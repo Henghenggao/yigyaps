@@ -1,0 +1,10 @@
+{
+  "registries": [
+    {
+      "name": "YigYaps",
+      "description": "The open marketplace for YAP skills — MCP-compatible skill registry",
+      "url": "https://api.yigyaps.com/v1",
+      "version": "1.0.0"
+    }
+  ]
+}

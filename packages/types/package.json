@@ -1,0 +1,23 @@
+{
+  "name": "@yigyaps/types",
+  "version": "0.1.0",
+  "description": "Shared TypeScript types for the YigYaps open skill marketplace",
+  "license": "Apache-2.0",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "import": "./dist/index.js",
+      "types": "./dist/index.d.ts"
+    }
+  },
+  "files": ["dist"],
+  "scripts": {
+    "build": "tsc -b",
+    "clean": "tsc -b --clean"
+  },
+  "devDependencies": {
+    "typescript": "^5.7.0"
+  }
+}
