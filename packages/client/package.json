@@ -18,7 +18,7 @@
     "clean": "tsc -b --clean"
   },
   "dependencies": {
-    "@yigyaps/types": "workspace:*"
+    "@yigyaps/types": "*"
   },
   "devDependencies": {
     "typescript": "^5.7.0"
