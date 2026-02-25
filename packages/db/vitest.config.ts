@@ -6,7 +6,7 @@ export default defineConfig({
     globals: true,
     environment: 'node',
     include: ['__tests__/**/*.test.ts'],
-    globalSetup: ['__tests__/helpers/global-setup.ts'],
+    globalSetup: [path.resolve(__dirname, '__tests__/helpers/global-setup.ts')],
     testTimeout: 30000,
     hookTimeout: 60000,
     pool: 'threads',

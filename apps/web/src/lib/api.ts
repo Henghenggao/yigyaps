@@ -64,6 +64,6 @@ export async function fetchApi<T = unknown>(
             throw error;
         }
         // Network or parse errors
-        throw new Error(error instanceof Error ? error.message : 'Unknown network error');
+        throw new Error(error instanceof Error ? error.message : 'Unknown network error', { cause: error });
     }
 }

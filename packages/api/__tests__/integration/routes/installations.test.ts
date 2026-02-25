@@ -458,7 +458,6 @@ describe('DELETE /v1/installations/:id', () => {
       method: 'DELETE',
       url: '/v1/installations/non_existent_id',
       headers: { authorization: `Bearer ${createTestJWT({ userId: 'usr_test_123', tier: 'legendary', role: 'user' })}` },
-      headers: { authorization: `Bearer ${createTestJWT({ userId: 'usr_test_123', tier: 'legendary', role: 'user' })}` },
     });
 
     expect(response.statusCode).toBe(404);

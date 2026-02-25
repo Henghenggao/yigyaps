@@ -16,7 +16,7 @@
   "scripts": {
     "build": "tsc -b",
     "clean": "tsc -b --clean",
-    "test": "vitest run",
+    "test": "npm run test -w @yigyaps/db && npm run test -w @yigyaps/api && npm run test -w web",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
@@ -30,11 +30,16 @@
     "db:migrate": "node scripts/migrate.js"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
     "@faker-js/faker": "^10.3.0",
     "@vitest/coverage-v8": "^4.0.18",
     "eslint": "^9.0.0",
+    "eslint-plugin-react-hooks": "^7.0.1",
+    "eslint-plugin-react-refresh": "^0.5.2",
+    "globals": "^17.3.0",
     "prettier": "^3.0.0",
     "typescript": "^5.7.0",
+    "typescript-eslint": "^8.56.1",
     "vitest": "^4.0.0"
   }
 }

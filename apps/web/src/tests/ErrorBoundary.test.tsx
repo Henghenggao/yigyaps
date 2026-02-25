@@ -1,4 +1,6 @@
-import { render, screen, fireEvent, act } from '@testing-library/react';
+// @vitest-environment jsdom
+import { describe, it, expect, afterEach } from 'vitest';
+import { render, screen, act, cleanup } from '@testing-library/react';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 
 const ThrowError = () => {
@@ -6,20 +8,22 @@ const ThrowError = () => {
 };
 
 describe('ErrorBoundary', () => {
+    afterEach(() => {
+        cleanup();
+    });
+
     it('should catch errors in children and display fallback UI', () => {
-        act(() => {
-            // Temporarily silence console.error for the expected error
-            const originalError = console.error;
-            console.error = () => { };
+        // Temporarily silence console.error for the expected error
+        const originalError = console.error;
+        console.error = () => { };
 
-            render(
-                <ErrorBoundary>
-                    <ThrowError />
-                </ErrorBoundary>
-            );
+        render(
+            <ErrorBoundary>
+                <ThrowError />
+            </ErrorBoundary>
+        );
 
-            console.error = originalError;
-        });
+        console.error = originalError;
 
         expect(screen.getByText('Something went wrong.')).toBeTruthy();
         expect(screen.getByText('Test error thrown!')).toBeTruthy();
@@ -29,10 +33,11 @@ describe('ErrorBoundary', () => {
     it('should render children normally when no error occurs', () => {
         render(
             <ErrorBoundary>
-                <div>All good here!</div>
+                <div data-testid="success">All good here!</div>
             </ErrorBoundary>
         );
 
+        expect(screen.getByTestId('success')).toBeTruthy();
         expect(screen.getByText('All good here!')).toBeTruthy();
         expect(screen.queryByText('Something went wrong.')).toBeNull();
     });

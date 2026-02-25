@@ -66,10 +66,10 @@ export function verifyJWT(token: string): JWTPayload {
     return decoded;
   } catch (error) {
     if (error instanceof jwt.TokenExpiredError) {
-      throw new Error("Token has expired");
+      throw new Error("Token has expired", { cause: error });
     }
     if (error instanceof jwt.JsonWebTokenError) {
-      throw new Error("Invalid token");
+      throw new Error("Invalid token", { cause: error });
     }
     throw error;
   }

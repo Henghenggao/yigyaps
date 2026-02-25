@@ -1,11 +1,10 @@
+// @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { SkillCard } from '../components/SkillCard';
 import { MemoryRouter } from 'react-router-dom';
 import type { SkillPackage } from '@yigyaps/types';
 
-// Mock without 'id' if the type doesn't have an internal UUID id. 
-// Just cast to any if necessary, or omit if optional. The schema uses 'id' for DB but the returned SkillPackage might not expose it.
 const mockSkill = {
     packageId: 'com.test.skill',
     version: '1.0.0',

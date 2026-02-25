@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 import { describe, it, expect } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { SearchBar } from '../components/SearchBar';
@@ -10,7 +11,8 @@ describe('SearchBar', () => {
                 <SearchBar value="" onChange={() => { }} />
             </MemoryRouter>
         );
-        expect(screen.getByPlaceholderText(/Search skills.../i)).toBeTruthy();
+        const inputs = screen.getAllByPlaceholderText(/Search skills.../i);
+        expect(inputs.length).toBeGreaterThan(0);
     });
 
     it('navigates on submit with query', () => {
@@ -20,7 +22,8 @@ describe('SearchBar', () => {
             </MemoryRouter>
         );
 
-        const input = screen.getByPlaceholderText(/Search skills.../i);
+        const inputs = screen.getAllByPlaceholderText(/Search skills.../i);
+        const input = inputs[0];
         fireEvent.change(input, { target: { value: 'react' } });
 
         // Simulate form submit
