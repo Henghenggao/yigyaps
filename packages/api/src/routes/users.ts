@@ -22,17 +22,6 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
       });
     }
 
-    // If using ADMIN_SECRET, return basic info
-    if (request.user.authMethod === "admin_secret") {
-      return reply.send({
-        id: request.user.userId,
-        displayName: request.user.userName,
-        tier: request.user.tier,
-        role: request.user.role,
-        authMethod: "admin_secret",
-      });
-    }
-
     // Get full user profile from database
     const userDAL = new UserDAL(fastify.db);
     const user = await userDAL.getById(request.user.userId);
@@ -74,14 +63,6 @@ export const usersRoutes: FastifyPluginAsync = async (fastify) => {
       return reply.status(401).send({
         error: "Unauthorized",
         message: "Not authenticated",
-      });
-    }
-
-    // ADMIN_SECRET cannot update profile
-    if (request.user.authMethod === "admin_secret") {
-      return reply.status(403).send({
-        error: "Forbidden",
-        message: "ADMIN_SECRET authentication cannot update user profiles",
       });
     }
 

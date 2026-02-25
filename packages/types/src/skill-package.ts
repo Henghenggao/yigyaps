@@ -64,6 +64,19 @@ export type SkillPackageMaturity =
  * 4. Dependency requirements
  * 5. Marketplace metadata (description, tags, pricing)
  */
+export interface SkillPackageFolderStructure {
+  /** Root directory of the skill */
+  root: string;
+  /** Mandatory: Skill logic and instructions (usually .md or .txt) */
+  rulesDir: "rules/";
+  /** Optional: Reference documents for the agent */
+  knowledgeDir?: "knowledge/";
+  /** Optional: Custom MCP server implementation */
+  mcpDir?: "mcp/";
+  /** Mandatory: Package definition file */
+  manifestFile: "package.json";
+}
+
 export interface SkillPackage {
   /** Unique package identifier (e.g., "skill-github") */
   packageId: string;
@@ -133,6 +146,8 @@ export interface SkillPackage {
   updatedAt: number;
   /** Last version release timestamp (Unix ms) */
   releasedAt: number;
+  /** Standardized folder layout (for CLI and registry validation) */
+  structure?: SkillPackageFolderStructure;
 }
 
 /**

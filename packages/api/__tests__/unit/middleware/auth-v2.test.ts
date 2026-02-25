@@ -7,9 +7,10 @@
  * License: Apache 2.0
  */
 
+import { describe, it, expect, beforeEach } from 'vitest';
 import { optionalAuth, requireAuth, type UserContext } from '../../../src/middleware/auth-v2.js';
 import { createTestJWT, createAdminJWT, createExpiredJWT } from '../helpers/jwt-helpers.js';
-import type { FastifyRequest, FastifyReply } from 'fastify';
+import type { FastifyRequest, FastifyReply, FastifyBaseLogger } from 'fastify';
 import crypto from 'crypto';
 
 // ─── Mock Helpers ─────────────────────────────────────────────────────────────
@@ -17,12 +18,9 @@ import crypto from 'crypto';
 interface MockRequest extends Partial<FastifyRequest> {
   headers: Record<string, string | undefined>;
   user?: UserContext;
-  log?: {
-    warn: (msg: string) => void;
-  };
-  server: {
-    db: any;
-  };
+  cookies: Record<string, string | undefined>;
+  log: FastifyBaseLogger;
+  server: any; // Allow any for mock server to bypass FastifyInstance strict requirements
 }
 
 interface MockReply extends Partial<FastifyReply> {
@@ -33,13 +31,22 @@ interface MockReply extends Partial<FastifyReply> {
 function createMockRequest(authHeader?: string): MockRequest {
   return {
     headers: authHeader ? { authorization: authHeader } : {},
+    cookies: {},
     log: {
       warn: () => { },
-    },
+      info: () => { },
+      error: () => { },
+      debug: () => { },
+      fatal: () => { },
+      trace: () => { },
+      silent: () => { },
+      child: () => ({}) as any,
+      level: 'info',
+    } as unknown as FastifyBaseLogger,
     server: {
       db: {}, // Mock database connection
     },
-  };
+  } as MockRequest;
 }
 
 function createMockReply(): MockReply {
@@ -48,14 +55,14 @@ function createMockReply(): MockReply {
     sentPayload: null,
   };
 
-  reply.status = function (code: number) {
+  reply.status = function (this: MockReply, code: number) {
     this.statusCode = code;
-    return this;
+    return this as FastifyReply;
   } as any;
 
-  reply.send = function (payload: any) {
+  reply.send = function (this: MockReply, payload: any) {
     this.sentPayload = payload;
-    return this;
+    return this as FastifyReply;
   } as any;
 
   return reply;

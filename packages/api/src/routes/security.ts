@@ -9,6 +9,7 @@
 
 import { FastifyPluginAsync } from "fastify";
 import { KMS } from "../lib/kms.js";
+import { CKKSPoC } from "../lib/ckks.js";
 import { SecureBuffer } from "../middleware/memory-zeroizer.js";
 import {
     encryptedKnowledgeTable,
@@ -152,6 +153,33 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
             success: true,
             conclusion,
             disclaimer: "Output is sanitized. Original rules were not leaked.",
+        });
+    });
+
+    /**
+     * CKKS Homomorphic Encryption PoC
+     * Demonstrates computation on encrypted room data.
+     */
+    fastify.get("/ckks-poc", async (request, reply) => {
+        const userScore = 85;
+        const threshold = 15;
+
+        // 1. Client encrypts data before sending
+        const encScore = CKKSPoC.encrypt(userScore).ciphertext;
+        const encThreshold = CKKSPoC.encrypt(threshold).ciphertext;
+
+        // 2. Room processes encrypted data
+        const encResult = CKKSPoC.processSecureRoom(encScore, encThreshold);
+
+        return reply.send({
+            concept: "Homomorphic Encryption (CKKS Simulation)",
+            inputs: {
+                userScore: "ENCRYPTED",
+                threshold: "ENCRYPTED"
+            },
+            operation: "Addition over Ciphertexts",
+            encryptedResult: encResult,
+            message: "The room calculated the sum without ever seeing the numbers 85 or 15."
         });
     });
 };

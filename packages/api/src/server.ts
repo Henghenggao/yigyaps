@@ -37,25 +37,21 @@ import { registryRoutes, wellKnownRoutes } from "./routes/registry.js";
 import { authRoutes } from "./routes/auth.js";
 import { usersRoutes } from "./routes/users.js";
 import { securityRoutes } from "./routes/security.js";
+import { env } from "./lib/env.js";
 
 const { Pool } = pg;
 
 async function buildServer() {
-  const sessionSecret = process.env.SESSION_SECRET;
-  if (!sessionSecret) {
-    throw new Error("SESSION_SECRET is required");
-  }
-
   const fastify = Fastify({
     logger: {
-      level: process.env.LOG_LEVEL ?? "info",
+      level: env.LOG_LEVEL,
     },
   });
 
   // ── Security ──────────────────────────────────────────────────────────────
   await fastify.register(helmet);
   await fastify.register(cors, {
-    origin: (process.env.CORS_ORIGIN || "").split(",").filter(Boolean),
+    origin: (env.CORS_ORIGIN || "").split(",").filter(Boolean),
     credentials: true,
   });
   await fastify.register(rateLimit, {
@@ -63,16 +59,15 @@ async function buildServer() {
     timeWindow: "1 minute",
   });
   await fastify.register(cookie, {
-    secret: sessionSecret,
+    secret: env.SESSION_SECRET,
   });
 
   // ── Database ──────────────────────────────────────────────────────────────
   const pool = new Pool({
-    connectionString:
-      process.env.DATABASE_URL ?? "postgresql://localhost:5432/yigyaps",
-    max: Number(process.env.DB_POOL_MAX ?? 20),
-    idleTimeoutMillis: Number(process.env.DB_POOL_IDLE_TIMEOUT ?? 30000),
-    connectionTimeoutMillis: Number(process.env.DB_POOL_CONN_TIMEOUT ?? 2000),
+    connectionString: env.DATABASE_URL,
+    max: env.DB_POOL_MAX,
+    idleTimeoutMillis: env.DB_POOL_IDLE_TIMEOUT,
+    connectionTimeoutMillis: env.DB_POOL_CONN_TIMEOUT,
   });
   const db = drizzle(pool, { schema });
   fastify.decorate("db", db);
@@ -165,8 +160,8 @@ async function buildServer() {
 
 async function main() {
   const server = await buildServer();
-  const port = Number(process.env.PORT ?? 3100);
-  const host = process.env.HOST ?? "0.0.0.0";
+  const port = env.PORT;
+  const host = env.HOST;
 
   try {
     await server.listen({ port, host });

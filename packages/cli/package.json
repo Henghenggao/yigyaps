@@ -1,0 +1,26 @@
+{
+    "name": "@yigyaps/cli",
+    "version": "0.1.0",
+    "type": "module",
+    "bin": {
+        "yigyaps": "./bin/yigyaps.js"
+    },
+    "scripts": {
+        "build": "tsc",
+        "dev": "tsc -w"
+    },
+    "dependencies": {
+        "@yigyaps/types": "*",
+        "chalk": "^5.3.0",
+        "commander": "^12.0.0",
+        "fs-extra": "^11.2.0",
+        "inquirer": "^9.2.15",
+        "zod": "^3.22.4"
+    },
+    "devDependencies": {
+        "@types/fs-extra": "^11.0.4",
+        "@types/inquirer": "^9.0.9",
+        "@types/node": "^20.11.19",
+        "typescript": "^5.3.3"
+    }
+}

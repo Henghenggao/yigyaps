@@ -9,7 +9,7 @@
 
 import type { FastifyRequest, FastifyReply } from "fastify";
 import { verifyJWT } from "../lib/jwt.js";
-import { ApiKeyDAL } from "@yigyaps/db";
+import { ApiKeyDAL, UserDAL } from "@yigyaps/db";
 import crypto from "crypto";
 
 // ─── User Context ─────────────────────────────────────────────────────────────
@@ -82,13 +82,19 @@ async function validateApiKey(
     // Update last used timestamp (async, don't wait)
     apiKeyDAL.updateLastUsed(apiKey.id).catch(() => { });
 
-    // Get user info from database (we'll need to implement this)
-    // For now, return basic context
+    // Get user info from database
+    const userDAL = new UserDAL(request.server.db);
+    const user = await userDAL.getById(apiKey.userId);
+
+    if (!user) {
+      return null;
+    }
+
     return {
-      userId: apiKey.userId,
-      userName: `user_${apiKey.userId}`,
-      tier: "free", // We'll get this from user table in future
-      role: "user",
+      userId: user.id,
+      userName: user.displayName,
+      tier: user.tier as "free" | "pro" | "epic" | "legendary",
+      role: user.role as "user" | "admin",
       authMethod: "apikey",
     };
   } catch (error) {

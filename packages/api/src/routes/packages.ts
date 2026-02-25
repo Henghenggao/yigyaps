@@ -70,6 +70,12 @@ const createPackageSchema = z.object({
   homepageUrl: z.string().url().optional(),
 });
 
+const updatePackageSchema = createPackageSchema
+  .partial()
+  .extend({
+    priceUsd: z.number().min(0).max(9999).transform((val) => String(val)).optional(),
+  });
+
 const searchSchema = z.object({
   query: z.string().max(200).optional(),
   category: z
@@ -205,9 +211,17 @@ export async function packagesRoutes(fastify: FastifyInstance) {
           .code(403)
           .send({ error: "Not authorized to update this package" });
       }
+      const parsed = updatePackageSchema.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.code(400).send({
+          error: "Bad Request",
+          message: "Validation failed",
+          details: parsed.error.issues,
+        });
+      }
       const updated = await packageDAL.update(
         request.params.id,
-        request.body as Record<string, unknown>,
+        parsed.data,
       );
       return reply.send(updated);
     },

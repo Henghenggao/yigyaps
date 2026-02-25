@@ -252,17 +252,6 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       });
     }
 
-    // If using ADMIN_SECRET, return basic info
-    if (request.user.authMethod === "admin_secret") {
-      return reply.send({
-        id: request.user.userId,
-        displayName: request.user.userName,
-        tier: request.user.tier,
-        role: request.user.role,
-        authMethod: "admin_secret",
-      });
-    }
-
     // Get full user profile from database
     const userDAL = new UserDAL(fastify.db);
     const user = await userDAL.getById(request.user.userId);
