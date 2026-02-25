@@ -18,11 +18,6 @@
  * License: Apache 2.0
  */
 
-export { YigYapsRegistryClient } from "./registry-client.js";
-export type { RegistryClientOptions } from "./registry-client.js";
-
-export { YigYapsPublisherClient } from "./publisher-client.js";
-export type {
-  PublisherClientOptions,
-  PublishPackageParams,
-} from "./publisher-client.js";
+export * from "./registry-client.js";
+export * from "./publisher-client.js";
+export * from "./security-client.js";

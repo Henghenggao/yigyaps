@@ -40,7 +40,7 @@ function ReviewCard({ review }: { review: SkillPackageReview }) {
           {review.title && <span className="review-title">{review.title}</span>}
         </div>
         <div className="review-meta">
-          <span className="review-author">@{review.reviewerUsername}</span>
+          <span className="review-author">@{String((review as unknown as Record<string, unknown>).reviewerUsername)}</span>
           <span className="meta-separator">·</span>
           <span className="review-time">{timeAgo}</span>
           {review.verified && (

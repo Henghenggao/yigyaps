@@ -1,3 +1,5 @@
+import type { ReactNode } from 'react';
+
 interface PaginationProps {
   currentPage: number;
   totalItems: number;
@@ -32,7 +34,7 @@ export function Pagination({
   };
 
   const renderPageNumbers = () => {
-    const pages: JSX.Element[] = [];
+    const pages: ReactNode[] = [];
     const maxPagesToShow = 5;
 
     let startPage = Math.max(1, currentPage - 2);

@@ -10,7 +10,7 @@ import { useState } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { YigYapsRegistryClient } from '@yigyaps/client';
 import type { SkillPackage } from '@yigyaps/types';
-import { TIER_RANK, getTierName, canAccessTier } from '../utils/tierHelpers';
+import { getTierName, canAccessTier } from '../utils/tierHelpers';
 
 interface InstallButtonProps {
   skill: SkillPackage;
@@ -73,12 +73,15 @@ export function InstallButton({ skill, onInstallSuccess }: InstallButtonProps) {
       setTimeout(() => {
         setStatus('idle');
       }, 2000);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Installation failed:', err);
       setStatus('error');
 
       // Extract user-friendly error message
-      const errorMessage = err.message || 'Installation failed';
+      let errorMessage = 'Installation failed';
+      if (err instanceof Error) {
+        errorMessage = err.message;
+      }
 
       // Parse specific error cases
       if (errorMessage.includes('tier')) {
@@ -130,13 +133,14 @@ export function InstallButton({ skill, onInstallSuccess }: InstallButtonProps) {
         );
 
       case 'idle':
-      default:
+      default: {
         const priceLabel = skill.priceUsd > 0 ? `Install - $${skill.priceUsd}` : 'Install Free';
         return (
           <button className="btn btn-primary btn-large" onClick={handleInstall}>
             {priceLabel}
           </button>
         );
+      }
     }
   };
 

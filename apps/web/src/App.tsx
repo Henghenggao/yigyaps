@@ -2,12 +2,14 @@ import { Routes, Route } from 'react-router-dom';
 import { HomePage } from './pages/HomePage';
 import { SkillDetailPage } from './pages/SkillDetailPage';
 import { AuthCallback } from './pages/AuthCallback';
+import { PublishSkillPage } from './pages/PublishSkillPage';
 import './App.css';
 
 function App() {
   return (
     <Routes>
       <Route path="/" element={<HomePage />} />
+      <Route path="/publish" element={<PublishSkillPage />} />
       <Route path="/skill/:packageId" element={<SkillDetailPage />} />
       <Route path="/auth/success" element={<AuthCallback />} />
       <Route path="/auth/error" element={<AuthCallback />} />

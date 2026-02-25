@@ -1,0 +1,45 @@
+﻿No config path provided, using default 'drizzle.config.ts'
+Reading config file 'C:\Users\gaoyu\Documents\GitHub\yigyaps\packages\db\drizzle.config.ts'
+Using 'pg' driver for database querying
+node.exe : Error: Cannot find module './skill-packages.js'
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program 
+Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~~~~~~~~
+    + CategoryInfo          : NotSpecified: (Error: Cannot 
+    f...ll-packages.js':String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+Require stack:
+- C:\Users\gaoyu\Documents\GitHub\yigyaps\packages\db\src\s
+chema\index.ts
+- C:\Users\gaoyu\Documents\GitHub\yigyaps\node_modules\driz
+zle-kit\bin.cjs
+    at Module.<anonymous> 
+(node:internal/modules/cjs/loader:1421:15)
+    at Module._resolveFilename (C:\Users\gaoyu\Documents\Gi
+tHub\yigyaps\node_modules\drizzle-kit\bin.cjs:16806:40)
+    at defaultResolveImpl 
+(node:internal/modules/cjs/loader:1059:19)
+    at resolveForCJSWithHooks 
+(node:internal/modules/cjs/loader:1064:22)
+    at Module._load 
+(node:internal/modules/cjs/loader:1227:37)
+    at TracingChannel.traceSync 
+(node:diagnostics_channel:328:14)
+    at wrapModuleLoad 
+(node:internal/modules/cjs/loader:245:24)
+    at Module.require 
+(node:internal/modules/cjs/loader:1504:12)
+    at require (node:internal/modules/helpers:152:16)
+    at Object.<anonymous> (C:\Users\gaoyu\Documents\GitHub\
+yigyaps\packages\db\src\schema\index.ts:1:15) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    'C:\\Users\\gaoyu\\Documents\\GitHub\\yigyaps\\packages
+\\db\\src\\schema\\index.ts',
+    'C:\\Users\\gaoyu\\Documents\\GitHub\\yigyaps\\node_mod
+ules\\drizzle-kit\\bin.cjs'
+  ]
+}

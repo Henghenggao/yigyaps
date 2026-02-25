@@ -81,7 +81,7 @@ export function HomePage() {
         }
       }
 
-      if (filters.maxPriceUsd !== undefined) {
+      if (filters.maxPriceUsd !== undefined && filters.maxPriceUsd !== null) {
         params.set('maxPrice', filters.maxPriceUsd.toString());
       }
 
@@ -112,6 +112,7 @@ export function HomePage() {
         </div>
         <nav className="nav-links">
           <a href="#">Marketplace</a>
+          <a href="/publish">Publish Skill</a>
           <a href="#">Creators</a>
           <a href="#">Docs</a>
         </nav>

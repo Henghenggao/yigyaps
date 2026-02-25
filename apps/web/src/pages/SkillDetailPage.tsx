@@ -1,4 +1,6 @@
+import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import { YigYapsSecurityClient } from '@yigyaps/client';
 import { useSkillDetail } from '../hooks/useSkillDetail';
 import { useAuth } from '../contexts/AuthContext';
 import { UserMenu } from '../components/UserMenu';
@@ -43,9 +45,10 @@ export function SkillDetailPage() {
   }
 
   const displayName = skillDetail.displayName || skillDetail.packageId;
-  const hasLimitedEdition = skillDetail.maxEditions !== null;
+  const detailData = skillDetail as unknown as Record<string, unknown>;
+  const hasLimitedEdition = detailData.maxEditions !== null && detailData.maxEditions !== undefined;
   const mintProgress = hasLimitedEdition
-    ? ((skillDetail.mintedCount || 0) / (skillDetail.maxEditions || 1)) * 100
+    ? ((Number(detailData.mintedCount) || 0) / (Number(detailData.maxEditions) || 1)) * 100
     : 0;
 
   return (
@@ -63,7 +66,7 @@ export function SkillDetailPage() {
               <div className="skill-title-section">
                 <h1 className="skill-title">{displayName}</h1>
                 <div className="skill-meta">
-                  <span>@{skillDetail.creatorUsername}</span>
+                  <span>@{String(detailData.creatorUsername) || 'anonymous'}</span>
                   {skillDetail.rating > 0 && (
                     <>
                       <span className="meta-separator">|</span>
@@ -98,14 +101,30 @@ export function SkillDetailPage() {
         {/* README Section */}
         <section className="readme-section">
           <h2 className="section-heading">About</h2>
-          {skillDetail.longDescription ? (
+          {detailData.longDescription ? (
             <div
               className="markdown-content"
-              dangerouslySetInnerHTML={{ __html: skillDetail.longDescription }}
+              dangerouslySetInnerHTML={{ __html: detailData.longDescription as string }}
             />
           ) : (
             <p className="no-content">{skillDetail.description || 'No description provided.'}</p>
           )}
+        </section>
+
+        {/* EVR Simulation Sandbox */}
+        <section className="sandbox-section" style={{ marginTop: '3rem', padding: '2rem', background: 'var(--color-card)', borderRadius: '12px', border: '1px solid var(--color-border)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1.5rem' }}>
+            <h2 className="section-heading" style={{ margin: 0 }}>Simulation Sandbox</h2>
+            <span style={{ fontSize: '0.85rem', background: 'rgba(0,255,100,0.1)', color: '#2ecc71', padding: '0.2rem 0.6rem', borderRadius: '4px', border: '1px solid rgba(0,255,100,0.2)' }}>
+              Encrypted Virtual Room Active
+            </span>
+          </div>
+          <p style={{ color: 'var(--color-text-muted)', marginBottom: '1.5rem', lineHeight: '1.6' }}>
+            Test what an external AI sees when invoking this secure skill. The raw rules are decrypted only in volatile memory (RAM) and immediately wiped.
+            The firewall ensures <strong>only the sanitized conclusion</strong> is exported.
+          </p>
+
+          <SimulationSandbox packageId={packageId!} />
         </section>
 
         {/* Mint Status (if limited edition) */}
@@ -113,8 +132,8 @@ export function SkillDetailPage() {
           <section className="mint-status-section">
             <div className="mint-status-header">
               <h2 className="section-heading">
-                {skillDetail.editionType?.toUpperCase()}: {skillDetail.mintedCount || 0} /{' '}
-                {skillDetail.maxEditions} minted
+                {String(detailData.editionType)?.toUpperCase()}: {Number(detailData.mintedCount) || 0} /{' '}
+                {Number(detailData.maxEditions)} minted
               </h2>
               <span className="mint-percentage">{mintProgress.toFixed(1)}% claimed</span>
             </div>
@@ -158,7 +177,7 @@ export function SkillDetailPage() {
 }
 
 // Shared Header Component (extracted for reuse)
-function Header({ user, login }: { user: any; login: () => void }) {
+function Header({ user, login }: { user: unknown; login: () => void }) {
   return (
     <header className="header">
       <Link to="/" className="logo">
@@ -166,6 +185,7 @@ function Header({ user, login }: { user: any; login: () => void }) {
       </Link>
       <nav className="nav-links">
         <Link to="/">Marketplace</Link>
+        <Link to="/publish">Publish Skill</Link>
         <a href="#">Creators</a>
         <a href="#">Docs</a>
       </nav>
@@ -180,5 +200,70 @@ function Header({ user, login }: { user: any; login: () => void }) {
         <button className="btn btn-primary">Connect Agent</button>
       </div>
     </header>
+  );
+}
+
+function SimulationSandbox({ packageId }: { packageId: string }) {
+  const [loading, setLoading] = useState(false);
+  const [result, setResult] = useState<{ conclusion: string; disclaimer: string } | null>(null);
+  const [error, setError] = useState<string | null>(null);
+
+  const handleSimulate = async () => {
+    setLoading(true);
+    setError(null);
+    setResult(null);
+
+    try {
+      const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3100';
+      const security = new YigYapsSecurityClient({ baseUrl });
+
+      const response = await security.invokeEvr(packageId);
+      setResult({
+        conclusion: response.conclusion,
+        disclaimer: response.disclaimer,
+      });
+    } catch (err: unknown) {
+      if (err instanceof Error) {
+        setError(err.message || 'Simulation failed');
+      } else {
+        setError('Simulation failed owing to an unknown error.');
+      }
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  return (
+    <div style={{ padding: '1.5rem', background: 'rgba(0,0,0,0.2)', borderRadius: '8px' }}>
+      <div style={{ marginBottom: '1.5rem' }}>
+        <button
+          onClick={handleSimulate}
+          disabled={loading}
+          className="btn btn-primary"
+          style={{ width: '100%', padding: '1rem', fontSize: '1rem' }}
+        >
+          {loading ? 'Booting EVR Sandbox and Matching Rules...' : 'Simulate External Agent Call'}
+        </button>
+      </div>
+
+      {error && (
+        <div style={{ color: '#e74c3c', padding: '1rem', background: 'rgba(255,0,0,0.1)', borderRadius: '6px' }}>
+          ❌ {error}
+        </div>
+      )}
+
+      {result && (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+          <div style={{ padding: '1rem', background: '#1e1e24', borderLeft: '4px solid #3498db', borderRadius: '4px' }}>
+            <div style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>Agent Received:</div>
+            <div style={{ fontFamily: 'monospace', color: '#ecf0f1' }}>{result.conclusion}</div>
+          </div>
+          <div style={{ padding: '1rem', background: '#1e1e24', borderLeft: '4px solid #2ecc71', borderRadius: '4px' }}>
+            <div style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>System Disclaimer:</div>
+            <div style={{ fontSize: '0.9rem', color: '#2ecc71' }}>🛡️ {result.disclaimer}</div>
+          </div>
+        </div>
+      )}
+    </div>
   );
 }

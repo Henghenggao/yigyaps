@@ -33,6 +33,7 @@ import { mintsRoutes } from "./routes/mints.js";
 import { registryRoutes, wellKnownRoutes } from "./routes/registry.js";
 import { authRoutes } from "./routes/auth.js";
 import { usersRoutes } from "./routes/users.js";
+import { securityRoutes } from "./routes/security.js";
 
 const { Pool } = pg;
 
@@ -49,7 +50,7 @@ async function buildServer() {
     origin: process.env.CORS_ORIGIN ?? "*",
   });
   await fastify.register(rateLimit, {
-    max: 100,
+    max: 20, // Strict MVP Limit for scraping protection
     timeWindow: "1 minute",
   });
   await fastify.register(cookie, {
@@ -73,6 +74,7 @@ async function buildServer() {
   await fastify.register(installationsRoutes, { prefix: "/v1/installations" });
   await fastify.register(reviewsRoutes, { prefix: "/v1/reviews" });
   await fastify.register(mintsRoutes, { prefix: "/v1/mints" });
+  await fastify.register(securityRoutes, { prefix: "/v1/security" });
 
   return fastify;
 }
