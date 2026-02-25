@@ -3,14 +3,90 @@
 **The open marketplace for YAP skills** — MCP-compatible, community-governed, Apache 2.0.
 
 YigYaps is an independent registry for YAP (Yet Another Plugin) skills used by MCP clients
-including Yigcore, Claude Code, Cursor, Windsurf, and others.
+including Claude Code, Cursor, Windsurf, and other AI platforms.
+
+## 🚀 Deployment Status
+
+| Component | Status | URL |
+|-----------|--------|-----|
+| Database | ✅ Live | PostgreSQL on Railway |
+| API Server | ✅ Live | `https://yigyaps-production.up.railway.app` |
+| Health Check | ✅ Live | `https://yigyaps-production.up.railway.app/health` |
+| MCP Discovery | ✅ Live | `https://yigyaps-production.up.railway.app/.well-known/mcp.json` |
+| Production Domain | 🔄 Pending | `api.yigyaps.com` (DNS setup required) |
+
+## 📦 Phase 1: MVP (Current)
+
+### What's Live
+
+- ✅ **Database**: PostgreSQL with full schema (packages, installations, reviews, mints)
+- ✅ **API Server**: Fastify REST API deployed on Railway
+- ✅ **Core Endpoints**: Package publishing, installation tracking, reviews, minting
+- ✅ **MCP Registry Discovery**: `/.well-known/mcp.json` endpoint
+- ✅ **Health Monitoring**: `/health` endpoint with database connectivity check
+
+### What's Coming (Phase 2)
+
+- 🔄 Custom domain setup (`api.yigyaps.com`)
+- 🔄 Frontend marketplace UI
+- 🔄 Authentication & authorization
+- 🔄 Rate limiting & API keys
+- 🔄 Analytics dashboard
+
+## 🛠️ Local Development
+
+### Prerequisites
+
+- Node.js 18+ and npm
+- PostgreSQL 14+ (or use Railway free tier)
+- Git
+
+### Quick Start
+
+```bash
+# 1. Clone the repository
+git clone https://github.com/yourusername/yigyaps.git
+cd yigyaps
+
+# 2. Install dependencies
+npm install
+
+# 3. Set up environment variables
+cp .env.example .env
+# Edit .env and add your DATABASE_URL
+
+# 4. Run database migrations
+npm run db:migrate
+
+# 5. Build all packages
+npm run build
+
+# 6. Start the API server
+npm run dev:api
+```
+
+The API will be available at `http://localhost:3000`.
+
+### Environment Variables
+
+```bash
+DATABASE_URL=postgresql://user:password@host:port/database
+PORT=3000
+NODE_ENV=development
+```
+
+## 📖 Documentation
+
+- **Deployment Guide**: [`docs/railway-deployment.md`](docs/railway-deployment.md) - Complete Railway deployment walkthrough
+- **Governance**: [`docs/governance.md`](docs/governance.md) - Community governance model
+- **API Reference**: See "API Endpoints" section below
 
 ## Why Independent?
 
-YigYaps is intentionally separated from Yigcore to prevent conflicts of interest:
+YigYaps is intentionally separated from its primary clients to prevent conflicts of interest:
 
-- Yigcore publishes skills to YigYaps the same way any third-party creator does — via HTTP API
-- No single company has database-level access or ranking privileges
+- Platform developers publish skills to YigYaps the same way any third-party creator does — via HTTP API
+- No single organization has database-level access or ranking privileges
 - Governance is community-driven (see [governance.md](docs/governance.md))
 
 This mirrors how Docker Hub, npmjs.com, and PyPI operate independently of their primary clients.
@@ -44,9 +120,9 @@ POST   /v1/packages              Publish a YAP skill package
 GET    /v1/packages              Search and list packages
 GET    /v1/packages/:id          Get package details
 PATCH  /v1/packages/:id          Update a package
-POST   /v1/installations         Install a package to a Yigbot
+POST   /v1/installations         Install a package to an agent
 DELETE /v1/installations/:id     Uninstall
-GET    /v1/installations/yigbot/:id  List Yigbot's active skills
+GET    /v1/installations/agent/:id   List agent's active skills
 POST   /v1/reviews               Submit a review
 GET    /v1/reviews/:packageId    Get reviews
 POST   /v1/mints                 Mint a limited edition
