@@ -2,7 +2,7 @@
  * YigYaps Database Schema — Skill Packages Registry
  *
  * Drizzle ORM table definitions for the YigYaps marketplace.
- * Tables use the `yy_` prefix (YigYaps namespace, no `mr_` coupling to Yigcore).
+ * Tables use the `yy_` prefix (YigYaps namespace, independent of specific platforms).
  *
  * License: Apache 2.0
  */
@@ -61,7 +61,7 @@ export const skillPackagesTable = pgTable(
       .notNull()
       .default("experimental"),
     tags: text("tags").array().notNull().default([]),
-    minYigcoreVersion: text("min_yigcore_version").notNull().default("0.1.0"),
+    minRuntimeVersion: text("min_runtime_version").notNull().default("0.1.0"),
     requiredTier: integer("required_tier").notNull().default(0),
     mcpTransport: text("mcp_transport")
       .$type<"stdio" | "http" | "sse">()
@@ -109,7 +109,7 @@ export const skillPackageInstallationsTable = pgTable(
       .notNull()
       .references(() => skillPackagesTable.id, { onDelete: "cascade" }),
     packageVersion: text("package_version").notNull(),
-    yigbotId: text("yigbot_id").notNull(),
+    agentId: text("agent_id").notNull(),
     userId: text("user_id").notNull(),
     status: text("status")
       .$type<"installing" | "active" | "failed" | "uninstalled">()
@@ -122,7 +122,7 @@ export const skillPackageInstallationsTable = pgTable(
     uninstalledAt: bigint("uninstalled_at", { mode: "number" }),
   },
   (table) => [
-    index("idx_yy_installations_yigbot").on(table.yigbotId),
+    index("idx_yy_installations_agent").on(table.agentId),
     index("idx_yy_installations_user").on(table.userId),
     index("idx_yy_installations_package").on(table.packageId),
   ],

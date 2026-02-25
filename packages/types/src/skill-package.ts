@@ -91,8 +91,8 @@ export interface SkillPackage {
   maturity: SkillPackageMaturity;
   /** Search tags */
   tags: string[];
-  /** Minimum Yigcore version required (semver) */
-  minYigcoreVersion: string;
+  /** Minimum runtime version required (semver) */
+  minRuntimeVersion: string;
   /** Execution tier required (0-3) */
   requiredTier: number;
   /** MCP server transport type */
@@ -132,13 +132,13 @@ export interface SkillPackage {
 }
 
 /**
- * SkillPackageInstallation — Record of a skill package installed for a Yigbot.
+ * SkillPackageInstallation — Record of a skill package installed for an agent.
  */
 export interface SkillPackageInstallation {
   id: string;
   packageId: string;
   packageVersion: string;
-  yigbotId: string;
+  agentId: string;
   userId: string;
   status: "installing" | "active" | "failed" | "uninstalled";
   errorMessage?: string;
