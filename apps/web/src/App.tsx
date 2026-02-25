@@ -1,8 +1,13 @@
+import { Routes, Route } from 'react-router-dom';
 import { useSkills } from './hooks/useSkills';
+import { useAuth } from './contexts/AuthContext';
+import { UserMenu } from './components/UserMenu';
+import { AuthCallback } from './pages/AuthCallback';
 import './App.css'
 
-function App() {
+function HomePage() {
   const { skills, loading, error } = useSkills();
+  const { user, login } = useAuth();
 
   return (
     <div className="app-container">
@@ -17,7 +22,11 @@ function App() {
           <a href="#">Docs</a>
         </nav>
         <div className="header-actions">
-          <button className="btn btn-outline">Sign In</button>
+          {user ? (
+            <UserMenu />
+          ) : (
+            <button className="btn btn-outline" onClick={login}>Sign In</button>
+          )}
           <button className="btn btn-primary">Connect Agent</button>
         </div>
       </header>
@@ -67,19 +76,26 @@ function App() {
 
           <div className="skills-grid">
             {skills.map((skill) => (
-              <div key={skill.id} className="skill-card">
+              <div key={skill.packageId} className="skill-card">
                 <div className="card-header">
-                  <div className="card-icon">{skill.name ? skill.name.charAt(0).toUpperCase() : 'Y'}</div>
+                  <div className="card-icon">
+                    {skill.icon || (skill.displayName ? skill.displayName.charAt(0).toUpperCase() : 'Y')}
+                  </div>
                   <div className="status-indicator">
                     <span className="status-dot"></span>
-                    Verified
+                    {skill.maturity === 'stable' ? 'Verified' : skill.maturity}
                   </div>
                 </div>
-                <h3 className="card-title">{skill.name}</h3>
+                <h3 className="card-title">{skill.displayName}</h3>
                 <p className="card-desc">{skill.description || 'No description provided.'}</p>
                 <div className="card-footer">
                   <div className="mint-quota">
-                    MINT QUOTA: <span>{skill.mintCount || 0}/{skill.mintQuota ? skill.mintQuota : '∞'}</span>
+                    INSTALLS: <span>{skill.installCount}</span>
+                    {skill.rating > 0 && (
+                      <span style={{ marginLeft: '0.5rem' }}>
+                        ⭐ {skill.rating.toFixed(1)}
+                      </span>
+                    )}
                   </div>
                   <button className="btn btn-outline" style={{ padding: '0.4rem 0.8rem', fontSize: '0.85rem' }}>
                     View
@@ -96,7 +112,17 @@ function App() {
         <p>&copy; {new Date().getFullYear()} YigYaps. Apache 2.0 Licensed.</p>
       </footer>
     </div>
-  )
+  );
+}
+
+function App() {
+  return (
+    <Routes>
+      <Route path="/" element={<HomePage />} />
+      <Route path="/auth/success" element={<AuthCallback />} />
+      <Route path="/auth/error" element={<AuthCallback />} />
+    </Routes>
+  );
 }
 
 export default App
