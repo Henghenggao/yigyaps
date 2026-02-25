@@ -16,6 +16,7 @@ import {
   SkillPackageDAL,
   SkillInstallationDAL,
 } from "@yigyaps/db";
+import { requireAdminAuth } from "../middleware/auth.js";
 
 const createPackageSchema = z.object({
   packageId: z.string().min(1).max(100),
@@ -95,52 +96,56 @@ export async function packagesRoutes(fastify: FastifyInstance) {
   const packageDAL = new SkillPackageDAL(db);
   const installDAL = new SkillInstallationDAL(db);
 
-  fastify.post("/", async (request, reply) => {
-    const userId = (request as any).userId ?? "anonymous";
-    const body = createPackageSchema.parse(request.body);
-    const now = Date.now();
+  fastify.post(
+    "/",
+    { preHandler: requireAdminAuth },
+    async (request, reply) => {
+      const userId = (request as any).userId ?? "anonymous";
+      const body = createPackageSchema.parse(request.body);
+      const now = Date.now();
 
-    const existing = await packageDAL.getByPackageId(body.packageId);
-    if (existing) {
-      return reply
-        .code(409)
-        .send({ error: "Package ID already exists", packageId: body.packageId });
-    }
+      const existing = await packageDAL.getByPackageId(body.packageId);
+      if (existing) {
+        return reply
+          .code(409)
+          .send({ error: "Package ID already exists", packageId: body.packageId });
+      }
 
-    const id = `spkg_${now}_${Math.random().toString(36).slice(2, 8)}`;
-    const pkg = await packageDAL.create({
-      id,
-      packageId: body.packageId,
-      version: body.version,
-      displayName: body.displayName,
-      description: body.description,
-      readme: body.readme ?? null,
-      author: userId,
-      authorName: body.authorName,
-      authorUrl: body.authorUrl ?? null,
-      license: body.license,
-      priceUsd: String(body.priceUsd),
-      requiresApiKey: body.requiresApiKey,
-      apiKeyInstructions: body.apiKeyInstructions ?? null,
-      category: body.category,
-      maturity: body.maturity,
-      tags: body.tags,
-      minRuntimeVersion: body.minRuntimeVersion,
-      requiredTier: body.requiredTier,
-      mcpTransport: body.mcpTransport,
-      mcpCommand: body.mcpCommand ?? null,
-      mcpUrl: body.mcpUrl ?? null,
-      icon: body.icon ?? null,
-      repositoryUrl: body.repositoryUrl ?? null,
-      homepageUrl: body.homepageUrl ?? null,
-      origin: "manual",
-      createdAt: now,
-      updatedAt: now,
-      releasedAt: now,
-    });
+      const id = `spkg_${now}_${Math.random().toString(36).slice(2, 8)}`;
+      const pkg = await packageDAL.create({
+        id,
+        packageId: body.packageId,
+        version: body.version,
+        displayName: body.displayName,
+        description: body.description,
+        readme: body.readme ?? null,
+        author: userId,
+        authorName: body.authorName,
+        authorUrl: body.authorUrl ?? null,
+        license: body.license,
+        priceUsd: String(body.priceUsd),
+        requiresApiKey: body.requiresApiKey,
+        apiKeyInstructions: body.apiKeyInstructions ?? null,
+        category: body.category,
+        maturity: body.maturity,
+        tags: body.tags,
+        minRuntimeVersion: body.minRuntimeVersion,
+        requiredTier: body.requiredTier,
+        mcpTransport: body.mcpTransport,
+        mcpCommand: body.mcpCommand ?? null,
+        mcpUrl: body.mcpUrl ?? null,
+        icon: body.icon ?? null,
+        repositoryUrl: body.repositoryUrl ?? null,
+        homepageUrl: body.homepageUrl ?? null,
+        origin: "manual",
+        createdAt: now,
+        updatedAt: now,
+        releasedAt: now,
+      });
 
-    return reply.code(201).send(pkg);
-  });
+      return reply.code(201).send(pkg);
+    },
+  );
 
   fastify.get("/", async (request, reply) => {
     const params = searchSchema.parse(request.query);
@@ -168,6 +173,7 @@ export async function packagesRoutes(fastify: FastifyInstance) {
 
   fastify.patch<{ Params: { id: string } }>(
     "/:id",
+    { preHandler: requireAdminAuth },
     async (request, reply) => {
       const userId = (request as any).userId ?? "anonymous";
       const pkg = await packageDAL.getById(request.params.id);
