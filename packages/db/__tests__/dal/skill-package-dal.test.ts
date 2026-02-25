@@ -1,14 +1,19 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, afterAll } from 'vitest';
 import { SkillPackageDAL } from '../../src/dal/skill-package-dal.js';
 import { SkillPackageFactory } from '../helpers/factories.js';
 import { clearDatabase } from '../helpers/test-utils.js';
-import { db } from '../helpers/test-db.js';
+import { db, pool, container } from '../helpers/test-db.js';
 
 describe('SkillPackageDAL', () => {
   const dal = new SkillPackageDAL(db);
 
   beforeEach(async () => {
     await clearDatabase();
+  });
+
+  afterAll(async () => {
+    await pool.end();
+    await container.stop();
   });
 
   describe('create', () => {
@@ -184,9 +189,10 @@ describe('SkillPackageDAL', () => {
         priceUsd: '50.00',
       });
 
-      expect(result.displayName).toBe('Updated Name');
-      expect(result.description).toBe('Updated description');
-      expect(result.priceUsd).toBe('50.00');
+      expect(result).not.toBeNull();
+      expect(result?.displayName).toBe('Updated Name');
+      expect(result?.description).toBe('Updated description');
+      expect(result?.priceUsd).toBe('50.00');
     });
 
     it('should return null for non-existent package', async () => {

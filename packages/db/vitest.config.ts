@@ -7,6 +7,7 @@ export default defineConfig({
     environment: 'node',
     include: ['__tests__/**/*.test.ts'],
     globalSetup: [path.resolve(__dirname, '__tests__/helpers/global-setup.ts')],
+    setupFiles: [path.resolve(__dirname, '__tests__/helpers/setup-env.ts')],
     testTimeout: 30000,
     hookTimeout: 60000,
     pool: 'threads',

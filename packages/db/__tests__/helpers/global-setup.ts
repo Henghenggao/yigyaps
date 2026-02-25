@@ -4,6 +4,7 @@ import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { Pool } from 'pg';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import fs from 'fs';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
@@ -42,12 +43,17 @@ export async function setup() {
 
   console.log('✅ Test database ready');
 
-  // 保存连接信息到环境变量
+  // 保存连接信息到环境变量及文件
   process.env.TEST_DATABASE_URL = connectionString;
+  const envPath = path.resolve(__dirname, '../../.test-db-env.json');
+  fs.writeFileSync(envPath, JSON.stringify({ TEST_DATABASE_URL: connectionString }));
 
   return async () => {
     await pool.end();
     await container.stop();
+    if (fs.existsSync(envPath)) {
+      fs.unlinkSync(envPath);
+    }
     console.log('🛑 Test container stopped');
   };
 }

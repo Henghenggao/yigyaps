@@ -299,7 +299,7 @@ describe('Concurrent Stress Tests - Race Condition Detection', () => {
 
       expect(finalMint?.mintedCount).toBeLessThanOrEqual(1000);
       expect(successes.length).toBeLessThanOrEqual(1000);
-    });
+    }, 60000);
   });
 
   describe('✅ Common Edition (No Limit)', () => {

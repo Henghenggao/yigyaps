@@ -1,0 +1,175 @@
+﻿
+[1m[46m RUN [49m[22m [36mv4.0.18 [39m[90mC:/Users/gaoyu/Documents/GitHub/yigyaps[39m
+
+ [31mÔØ»[39m packages/api/__tests__/integration/routes/concurrent-stress.test.ts [2m([22m[2m0 test[22m[2m)[22m
+ [31mÔØ»[39m packages/db/__tests__/dal/skill-package-dal.test.ts [2m([22m[2m0 test[22m[2m)[22m
+ [32mÔ£ô[39m packages/api/__tests__/unit/middleware/auth-v2.test.ts [2m([22m[2m14 tests[22m[2m)[22m[32m 217[2mms[22m[39m
+ [32mÔ£ô[39m apps/web/src/tests/SearchBar.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 26[2mms[22m[39m
+ [32mÔ£ô[39m apps/web/src/tests/SkillCard.test.tsx [2m([22m[2m1 test[22m[2m)[22m[32m 30[2mms[22m[39m
+node.exe : [90mstderr[2m | 
+apps/web/src/tests/AuthContext.test.tsx[2m > 
+[22m[2mAuthContext[2m > [22m[2mhandles fetch failure and 
+clears user
+At line:1 char:1
++ & "C:\Program Files\nodejs/node.exe" "C:\Program 
+Files\nodejs/node_mo ...
++ ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+~~~~~
+    + CategoryInfo          : NotSpecified: ([90mstderr[2m...an 
+   d clears user:String) [], RemoteException
+    + FullyQualifiedErrorId : NativeCommandError
+ 
+[22m[39mFailed to fetch user profile: Error: Network error
+    at C:/Users/gaoyu/Documents/GitHub/yigyaps/apps/web/src/tests/
+AuthContext.test.tsx:54:55
+    at [90mfile:///C:/Users/gaoyu/Documents/GitHub/yigyaps/[39mn
+ode_modules/[4m@vitest/runner[24m/dist/index.js:145:11
+    at [90mfile:///C:/Users/gaoyu/Documents/GitHub/yigyaps/[39mn
+ode_modules/[4m@vitest/runner[24m/dist/index.js:915:26
+    at [90mfile:///C:/Users/gaoyu/Documents/GitHub/yigyaps/[39mn
+ode_modules/[4m@vitest/runner[24m/dist/index.js:1243:20
+    at new Promise (<anonymous>)
+    at runWithTimeout [90m(file:///C:/Users/gaoyu/Documents/GitHu
+b/yigyaps/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:
+1209:10[90m)[39m
+    at [90mfile:///C:/Users/gaoyu/Documents/GitHub/yigyaps/[39mn
+ode_modules/[4m@vitest/runner[24m/dist/index.js:1653:37
+    at Traces.$ [90m(file:///C:/Users/gaoyu/Documents/GitHub/yigy
+aps/[39mnode_modules/[4mvitest[24m/dist/chunks/traces.CCmnQaNT.
+js:142:27[90m)[39m
+    at trace [90m(file:///C:/Users/gaoyu/Documents/GitHub/yigyaps
+/[39mnode_modules/[4mvitest[24m/dist/chunks/test.B8ej_ZHS.js:23
+9:21[90m)[39m
+    at runTest [90m(file:///C:/Users/gaoyu/Documents/GitHub/yigya
+ps/[39mnode_modules/[4m@vitest/runner[24m/dist/index.js:1653:12
+[90m)[39m
+
+ [32mÔ£ô[39m apps/web/src/tests/AuthContext.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 53[2mms[22m[39m
+ [32mÔ£ô[39m apps/web/src/tests/ErrorBoundary.test.tsx [2m([22m[2m2 tests[22m[2m)[22m[32m 121[2mms[22m[39m
+ [32mÔ£ô[39m packages/api/__tests__/integration/routes/reviews.test.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 14403[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should create a review with verified badge when user has installed the package [33m 616[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should create a review without verified badge when user has not installed [33m 504[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should reject review with invalid rating (below 1) [33m 630[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should reject review with invalid rating (above 5) [33m 620[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should reject review with title too short (< 3 chars) [33m 636[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should reject review with comment too short (< 10 chars) [33m 492[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should return 404 when package does not exist [33m 492[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should calculate average rating correctly with multiple reviews [33m 553[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should return reviews for a package [33m 527[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should return empty array when no reviews exist [33m 499[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should paginate reviews correctly with limit and offset [33m 569[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should respect max limit of 100 reviews [33m 761[2mms[22m[39m
+ [32mÔ£ô[39m packages/api/__tests__/integration/routes/mints.test.ts [2m([22m[2m15 tests[22m[2m)[22m[33m 17348[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should create a common mint successfully [33m 553[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should create a rare mint with graduation certificate [33m 652[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should create an epic mint with correct max editions [33m 657[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should create a legendary mint with correct max editions [33m 597[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should allow custom maxEditions [33m 510[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should return 404 for non-existent package [33m 488[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should return 403 when non-author tries to mint [33m 529[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should return 409 for duplicate mint [33m 521[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should return 422 when rare mint lacks graduation certificate [33m 499[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should return 422 when epic mint lacks graduation certificate [33m 574[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should return 422 when legendary mint lacks graduation certificate [33m 561[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should accept common mint without graduation certificate [33m 614[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should return zero earnings for new creator [33m 521[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should return earnings summary after installations [33m 722[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should limit recent earnings to 20 entries [33m 904[2mms[22m[39m
+ [32mÔ£ô[39m packages/api/__tests__/integration/routes/packages.test.ts [2m([22m[2m19 tests[22m[2m)[22m[33m 18637[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should create a new package with admin auth [33m 584[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should return 409 for duplicate packageId [33m 501[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should return 401 without admin auth [33m 636[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should return all packages without filters [33m 668[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should filter by category [33m 625[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should filter by license [33m 501[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should filter by maturity [33m 498[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should filter by maxPriceUsd [33m 549[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should handle pagination with limit and offset [33m 515[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should support query search [33m 495[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should support different sort orders [33m 564[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should return package by id [33m 585[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should return 404 for non-existent package [33m 564[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should return package by packageId [33m 558[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should return 404 for non-existent packageId [33m 643[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should update package by author [33m 744[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should return 403 when non-author tries to update [33m 541[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should return 404 for non-existent package [33m 764[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should return 401 without admin auth [33m 590[2mms[22m[39m
+ [32mÔ£ô[39m packages/api/__tests__/integration/routes/installations.test.ts [2m([22m[2m12 tests[22m[2m)[22m[33m 20754[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should install a free package successfully [33m 625[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should return 404 for non-existent package [33m 633[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should block free tier user from installing pro package [33m 661[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should allow pro tier user to install pro package [33m 505[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should calculate royalty correctly for paid package [33m 512[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should use default 70% royalty when not specified [33m 556[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should not create royalty entry for free package [33m 500[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should increment minted count when installing limited edition [33m 511[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should block installation when edition limit reached [33m 544[2mms[22m[39m
+       [33m[2mÔ£ô[22m[39m should block duplicate installation by same user [33m 600[2mms[22m[39m
+     [33m[2mÔ£ô[22m[39m should uninstall package successfully [33m 379[2mms[22m[39m
+     [33m[2mÔ£ô[22m[39m should return 404 for non-existent installation [33m 314[2mms[22m[39m
+
+[31mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[39m[1m[41m Failed Suites 2 
+[49m[22m[31mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[39m
+
+[41m[1m FAIL [22m[49m 
+packages/db/__tests__/dal/skill-package-dal.test.ts[2m [ 
+packages/db/__tests__/dal/skill-package-dal.test.ts ][22m
+[31m[1mError[22m: TEST_DATABASE_URL is not set. Make sure 
+globalSetup is configured.[39m
+[36m [2mÔØ»[22m 
+packages/db/__tests__/helpers/test-db.ts:[2m8:9[22m[39m
+    [90m  6| [39m
+    [90m  7| [39m[35mif[39m ([33m![39mconnectionString) {
+    [90m  8| [39m  throw new Error('TEST_DATABASE_URL is not 
+set. Make sure globalSetupÔÇª
+    [90m   | [39m        [31m^[39m
+    [90m  9| [39m}
+    [90m 10| [39m
+[90m [2mÔØ»[22m 
+packages/db/__tests__/helpers/test-utils.ts:[2m2:1[22m[39m
+[90m [2mÔØ»[22m packages/db/__tests__/dal/skill-package-dal.tes
+t.ts:[2m4:1[22m[39m
+
+[31m[2mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[1/2]ÔÄ»[22m[39m
+
+[41m[1m FAIL [22m[49m packages/api/__tests__/integration/route
+s/concurrent-stress.test.ts[2m [ packages/api/__tests__/integrati
+on/routes/concurrent-stress.test.ts ][22m
+[31m[1mError[22m: Transform failed with 1 error:
+C:/Users/gaoyu/Documents/GitHub/yigyaps/packages/api/__tests__/int
+egration/routes/concurrent-stress.test.ts:254:4: ERROR: 
+Unexpected ")"[39m
+  Plugin: [35mvite:esbuild[39m
+  File: [36mC:/Users/gaoyu/Documents/GitHub/yigyaps/packages/api/
+__tests__/integration/routes/concurrent-stress.test.ts[39m:254:4
+[33m  
+  [33mUnexpected ")"[33m
+  252 |    });
+  253 |  
+  254 |      );
+      |      ^
+  255 |  
+  256 |  await mintDAL.create(
+  [39m
+[90m [2mÔØ»[22m failureErrorWithLog 
+node_modules/esbuild/lib/main.js:[2m1467:15[22m[39m
+[90m [2mÔØ»[22m 
+node_modules/esbuild/lib/main.js:[2m736:50[22m[39m
+[90m [2mÔØ»[22m responseCallbacks.<computed> 
+node_modules/esbuild/lib/main.js:[2m603:9[22m[39m
+[90m [2mÔØ»[22m handleIncomingPacket 
+node_modules/esbuild/lib/main.js:[2m658:12[22m[39m
+[90m [2mÔØ»[22m Socket.readFromStdout 
+node_modules/esbuild/lib/main.js:[2m581:7[22m[39m
+
+[31m[2mÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»
+ÔÄ»ÔÄ»ÔÄ»ÔÄ»ÔÄ»[2/2]ÔÄ»[22m[39m
+
+
+[2m Test Files [22m [1m[31m2 failed[39m[22m[2m | [22m[1m[32m9 passed[39m[22m[90m (11)[39m
+[2m      Tests [22m [1m[32m79 passed[39m[22m[90m (79)[39m
+[2m   Start at [22m 00:40:55
+[2m   Duration [22m 21.91s[2m (transform 761ms, setup 0ms, import 4.86s, tests 71.59s, environment 2.63s)[22m
+
