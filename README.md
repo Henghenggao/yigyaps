@@ -5,32 +5,47 @@
 YigYaps is an independent registry for YAP (Yet Another Plugin) skills used by MCP clients
 including Claude Code, Cursor, Windsurf, and other AI platforms.
 
+### 🌟 Vision: Human-to-Agent Skill Assetization
+
+YigYaps extends beyond mere software utilities. Our vision is to **digitize and assetize human wisdom, experience, and identity (voice, likeness, personality)** into modular, licensed "skills" that can be authorized to AI Agents.
+
+- **Wisdom & Experience**: Experts can package their unique insights and problem-solving methodologies as queryable MCP tools.
+- **Identity Assets**: Individuals can license their digital twins—including verified voices and likenesses—for use by personal or corporate agents in a controlled, royalty-generating environment.
+- **Economic Empowerment**: By turning human capability into on-chain/on-registry digital assets, YigYaps creates a sustainable economy where AI agents generate revenue for the humans they represent or learn from.
+
 ## 🚀 Deployment Status
 
 | Component | Status | URL |
 |-----------|--------|-----|
-| Database | ✅ Live | PostgreSQL on Railway |
-| API Server | ✅ Live | `https://yigyaps-production.up.railway.app` |
-| Health Check | ✅ Live | `https://yigyaps-production.up.railway.app/health` |
-| MCP Discovery | ✅ Live | `https://yigyaps-production.up.railway.app/.well-known/mcp.json` |
+| Database | ✅ Live | PostgreSQL on Railway (5 tables, 12 indexes) |
+| API Server | ✅ Live | `https://yigyapsapi-production.up.railway.app` |
+| Health Check | ✅ Live | `https://yigyapsapi-production.up.railway.app/v1/health` |
+| MCP Discovery | ✅ Live | `https://yigyapsapi-production.up.railway.app/.well-known/mcp.json` |
 | Production Domain | 🔄 Pending | `api.yigyaps.com` (DNS setup required) |
 
-## 📦 Phase 1: MVP (Current)
+**Railway Project**: easygoing-warmth
+**Deployed**: 2026-02-25
+**Build**: Docker (Multi-stage, Node.js 20-alpine)
+**Authentication**: ADMIN_SECRET (Phase 1 MVP)
+
+## 📦 Phase 1: MVP (Current - ✅ DEPLOYED)
 
 ### What's Live
 
-- ✅ **Database**: PostgreSQL with full schema (packages, installations, reviews, mints)
-- ✅ **API Server**: Fastify REST API deployed on Railway
-- ✅ **Core Endpoints**: Package publishing, installation tracking, reviews, minting
-- ✅ **MCP Registry Discovery**: `/.well-known/mcp.json` endpoint
-- ✅ **Health Monitoring**: `/health` endpoint with database connectivity check
+- ✅ **Database**: PostgreSQL with full schema (5 tables: packages, installations, reviews, mints, royalty_ledger)
+- ✅ **API Server**: Fastify REST API deployed on Railway (Docker)
+- ✅ **Core Endpoints**: Package publishing, installation tracking, reviews, minting (all tested & working)
+- ✅ **MCP Registry Discovery**: `/.well-known/mcp.json` endpoint (spec-compliant)
+- ✅ **Health Monitoring**: `/v1/health` endpoint with database connectivity check
+- ✅ **Authentication**: ADMIN_SECRET Bearer token authentication (Phase 1)
+- ✅ **Security**: Helmet, CORS, Rate limiting configured
 
 ### What's Coming (Phase 2)
 
-- 🔄 Custom domain setup (`api.yigyaps.com`)
-- 🔄 Frontend marketplace UI
-- 🔄 Authentication & authorization
-- 🔄 Rate limiting & API keys
+- 🔄 Custom domain setup (`api.yigyaps.com`) - Railway configured, DNS pending
+- 🔄 GitHub OAuth integration (replace ADMIN_SECRET)
+- 🔄 Frontend marketplace UI (@yigyaps/client published to npm)
+- 🔄 User-specific API keys
 - 🔄 Analytics dashboard
 
 ## 🛠️ Local Development
