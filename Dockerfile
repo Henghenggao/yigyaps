@@ -59,9 +59,9 @@ COPY scripts/migrate.js ./scripts/migrate.js
 # Expose port (Railway will override this)
 EXPOSE 3100
 
-# Health check
+# Health check (use PORT env var, fallback to 3100)
 HEALTHCHECK --interval=30s --timeout=10s --start-period=40s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3100/v1/health', (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
+  CMD node -e "const port = process.env.PORT || 3100; require('http').get(\`http://localhost:\${port}/v1/health\`, (r) => process.exit(r.statusCode === 200 ? 0 : 1))"
 
 # Start command: run migrations then start server
 CMD ["sh", "-c", "npm run db:migrate && npm run start --workspace=@yigyaps/api"]
