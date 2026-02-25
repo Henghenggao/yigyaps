@@ -52,6 +52,10 @@ export const skillPackagesTable = pgTable(
         | "automation"
         | "security"
         | "ai-ml"
+        | "personality"
+        | "wisdom"
+        | "voice"
+        | "likeness"
         | "other"
       >()
       .notNull()

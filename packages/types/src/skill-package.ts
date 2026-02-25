@@ -35,6 +35,10 @@ export type SkillPackageCategory =
   | "automation"
   | "security"
   | "ai-ml"
+  | "personality"
+  | "wisdom"
+  | "voice"
+  | "likeness"
   | "other";
 
 /**

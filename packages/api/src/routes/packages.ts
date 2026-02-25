@@ -43,6 +43,10 @@ const createPackageSchema = z.object({
       "automation",
       "security",
       "ai-ml",
+      "personality",
+      "wisdom",
+      "voice",
+      "likeness",
       "other",
     ])
     .default("other"),
@@ -73,6 +77,10 @@ const searchSchema = z.object({
       "automation",
       "security",
       "ai-ml",
+      "personality",
+      "wisdom",
+      "voice",
+      "likeness",
       "other",
     ])
     .optional(),

@@ -6,12 +6,14 @@
  * via this HTTP API, just like any third-party creator would.
  *
  * Endpoints:
+ *   /v1/auth              — GitHub OAuth & user authentication (Phase 2)
+ *   /v1/users             — User profile management (Phase 2)
  *   /v1/packages          — Skill package registry (CRUD + search)
  *   /v1/installations     — Skill installation management
  *   /v1/reviews           — Package reviews
  *   /v1/mints             — Limited edition minting
  *   /.well-known/mcp.json — MCP Registry discovery
- *   /health               — Health check
+ *   /v1/health            — Health check
  *
  * License: Apache 2.0
  */
@@ -20,6 +22,7 @@ import Fastify from "fastify";
 import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
+import cookie from "@fastify/cookie";
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
 import * as schema from "@yigyaps/db";
@@ -28,6 +31,8 @@ import { installationsRoutes } from "./routes/installations.js";
 import { reviewsRoutes } from "./routes/reviews.js";
 import { mintsRoutes } from "./routes/mints.js";
 import { registryRoutes, wellKnownRoutes } from "./routes/registry.js";
+import { authRoutes } from "./routes/auth.js";
+import { usersRoutes } from "./routes/users.js";
 
 const { Pool } = pg;
 
@@ -47,6 +52,9 @@ async function buildServer() {
     max: 100,
     timeWindow: "1 minute",
   });
+  await fastify.register(cookie, {
+    secret: process.env.SESSION_SECRET,
+  });
 
   // ── Database ──────────────────────────────────────────────────────────────
   const pool = new Pool({
@@ -59,6 +67,8 @@ async function buildServer() {
   // ── Routes ─────────────────────────────────────────────────────────────────
   await fastify.register(wellKnownRoutes, { prefix: "/.well-known" });
   await fastify.register(registryRoutes, { prefix: "/v1" });
+  await fastify.register(authRoutes, { prefix: "/v1/auth" });
+  await fastify.register(usersRoutes, { prefix: "/v1/users" });
   await fastify.register(packagesRoutes, { prefix: "/v1/packages" });
   await fastify.register(installationsRoutes, { prefix: "/v1/installations" });
   await fastify.register(reviewsRoutes, { prefix: "/v1/reviews" });

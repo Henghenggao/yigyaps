@@ -1,8 +1,11 @@
 /**
- * YigYaps API Authentication Middleware
+ * YigYaps API Authentication Middleware (Phase 1 - DEPRECATED)
+ *
+ * ⚠️ DEPRECATED: This middleware is kept for backward compatibility only.
+ * New code should use auth-v2.ts (requireAuth, optionalAuth) instead.
  *
  * Phase 1: Simple ADMIN_SECRET for write operations
- * Phase 2: Will be replaced with GitHub OAuth + API key validation
+ * Phase 2: Use GitHub OAuth + JWT + API keys (see auth-v2.ts)
  *
  * License: Apache 2.0
  */
