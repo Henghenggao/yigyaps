@@ -15,8 +15,27 @@
 import type { FastifyInstance } from "fastify";
 
 export async function registryRoutes(fastify: FastifyInstance) {
-  fastify.get("/health", async (_request, reply) => {
-    return reply.send({ status: "ok", service: "yigyaps-api", version: "0.1.0" });
+  fastify.get("/health", async (request, reply) => {
+    // Test database connection
+    let dbStatus = "disconnected";
+    try {
+      await fastify.db.execute("SELECT 1");
+      dbStatus = "connected";
+    } catch (error) {
+      request.log.error({ error }, "Database health check failed");
+    }
+
+    const response = {
+      status: dbStatus === "connected" ? "healthy" : "degraded",
+      service: "yigyaps-api",
+      version: "0.1.0",
+      timestamp: new Date().toISOString(),
+      database: dbStatus,
+      environment: process.env.NODE_ENV || "development",
+    };
+
+    const statusCode = dbStatus === "connected" ? 200 : 503;
+    return reply.status(statusCode).send(response);
   });
 }
 
