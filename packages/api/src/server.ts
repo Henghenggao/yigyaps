@@ -53,7 +53,7 @@ async function buildServer() {
     timeWindow: "1 minute",
   });
   await fastify.register(cookie, {
-    secret: process.env.SESSION_SECRET,
+    secret: process.env.SESSION_SECRET || "temp-dev-secret-please-set-in-production",
   });
 
   // ── Database ──────────────────────────────────────────────────────────────
