@@ -468,6 +468,10 @@ export class SkillMintDAL {
     );
   }
 
+  /**
+   * DEPRECATED: Use tryIncrementMintedCount instead.
+   * This method does not check edition limits and can cause overselling in concurrent scenarios.
+   */
   async incrementMintedCount(skillPackageId: string): Promise<void> {
     return dbOperation(
       async () => {
@@ -481,6 +485,45 @@ export class SkillMintDAL {
       },
       {
         method: "incrementMintedCount",
+        entity: "skillMint",
+        id: skillPackageId,
+      },
+    );
+  }
+
+  /**
+   * Atomically increment minted count ONLY if edition limit is not reached.
+   * This prevents race conditions and overselling in concurrent installations.
+   *
+   * @returns true if increment succeeded, false if edition limit reached
+   */
+  async tryIncrementMintedCount(skillPackageId: string): Promise<boolean> {
+    return dbOperation(
+      async () => {
+        const now = Date.now();
+        const results = await this.db
+          .update(skillMintsTable)
+          .set({
+            mintedCount: sql`${skillMintsTable.mintedCount} + 1`,
+            updatedAt: now,
+          })
+          .where(
+            and(
+              eq(skillMintsTable.skillPackageId, skillPackageId),
+              // Only increment if limit not reached (atomic check-and-increment)
+              or(
+                sql`${skillMintsTable.maxEditions} IS NULL`, // Unlimited editions
+                sql`${skillMintsTable.mintedCount} < ${skillMintsTable.maxEditions}`, // Under limit
+              ),
+            ),
+          )
+          .returning();
+
+        // If no rows were updated, edition limit was reached
+        return results.length > 0;
+      },
+      {
+        method: "tryIncrementMintedCount",
         entity: "skillMint",
         id: skillPackageId,
       },

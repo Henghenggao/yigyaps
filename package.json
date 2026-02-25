@@ -18,6 +18,11 @@
     "clean": "tsc -b --clean",
     "test": "vitest run",
     "test:watch": "vitest",
+    "test:ui": "vitest --ui",
+    "test:coverage": "vitest run --coverage",
+    "test:db": "npm run test --workspace=@yigyaps/db",
+    "test:api": "npm run test --workspace=@yigyaps/api",
+    "test:ci": "vitest run --coverage --reporter=verbose",
     "lint": "eslint .",
     "format": "prettier --write .",
     "dev:api": "npm run dev --workspace=@yigyaps/api",
@@ -25,9 +30,11 @@
     "db:migrate": "node scripts/migrate.js"
   },
   "devDependencies": {
-    "typescript": "^5.7.0",
-    "vitest": "^4.0.0",
+    "@faker-js/faker": "^10.3.0",
+    "@vitest/coverage-v8": "^4.0.18",
     "eslint": "^9.0.0",
-    "prettier": "^3.0.0"
+    "prettier": "^3.0.0",
+    "typescript": "^5.7.0",
+    "vitest": "^4.0.0"
   }
 }

@@ -18,6 +18,9 @@
   "scripts": {
     "build": "tsc -b",
     "clean": "tsc -b --clean",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:coverage": "vitest run --coverage",
     "db:generate": "drizzle-kit generate",
     "db:push": "drizzle-kit push",
     "db:studio": "drizzle-kit studio"
@@ -27,6 +30,7 @@
     "drizzle-orm": "^0.38.0"
   },
   "devDependencies": {
+    "@testcontainers/postgresql": "^11.12.0",
     "@types/pg": "^8.11.0",
     "drizzle-kit": "^0.31.9",
     "pg": "^8.13.0",

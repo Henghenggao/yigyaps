@@ -67,17 +67,6 @@ export async function installationsRoutes(fastify: FastifyInstance) {
     }
 
     const mint = await mintDAL.getBySkillPackageId(body.packageId);
-    if (mint?.maxEditions !== null && mint !== null) {
-      const allowed = await mintDAL.checkEditionLimit(body.packageId);
-      if (!allowed) {
-        return reply.code(409).send({
-          error: "Edition limit reached",
-          rarity: mint.rarity,
-          maxEditions: mint.maxEditions,
-          mintedCount: mint.mintedCount,
-        });
-      }
-    }
 
     const hasExisting = await installDAL.hasInstallation(userId, body.packageId);
     if (hasExisting) {
@@ -98,7 +87,25 @@ export async function installationsRoutes(fastify: FastifyInstance) {
     });
 
     await packageDAL.incrementInstallCount(body.packageId);
-    if (mint) await mintDAL.incrementMintedCount(body.packageId);
+
+    // Atomic check-and-increment for limited editions (prevents race conditions)
+    if (mint) {
+      const incrementSucceeded = await mintDAL.tryIncrementMintedCount(
+        body.packageId,
+      );
+      if (!incrementSucceeded) {
+        // Edition limit reached after installation was created
+        // Rollback the installation to maintain consistency
+        await installDAL.updateStatus(installation.id, "failed");
+        return reply.code(409).send({
+          error: "Edition limit reached",
+          rarity: mint.rarity,
+          maxEditions: mint.maxEditions,
+          message:
+            "Installation was attempted but edition limit was reached. Please try again.",
+        });
+      }
+    }
 
     if (mint && Number(pkg.priceUsd) > 0) {
       const royaltyPct = Number(mint.creatorRoyaltyPercent) || 70;

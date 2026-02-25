@@ -10,6 +10,7 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { SkillPackageDAL, SkillInstallationDAL, SkillReviewDAL } from "@yigyaps/db";
+import { optionalAuth } from "../middleware/auth-v2.js";
 
 const reviewSchema = z.object({
   packageId: z.string().min(1),
@@ -25,10 +26,20 @@ export async function reviewsRoutes(fastify: FastifyInstance) {
   const installDAL = new SkillInstallationDAL(db);
   const reviewDAL = new SkillReviewDAL(db);
 
-  fastify.post("/", async (request, reply) => {
-    const userId = (request as any).userId ?? "anonymous";
-    const userName = (request as any).userName ?? "Anonymous";
-    const body = reviewSchema.parse(request.body);
+  fastify.post("/", { preHandler: optionalAuth }, async (request, reply) => {
+    const userId = request.user?.userId ?? "anonymous";
+    const userName = request.user?.userName ?? "Anonymous";
+
+    // Validate request body
+    const parseResult = reviewSchema.safeParse(request.body);
+    if (!parseResult.success) {
+      return reply.code(400).send({
+        error: "Invalid request",
+        details: parseResult.error.errors,
+      });
+    }
+
+    const body = parseResult.data;
     const now = Date.now();
 
     const pkg = await packageDAL.getById(body.packageId);
