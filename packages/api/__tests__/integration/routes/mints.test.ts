@@ -7,6 +7,7 @@
  * License: Apache 2.0
  */
 
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
 import { PostgreSqlContainer, StartedPostgreSqlContainer } from '@testcontainers/postgresql';
 import { drizzle } from 'drizzle-orm/node-postgres';
 import { migrate } from 'drizzle-orm/node-postgres/migrator';

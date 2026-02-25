@@ -1,3 +1,4 @@
+import { describe, it, expect, beforeEach } from 'vitest';
 import { SkillPackageDAL } from '../../src/dal/skill-package-dal.js';
 import { SkillPackageFactory } from '../helpers/factories.js';
 import { clearDatabase } from '../helpers/test-utils.js';
