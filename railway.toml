@@ -1,0 +1,43 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# YigYaps Railway Configuration
+# ─────────────────────────────────────────────────────────────────────────────
+#
+# This configuration defines how Railway builds and runs the YigYaps API.
+# Railway automatically detects this file and uses it for deployment.
+#
+# Services:
+#   1. yigyaps-api (this service)
+#   2. PostgreSQL database (created separately in Railway dashboard)
+#
+# License: Apache 2.0
+# ─────────────────────────────────────────────────────────────────────────────
+
+[build]
+builder = "NIXPACKS"
+buildCommand = "npm install && npm run build"
+
+[deploy]
+startCommand = "npm run db:migrate && npm run start --workspace=@yigyaps/api"
+healthcheckPath = "/v1/health"
+healthcheckTimeout = 100
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3
+
+[[deploy.environmentVariables]]
+name = "NODE_ENV"
+value = "production"
+
+[[deploy.environmentVariables]]
+name = "LOG_LEVEL"
+value = "info"
+
+[[deploy.environmentVariables]]
+name = "YIGYAPS_API_URL"
+value = "https://api.yigyaps.com"
+
+[[deploy.environmentVariables]]
+name = "CORS_ORIGIN"
+value = "*"
+
+# NOTE: DATABASE_URL is automatically injected by Railway when you link the PostgreSQL service
+# NOTE: ADMIN_SECRET should be set in Railway dashboard as a secret variable
