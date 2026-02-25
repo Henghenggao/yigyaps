@@ -9,3 +9,8 @@ coverage/
 .playwright-mcp/
 nul
 docs/
+*.log
+*.txt
+*.png
+.test-db-env.json
+nul
