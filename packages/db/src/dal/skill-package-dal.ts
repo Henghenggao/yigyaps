@@ -58,7 +58,7 @@ export interface SkillPackageSearchResult {
 // ─── Skill Package DAL ────────────────────────────────────────────────────────
 
 export class SkillPackageDAL {
-  constructor(private db: NodePgDatabase) {}
+  constructor(private db: NodePgDatabase<any>) { }
 
   async create(pkg: SkillPackageInsert): Promise<SkillPackageRow> {
     return dbOperation(
@@ -252,7 +252,7 @@ export class SkillPackageDAL {
 // ─── Skill Installation DAL ───────────────────────────────────────────────────
 
 export class SkillInstallationDAL {
-  constructor(private db: NodePgDatabase) {}
+  constructor(private db: NodePgDatabase<any>) { }
 
   async install(
     data: SkillPackageInstallationInsert,
@@ -285,8 +285,8 @@ export class SkillInstallationDAL {
     );
   }
 
-  async getByYigbot(
-    yigbotId: string,
+  async getByAgent(
+    agentId: string,
   ): Promise<SkillPackageInstallationRow[]> {
     return dbOperation(
       async () =>
@@ -295,11 +295,11 @@ export class SkillInstallationDAL {
           .from(skillPackageInstallationsTable)
           .where(
             and(
-              eq(skillPackageInstallationsTable.yigbotId, yigbotId),
+              eq(skillPackageInstallationsTable.agentId, agentId),
               eq(skillPackageInstallationsTable.status, "active"),
             ),
           ),
-      { method: "getByYigbot", entity: "skillInstallation", id: yigbotId },
+      { method: "getByAgent", entity: "skillInstallation", id: agentId },
     );
   }
 
@@ -360,7 +360,7 @@ export class SkillInstallationDAL {
 // ─── Skill Review DAL ─────────────────────────────────────────────────────────
 
 export class SkillReviewDAL {
-  constructor(private db: NodePgDatabase) {}
+  constructor(private db: NodePgDatabase<any>) { }
 
   async create(
     review: SkillPackageReviewInsert,
@@ -425,7 +425,7 @@ export class SkillReviewDAL {
 // ─── Skill Mint DAL ───────────────────────────────────────────────────────────
 
 export class SkillMintDAL {
-  constructor(private db: NodePgDatabase) {}
+  constructor(private db: NodePgDatabase<any>) { }
 
   async create(mint: SkillMintInsert): Promise<SkillMintRow> {
     return dbOperation(
@@ -503,7 +503,7 @@ export class SkillMintDAL {
 // ─── Royalty Ledger DAL ───────────────────────────────────────────────────────
 
 export class RoyaltyLedgerDAL {
-  constructor(private db: NodePgDatabase) {}
+  constructor(private db: NodePgDatabase<any>) { }
 
   async create(entry: RoyaltyLedgerInsert): Promise<RoyaltyLedgerRow> {
     return dbOperation(

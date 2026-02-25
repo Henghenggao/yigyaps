@@ -1,12 +1,12 @@
 /**
  * YigYaps Installation Routes
  *
- * POST   /v1/installations          — Install a package to a Yigbot
+ * POST   /v1/installations          — Install a package to an agent
  * DELETE /v1/installations/:id      — Uninstall
- * GET    /v1/installations/yigbot/:yigbotId — List active installs for Yigbot
+ * GET    /v1/installations/agent/:agentId — List active installs for an agent
  *
  * Note: Tier checking is handled via JWT claims (userTier field).
- * YigYaps does not call Yigcore APIs for tier validation.
+ * YigYaps does not call platform APIs for tier validation.
  *
  * License: Apache 2.0
  */
@@ -19,7 +19,6 @@ import {
   SkillMintDAL,
   RoyaltyLedgerDAL,
 } from "@yigyaps/db";
-import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 
 const TIER_RANK: Record<string, number> = {
   free: 0,
@@ -30,15 +29,15 @@ const TIER_RANK: Record<string, number> = {
 
 const installSchema = z.object({
   packageId: z.string().min(1),
-  yigbotId: z.string().min(1),
+  agentId: z.string().min(1),
   configuration: z.record(z.string(), z.unknown()).optional(),
   enabled: z.boolean().default(true),
-  /** User's subscription tier (from JWT or passed by Yigcore) */
+  /** User's subscription tier (from JWT or passed by the platform) */
   userTier: z.string().default("free"),
 });
 
 export async function installationsRoutes(fastify: FastifyInstance) {
-  const db = fastify.db as NodePgDatabase;
+  const db = fastify.db;
   const packageDAL = new SkillPackageDAL(db);
   const installDAL = new SkillInstallationDAL(db);
   const mintDAL = new SkillMintDAL(db);
@@ -90,7 +89,7 @@ export async function installationsRoutes(fastify: FastifyInstance) {
       id,
       packageId: body.packageId,
       packageVersion: pkg.version,
-      yigbotId: body.yigbotId,
+      agentId: body.agentId,
       userId,
       status: "active",
       enabled: body.enabled,
@@ -133,11 +132,11 @@ export async function installationsRoutes(fastify: FastifyInstance) {
     },
   );
 
-  fastify.get<{ Params: { yigbotId: string } }>(
-    "/yigbot/:yigbotId",
+  fastify.get<{ Params: { agentId: string } }>(
+    "/agent/:agentId",
     async (request, reply) => {
-      const installations = await installDAL.getByYigbot(
-        request.params.yigbotId,
+      const installations = await installDAL.getByAgent(
+        request.params.agentId,
       );
       return reply.send({ installations });
     },

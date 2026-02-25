@@ -10,7 +10,6 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { SkillPackageDAL, SkillInstallationDAL, SkillReviewDAL } from "@yigyaps/db";
-import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 
 const reviewSchema = z.object({
   packageId: z.string().min(1),
@@ -21,7 +20,7 @@ const reviewSchema = z.object({
 });
 
 export async function reviewsRoutes(fastify: FastifyInstance) {
-  const db = fastify.db as NodePgDatabase;
+  const db = fastify.db;
   const packageDAL = new SkillPackageDAL(db);
   const installDAL = new SkillInstallationDAL(db);
   const reviewDAL = new SkillReviewDAL(db);

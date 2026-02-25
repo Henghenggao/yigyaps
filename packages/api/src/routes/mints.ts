@@ -14,7 +14,6 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { SkillPackageDAL, SkillMintDAL, RoyaltyLedgerDAL } from "@yigyaps/db";
-import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 
 const mintSchema = z.object({
   skillPackageId: z.string().min(1),
@@ -32,7 +31,7 @@ const mintSchema = z.object({
 });
 
 export async function mintsRoutes(fastify: FastifyInstance) {
-  const db = fastify.db as NodePgDatabase;
+  const db = fastify.db;
   const packageDAL = new SkillPackageDAL(db);
   const mintDAL = new SkillMintDAL(db);
   const royaltyLedgerDAL = new RoyaltyLedgerDAL(db);

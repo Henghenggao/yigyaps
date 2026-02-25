@@ -16,7 +16,6 @@ import {
   SkillPackageDAL,
   SkillInstallationDAL,
 } from "@yigyaps/db";
-import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 
 const createPackageSchema = z.object({
   packageId: z.string().min(1).max(100),
@@ -50,7 +49,7 @@ const createPackageSchema = z.object({
     .enum(["experimental", "beta", "stable", "deprecated"])
     .default("experimental"),
   tags: z.array(z.string().max(50)).max(10).default([]),
-  minYigcoreVersion: z.string().default("0.1.0"),
+  minRuntimeVersion: z.string().default("0.1.0"),
   requiredTier: z.number().int().min(0).max(3).default(0),
   mcpTransport: z.enum(["stdio", "http", "sse"]).default("stdio"),
   mcpCommand: z.string().max(500).optional(),
@@ -92,7 +91,7 @@ const searchSchema = z.object({
 });
 
 export async function packagesRoutes(fastify: FastifyInstance) {
-  const db = fastify.db as NodePgDatabase;
+  const db = fastify.db;
   const packageDAL = new SkillPackageDAL(db);
   const installDAL = new SkillInstallationDAL(db);
 
@@ -126,7 +125,7 @@ export async function packagesRoutes(fastify: FastifyInstance) {
       category: body.category,
       maturity: body.maturity,
       tags: body.tags,
-      minYigcoreVersion: body.minYigcoreVersion,
+      minRuntimeVersion: body.minRuntimeVersion,
       requiredTier: body.requiredTier,
       mcpTransport: body.mcpTransport,
       mcpCommand: body.mcpCommand ?? null,

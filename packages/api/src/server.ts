@@ -22,6 +22,7 @@ import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
+import * as schema from "@yigyaps/db";
 import { packagesRoutes } from "./routes/packages.js";
 import { installationsRoutes } from "./routes/installations.js";
 import { reviewsRoutes } from "./routes/reviews.js";
@@ -52,7 +53,7 @@ async function buildServer() {
     connectionString:
       process.env.DATABASE_URL ?? "postgresql://localhost:5432/yigyaps",
   });
-  const db = drizzle(pool);
+  const db = drizzle(pool, { schema });
   fastify.decorate("db", db);
 
   // ── Routes ─────────────────────────────────────────────────────────────────

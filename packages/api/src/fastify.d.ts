@@ -4,9 +4,10 @@
  */
 
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
+import * as schema from "@yigyaps/db";
 
 declare module "fastify" {
   interface FastifyInstance {
-    db: NodePgDatabase;
+    db: NodePgDatabase<typeof schema>;
   }
 }
