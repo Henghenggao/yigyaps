@@ -10,7 +10,7 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { SkillPackageDAL, SkillInstallationDAL, SkillReviewDAL } from "@yigyaps/db";
-import { optionalAuth } from "../middleware/auth-v2.js";
+import { requireAuth } from "../middleware/auth-v2.js";
 
 const reviewSchema = z.object({
   packageId: z.string().min(1),
@@ -26,9 +26,13 @@ export async function reviewsRoutes(fastify: FastifyInstance) {
   const installDAL = new SkillInstallationDAL(db);
   const reviewDAL = new SkillReviewDAL(db);
 
-  fastify.post("/", { preHandler: optionalAuth }, async (request, reply) => {
-    const userId = request.user?.userId ?? "anonymous";
-    const userName = request.user?.userName ?? "Anonymous";
+  fastify.post("/", { preHandler: requireAuth() }, async (request, reply) => {
+    const userId = request.user?.userId;
+    const userName = request.user?.userName;
+
+    if (!userId || !userName) {
+      return reply.code(401).send({ error: "Unauthorized" });
+    }
 
     // Validate request body
     const parseResult = reviewSchema.safeParse(request.body);
@@ -42,30 +46,42 @@ export async function reviewsRoutes(fastify: FastifyInstance) {
     const body = parseResult.data;
     const now = Date.now();
 
-    const pkg = await packageDAL.getById(body.packageId);
-    if (!pkg) return reply.code(404).send({ error: "Package not found" });
+    const db = fastify.db;
+    const result = await db.transaction(async (tx: any) => {
+      const pkgDalTx = new SkillPackageDAL(tx);
+      const installDalTx = new SkillInstallationDAL(tx);
+      const reviewDalTx = new SkillReviewDAL(tx);
 
-    const hasInstalled = await installDAL.hasInstallation(userId, body.packageId);
+      const pkg = await pkgDalTx.getById(body.packageId);
+      if (!pkg) return { status: 404, error: "Package not found" };
 
-    const id = `srev_${now}_${Math.random().toString(36).slice(2, 8)}`;
-    const review = await reviewDAL.create({
-      id,
-      packageId: body.packageId,
-      packageVersion: body.packageVersion,
-      userId,
-      userName,
-      rating: body.rating,
-      title: body.title ?? null,
-      comment: body.comment ?? null,
-      verified: hasInstalled,
-      createdAt: now,
-      updatedAt: now,
+      const hasInstalled = await installDalTx.hasInstallation(userId, body.packageId);
+
+      const id = `srev_${now}_${Math.random().toString(36).slice(2, 8)}`;
+      const review = await reviewDalTx.create({
+        id,
+        packageId: body.packageId,
+        packageVersion: body.packageVersion,
+        userId,
+        userName,
+        rating: body.rating,
+        title: body.title ?? null,
+        comment: body.comment ?? null,
+        verified: hasInstalled,
+        createdAt: now,
+        updatedAt: now,
+      });
+
+      const { avgRating, count } = await reviewDalTx.calculateAverageRating(body.packageId);
+      await pkgDalTx.updateRatingStats(body.packageId, avgRating, count, count);
+
+      return { status: 201, review };
     });
 
-    const { avgRating, count } = await reviewDAL.calculateAverageRating(body.packageId);
-    await packageDAL.updateRatingStats(body.packageId, avgRating, count, count);
-
-    return reply.code(201).send(review);
+    if (result.error) {
+      return reply.code(result.status).send({ error: result.error });
+    }
+    return reply.code(result.status).send(result.review);
   });
 
   fastify.get<{

@@ -98,6 +98,9 @@ export const skillPackagesTable = pgTable(
     index("idx_yy_skill_packages_author").on(table.author),
     index("idx_yy_skill_packages_maturity").on(table.maturity),
     index("idx_yy_skill_packages_origin").on(table.origin),
+    index("idx_yy_skill_packages_install_count").on(table.installCount),
+    index("idx_yy_skill_packages_rating").on(table.rating),
+    index("idx_yy_skill_packages_released_at").on(table.releasedAt),
   ],
 );
 

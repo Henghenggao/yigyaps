@@ -96,6 +96,7 @@ describe('POST /v1/installations', () => {
       const response = await serverContext.fastify.inject({
         method: 'POST',
         url: '/v1/installations',
+        headers: { authorization: `Bearer ${createTestJWT({ userId: 'usr_test_123', tier: 'legendary', role: 'user' })}` },
         payload: {
           packageId: pkg.id,
           agentId: 'agt_test_001',
@@ -121,6 +122,7 @@ describe('POST /v1/installations', () => {
       const response = await serverContext.fastify.inject({
         method: 'POST',
         url: '/v1/installations',
+        headers: { authorization: `Bearer ${createTestJWT({ userId: 'usr_test_123', tier: 'legendary', role: 'user' })}` },
         payload: {
           packageId: 'non_existent_pkg',
           agentId: 'agt_test_001',
@@ -145,6 +147,7 @@ describe('POST /v1/installations', () => {
       const response = await serverContext.fastify.inject({
         method: 'POST',
         url: '/v1/installations',
+        headers: { authorization: `Bearer ${createTestJWT({ userId: 'usr_test_123', tier: 'legendary', role: 'user' })}` },
         payload: {
           packageId: pkg.id,
           agentId: 'agt_test_001',
@@ -170,6 +173,7 @@ describe('POST /v1/installations', () => {
       const response = await serverContext.fastify.inject({
         method: 'POST',
         url: '/v1/installations',
+        headers: { authorization: `Bearer ${createTestJWT({ userId: 'usr_test_123', tier: 'legendary', role: 'user' })}` },
         payload: {
           packageId: pkg.id,
           agentId: 'agt_test_001',
@@ -201,6 +205,7 @@ describe('POST /v1/installations', () => {
       const response = await serverContext.fastify.inject({
         method: 'POST',
         url: '/v1/installations',
+        headers: { authorization: `Bearer ${createTestJWT({ userId: 'usr_test_123', tier: 'legendary', role: 'user' })}` },
         payload: {
           packageId: pkg.id,
           agentId: 'agt_test_001',
@@ -244,6 +249,7 @@ describe('POST /v1/installations', () => {
       await serverContext.fastify.inject({
         method: 'POST',
         url: '/v1/installations',
+        headers: { authorization: `Bearer ${createTestJWT({ userId: 'usr_test_123', tier: 'legendary', role: 'user' })}` },
         payload: {
           packageId: pkg.id,
           agentId: 'agt_test_002',
@@ -273,6 +279,7 @@ describe('POST /v1/installations', () => {
       await serverContext.fastify.inject({
         method: 'POST',
         url: '/v1/installations',
+        headers: { authorization: `Bearer ${createTestJWT({ userId: 'usr_test_123', tier: 'legendary', role: 'user' })}` },
         payload: {
           packageId: pkg.id,
           agentId: 'agt_test_003',
@@ -302,6 +309,7 @@ describe('POST /v1/installations', () => {
       await serverContext.fastify.inject({
         method: 'POST',
         url: '/v1/installations',
+        headers: { authorization: `Bearer ${createTestJWT({ userId: 'usr_test_123', tier: 'legendary', role: 'user' })}` },
         payload: {
           packageId: pkg.id,
           agentId: 'agt_test_004',
@@ -328,6 +336,7 @@ describe('POST /v1/installations', () => {
       const response = await serverContext.fastify.inject({
         method: 'POST',
         url: '/v1/installations',
+        headers: { authorization: `Bearer ${createTestJWT({ userId: 'usr_test_123', tier: 'legendary', role: 'user' })}` },
         payload: {
           packageId: pkg.id,
           agentId: 'agt_test_005',
@@ -353,6 +362,7 @@ describe('POST /v1/installations', () => {
       await serverContext.fastify.inject({
         method: 'POST',
         url: '/v1/installations',
+        headers: { authorization: `Bearer ${createTestJWT({ userId: 'usr_test_123', tier: 'legendary', role: 'user' })}` },
         payload: {
           packageId: pkg.id,
           agentId: 'agt_test_006',
@@ -363,6 +373,7 @@ describe('POST /v1/installations', () => {
       const response = await serverContext.fastify.inject({
         method: 'POST',
         url: '/v1/installations',
+        headers: { authorization: `Bearer ${createTestJWT({ userId: 'usr_test_123', tier: 'legendary', role: 'user' })}` },
         payload: {
           packageId: pkg.id,
           agentId: 'agt_test_006',
@@ -423,6 +434,7 @@ describe('DELETE /v1/installations/:id', () => {
     const installResponse = await serverContext.fastify.inject({
       method: 'POST',
       url: '/v1/installations',
+      headers: { authorization: `Bearer ${createTestJWT({ userId: 'usr_test_123', tier: 'legendary', role: 'user' })}` },
       payload: {
         packageId: pkg.id,
         agentId: 'agt_test_007',
@@ -435,6 +447,7 @@ describe('DELETE /v1/installations/:id', () => {
     const response = await serverContext.fastify.inject({
       method: 'DELETE',
       url: `/v1/installations/${installation.id}`,
+      headers: { authorization: `Bearer ${createTestJWT({ userId: 'usr_test_123', tier: 'legendary', role: 'user' })}` },
     });
 
     expect(response.statusCode).toBe(204);
@@ -444,6 +457,8 @@ describe('DELETE /v1/installations/:id', () => {
     const response = await serverContext.fastify.inject({
       method: 'DELETE',
       url: '/v1/installations/non_existent_id',
+      headers: { authorization: `Bearer ${createTestJWT({ userId: 'usr_test_123', tier: 'legendary', role: 'user' })}` },
+      headers: { authorization: `Bearer ${createTestJWT({ userId: 'usr_test_123', tier: 'legendary', role: 'user' })}` },
     });
 
     expect(response.statusCode).toBe(404);

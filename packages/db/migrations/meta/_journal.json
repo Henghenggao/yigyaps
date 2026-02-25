@@ -8,6 +8,20 @@
       "when": 1771980249726,
       "tag": "0000_jittery_menace",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1772046970667,
+      "tag": "0001_tranquil_agent_zero",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1772047194358,
+      "tag": "0002_tired_slyde",
+      "breakpoints": true
     }
   ]
 }

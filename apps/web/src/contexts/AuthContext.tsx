@@ -1,3 +1,4 @@
+/* eslint-disable react-refresh/only-export-components */
 /**
  * Authentication Context for YigYaps
  *
@@ -8,6 +9,7 @@
 
 import { createContext, useContext, useState, useEffect } from 'react';
 import type { ReactNode } from 'react';
+import { fetchApi } from '../lib/api';
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -30,7 +32,6 @@ export interface User {
 
 interface AuthContextType {
   user: User | null;
-  token: string | null;
   loading: boolean;
   error: string | null;
   login: () => void;
@@ -50,24 +51,18 @@ interface AuthProviderProps {
 
 export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3100';
 
-  // Initialize auth state from localStorage
+  // Initialize auth state
   useEffect(() => {
     const initAuth = async () => {
       try {
-        const storedToken = localStorage.getItem('yigyaps_token');
-        if (storedToken) {
-          setToken(storedToken);
-          await fetchUserProfile(storedToken);
-        }
+        await fetchUserProfile();
       } catch (err) {
         console.error('Failed to initialize auth:', err);
-        localStorage.removeItem('yigyaps_token');
       } finally {
         setLoading(false);
       }
@@ -76,28 +71,20 @@ export function AuthProvider({ children }: AuthProviderProps) {
     initAuth();
   }, []);
 
-  // Fetch user profile with token
-  const fetchUserProfile = async (authToken: string) => {
+  // Fetch user profile securely with cookie
+  const fetchUserProfile = async () => {
     try {
-      const response = await fetch(`${API_URL}/v1/auth/me`, {
-        headers: {
-          'Authorization': `Bearer ${authToken}`,
-        },
-      });
-
-      if (!response.ok) {
-        throw new Error('Failed to fetch user profile');
-      }
-
-      const userData = await response.json();
+      const userData = await fetchApi<User>('/v1/auth/me');
       setUser(userData);
       setError(null);
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to fetch user profile:', err);
-      setError(err.message);
-      // Clear invalid token
-      localStorage.removeItem('yigyaps_token');
-      setToken(null);
+      if (err instanceof Error) {
+        setError(err.message);
+      } else {
+        setError('An unknown error occurred');
+      }
+      // Clear invalid state
       setUser(null);
     }
   };
@@ -110,19 +97,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Logout user
   const logout = async () => {
     try {
-      if (token) {
-        await fetch(`${API_URL}/v1/auth/logout`, {
-          method: 'POST',
-          headers: {
-            'Authorization': `Bearer ${token}`,
-          },
-        });
-      }
+      await fetchApi('/v1/auth/logout', { method: 'POST' });
     } catch (err) {
       console.error('Logout error:', err);
     } finally {
-      localStorage.removeItem('yigyaps_token');
-      setToken(null);
       setUser(null);
       setError(null);
     }
@@ -130,24 +108,11 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Refresh user profile
   const refreshUser = async () => {
-    if (token) {
-      await fetchUserProfile(token);
-    }
+    await fetchUserProfile();
   };
-
-  // Handle token from OAuth callback
-  const handleTokenFromCallback = (newToken: string) => {
-    localStorage.setItem('yigyaps_token', newToken);
-    setToken(newToken);
-    fetchUserProfile(newToken);
-  };
-
-  // Expose token setter for OAuth callback
-  (window as any).__yigyapsSetToken = handleTokenFromCallback;
 
   const value: AuthContextType = {
     user,
-    token,
     loading,
     error,
     login,

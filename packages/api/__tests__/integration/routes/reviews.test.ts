@@ -16,7 +16,7 @@ import { fileURLToPath } from 'url';
 import { createTestServer, closeTestServer, type TestServerContext } from '../helpers/test-server.js';
 import { SkillPackageDAL, SkillReviewDAL, SkillInstallationDAL } from '@yigyaps/db';
 import { SkillPackageFactory } from '../../../../db/__tests__/helpers/factories.js';
-import { createTestJWT } from '../../unit/helpers/jwt-helpers.js';
+import { createAdminJWT, createTestJWT } from '../../unit/helpers/jwt-helpers.js';
 import { sql } from 'drizzle-orm';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
@@ -63,7 +63,7 @@ describe('Reviews Routes Integration Tests', () => {
 
     // Set environment variables for tests
     process.env.JWT_SECRET = 'test-jwt-secret';
-    process.env.ADMIN_SECRET = 'test-admin-secret';
+    // ADMIN_SECRET removed
 
     // Create test server
     serverContext = await createTestServer(connectionString);

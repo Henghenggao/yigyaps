@@ -1,5 +1,7 @@
 import { useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
+import ReactMarkdown from 'react-markdown';
+import remarkGfm from 'remark-gfm';
 import { YigYapsSecurityClient } from '@yigyaps/client';
 import { useSkillDetail } from '../hooks/useSkillDetail';
 import { useAuth } from '../contexts/AuthContext';
@@ -101,11 +103,12 @@ export function SkillDetailPage() {
         {/* README Section */}
         <section className="readme-section">
           <h2 className="section-heading">About</h2>
-          {detailData.longDescription ? (
-            <div
-              className="markdown-content"
-              dangerouslySetInnerHTML={{ __html: detailData.longDescription as string }}
-            />
+          {(skillDetail.readme || detailData.longDescription) ? (
+            <div className="markdown-content">
+              <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                {String(skillDetail.readme || detailData.longDescription)}
+              </ReactMarkdown>
+            </div>
           ) : (
             <p className="no-content">{skillDetail.description || 'No description provided.'}</p>
           )}

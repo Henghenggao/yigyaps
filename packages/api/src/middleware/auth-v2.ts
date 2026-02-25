@@ -1,7 +1,7 @@
 /**
  * YigYaps Authentication Middleware (Phase 2)
  *
- * Validates JWT tokens, API keys, and ADMIN_SECRET (backward compatibility).
+ * Validates JWT tokens and API keys.
  * Attaches user information to request.user.
  *
  * License: Apache 2.0
@@ -20,7 +20,7 @@ export interface UserContext {
   githubUsername?: string;
   tier: "free" | "pro" | "epic" | "legendary";
   role: "user" | "admin";
-  authMethod: "jwt" | "apikey" | "admin_secret";
+  authMethod: "jwt" | "apikey";
 }
 
 // Extend Fastify Request to include user context
@@ -80,7 +80,7 @@ async function validateApiKey(
     }
 
     // Update last used timestamp (async, don't wait)
-    apiKeyDAL.updateLastUsed(apiKey.id).catch(() => {});
+    apiKeyDAL.updateLastUsed(apiKey.id).catch(() => { });
 
     // Get user info from database (we'll need to implement this)
     // For now, return basic context
@@ -96,27 +96,7 @@ async function validateApiKey(
   }
 }
 
-/**
- * Validate ADMIN_SECRET (Phase 1 backward compatibility)
- */
-function validateAdminSecret(token: string): UserContext | null {
-  const adminSecret = process.env.ADMIN_SECRET;
-  if (!adminSecret) {
-    return null;
-  }
 
-  if (token === adminSecret) {
-    return {
-      userId: "usr_admin_legacy",
-      userName: "Admin",
-      tier: "legendary",
-      role: "admin",
-      authMethod: "admin_secret",
-    };
-  }
-
-  return null;
-}
 
 // ─── Authentication Middleware ────────────────────────────────────────────────
 
@@ -128,18 +108,27 @@ export async function optionalAuth(
   request: FastifyRequest,
   reply: FastifyReply,
 ): Promise<void> {
+  let tokenToValidate: string | undefined;
+
   const authHeader = request.headers.authorization;
-  if (!authHeader) {
-    return; // No auth provided, continue without user context
+  if (authHeader) {
+    const [scheme, token] = authHeader.split(" ");
+    if (scheme === "Bearer" && token) {
+      tokenToValidate = token;
+    }
   }
 
-  const [scheme, token] = authHeader.split(" ");
-  if (scheme !== "Bearer" || !token) {
-    return; // Invalid format, continue without user context
+  if (!tokenToValidate && request.cookies?.yigyaps_jwt) {
+    tokenToValidate = request.cookies.yigyaps_jwt;
   }
 
-  // Try validation in order: JWT -> API Key -> ADMIN_SECRET
+  if (!tokenToValidate) {
+    return; // No valid auth format found, continue without user context
+  }
+
+  // Try validation in order: JWT -> API Key
   let userContext: UserContext | null = null;
+  const token = tokenToValidate;
 
   // Try JWT first
   userContext = await validateJWT(token);
@@ -155,76 +144,66 @@ export async function optionalAuth(
     return;
   }
 
-  // Try ADMIN_SECRET (backward compatibility)
-  userContext = validateAdminSecret(token);
-  if (userContext) {
-    request.user = userContext;
-    return;
-  }
-
   // No valid authentication, continue without user context
 }
 
 /**
  * Required authentication middleware
- * Validates JWT, API key, or ADMIN_SECRET (backward compatibility)
+ * Validates JWT or API key
  * @param scopes Optional scopes to check (for API keys)
  */
 export function requireAuth(scopes?: string[]) {
   return async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
+    let tokenToValidate: string | undefined;
+
     const authHeader = request.headers.authorization;
-    if (!authHeader) {
+    if (authHeader) {
+      const [scheme, token] = authHeader.split(" ");
+      if (scheme === "Bearer" && token) {
+        tokenToValidate = token;
+      }
+    }
+
+    if (!tokenToValidate && request.cookies?.yigyaps_jwt) {
+      tokenToValidate = request.cookies.yigyaps_jwt;
+    }
+
+    if (!tokenToValidate) {
       return reply.status(401).send({
         error: "Unauthorized",
-        message: "Missing Authorization header",
+        message: "Missing or invalid authentication token",
       });
     }
 
-    const [scheme, token] = authHeader.split(" ");
-    if (scheme !== "Bearer" || !token) {
-      return reply.status(401).send({
-        error: "Unauthorized",
-        message: "Invalid Authorization header format. Expected: Bearer <token>",
-      });
-    }
-
-    // Try validation in order: JWT -> API Key -> ADMIN_SECRET
+    // Try validation in order: JWT -> API Key
     let userContext: UserContext | null = null;
+    const token = tokenToValidate;
 
     // Try JWT first
     userContext = await validateJWT(token);
-    if (userContext) {
-      request.user = userContext;
-      return;
+    if (!userContext) {
+      // Try API key
+      userContext = await validateApiKey(request, token);
     }
 
-    // Try API key
-    userContext = await validateApiKey(request, token);
-    if (userContext) {
-      // Check scopes if required
-      if (scopes && scopes.length > 0) {
-        // For now, API key scope checking is not fully implemented
-        // We'll add this when we have the full API key system
-      }
-      request.user = userContext;
-      return;
+    if (!userContext) {
+      return reply.status(403).send({
+        error: "Forbidden",
+        message: "Invalid credentials",
+      });
     }
 
-    // Try ADMIN_SECRET (backward compatibility)
-    userContext = validateAdminSecret(token);
-    if (userContext) {
-      // Log deprecation warning
-      request.log.warn(
-        "ADMIN_SECRET authentication is deprecated. Please migrate to JWT or API keys.",
-      );
-      request.user = userContext;
-      return;
+    // Check scopes (role verification)
+    if (scopes && scopes.includes("admin") && userContext.role !== "admin") {
+      return reply.status(403).send({
+        error: "Forbidden",
+        message: "Requires admin privileges",
+      });
     }
 
-    // No valid authentication found
-    return reply.status(403).send({
-      error: "Forbidden",
-      message: "Invalid credentials",
-    });
+    // For API keys specifically, other scope checks could go here in future
+
+    request.user = userContext;
+    return;
   };
 }

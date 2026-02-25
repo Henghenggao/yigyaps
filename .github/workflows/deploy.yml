@@ -1,0 +1,15 @@
+name: Deploy
+
+on:
+  push:
+    branches: [ main ]
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Trigger Railway Deployment
+        run: |
+          echo "Railway deployment is triggered automatically via GitHub integration."
+          echo "This workflow serves as an acknowledgment in the CI/CD pipeline."

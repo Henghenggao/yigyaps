@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { YigYapsRegistryClient } from '@yigyaps/client';
 import type { SkillPackage, SkillPackageSearchQuery } from '@yigyaps/types';
+import { API_URL } from '../lib/api';
 
 export function useSkills(searchParams?: SkillPackageSearchQuery) {
     const [skills, setSkills] = useState<SkillPackage[]>([]);
@@ -14,7 +15,7 @@ export function useSkills(searchParams?: SkillPackageSearchQuery) {
                 setLoading(true);
                 // Use VITE_API_URL from .env or fallback to localhost
                 const client = new YigYapsRegistryClient({
-                    baseUrl: import.meta.env.VITE_API_URL || 'http://localhost:3100'
+                    baseUrl: API_URL
                 });
 
                 // Search API returns SkillPackageSearchResult with packages array

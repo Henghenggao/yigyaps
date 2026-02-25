@@ -19,10 +19,13 @@
  */
 
 import Fastify from "fastify";
+import { z } from "zod";
 import cors from "@fastify/cors";
 import helmet from "@fastify/helmet";
 import rateLimit from "@fastify/rate-limit";
 import cookie from "@fastify/cookie";
+import swagger from "@fastify/swagger";
+import swaggerUi from "@fastify/swagger-ui";
 import { drizzle } from "drizzle-orm/node-postgres";
 import pg from "pg";
 import * as schema from "@yigyaps/db";
@@ -38,6 +41,11 @@ import { securityRoutes } from "./routes/security.js";
 const { Pool } = pg;
 
 async function buildServer() {
+  const sessionSecret = process.env.SESSION_SECRET;
+  if (!sessionSecret) {
+    throw new Error("SESSION_SECRET is required");
+  }
+
   const fastify = Fastify({
     logger: {
       level: process.env.LOG_LEVEL ?? "info",
@@ -47,23 +55,55 @@ async function buildServer() {
   // ── Security ──────────────────────────────────────────────────────────────
   await fastify.register(helmet);
   await fastify.register(cors, {
-    origin: process.env.CORS_ORIGIN ?? "*",
+    origin: (process.env.CORS_ORIGIN || "").split(",").filter(Boolean),
+    credentials: true,
   });
   await fastify.register(rateLimit, {
     max: 20, // Strict MVP Limit for scraping protection
     timeWindow: "1 minute",
   });
   await fastify.register(cookie, {
-    secret: process.env.SESSION_SECRET || "temp-dev-secret-please-set-in-production",
+    secret: sessionSecret,
   });
 
   // ── Database ──────────────────────────────────────────────────────────────
   const pool = new Pool({
     connectionString:
       process.env.DATABASE_URL ?? "postgresql://localhost:5432/yigyaps",
+    max: Number(process.env.DB_POOL_MAX ?? 20),
+    idleTimeoutMillis: Number(process.env.DB_POOL_IDLE_TIMEOUT ?? 30000),
+    connectionTimeoutMillis: Number(process.env.DB_POOL_CONN_TIMEOUT ?? 2000),
   });
   const db = drizzle(pool, { schema });
   fastify.decorate("db", db);
+
+  // ── OpenAPI ────────────────────────────────────────────────────────────────
+  await fastify.register(swagger, {
+    openapi: {
+      info: {
+        title: "YigYaps API",
+        description: "YigYaps skill registry and deployment platform API",
+        version: "1.0.0",
+      },
+      components: {
+        securitySchemes: {
+          bearerAuth: {
+            type: "http",
+            scheme: "bearer",
+            bearerFormat: "JWT",
+          },
+        },
+      },
+    },
+  });
+
+  await fastify.register(swaggerUi, {
+    routePrefix: "/docs",
+    uiConfig: {
+      docExpansion: "list",
+      deepLinking: false,
+    },
+  });
 
   // ── Routes ─────────────────────────────────────────────────────────────────
   await fastify.register(wellKnownRoutes, { prefix: "/.well-known" });
@@ -75,6 +115,50 @@ async function buildServer() {
   await fastify.register(reviewsRoutes, { prefix: "/v1/reviews" });
   await fastify.register(mintsRoutes, { prefix: "/v1/mints" });
   await fastify.register(securityRoutes, { prefix: "/v1/security" });
+
+  // ── Error Handling ─────────────────────────────────────────────────────────
+  fastify.setErrorHandler(function (err, request, reply) {
+    if (err instanceof z.ZodError) {
+      return reply.status(400).send({
+        error: "Bad Request",
+        message: "Validation failed",
+        details: err.issues,
+      });
+    }
+
+    const error = err as Error & { code?: string; statusCode?: number };
+
+    // Database / Postgres error heuristics
+    if (error.code && typeof error.code === 'string' && error.code.match(/^[A-Z0-9]{5}$/)) {
+      request.log.error({ err: error }, "Database error");
+      return reply.status(500).send({
+        error: "Internal Server Error",
+        message: "A database error occurred",
+      });
+    }
+
+    // Default error handling
+    if (error.statusCode) {
+      return reply.status(error.statusCode).send({
+        error: error.name || "Error",
+        message: error.message,
+      });
+    }
+
+    // Log unexpected errors
+    request.log.error({ err: error }, "Unhandled server error");
+    return reply.status(500).send({
+      error: "Internal Server Error",
+      message: "An unexpected error occurred",
+    });
+  });
+
+  fastify.setNotFoundHandler(function (request, reply) {
+    return reply.status(404).send({
+      error: "Not Found",
+      message: `Route ${request.method}:${request.url} not found`,
+    });
+  });
 
   return fastify;
 }

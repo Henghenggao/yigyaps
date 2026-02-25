@@ -14,6 +14,7 @@ import { Pool } from 'pg';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createTestServer, closeTestServer, type TestServerContext } from '../helpers/test-server.js';
+import { createAdminJWT } from '../../unit/helpers/jwt-helpers.js';
 import { SkillPackageDAL } from '@yigyaps/db';
 import { SkillPackageFactory } from '../../../../db/__tests__/helpers/factories.js';
 import { sql } from 'drizzle-orm';
@@ -60,7 +61,7 @@ describe('Packages Routes', () => {
 
     // Set JWT_SECRET and ADMIN_SECRET for tests
     process.env.JWT_SECRET = 'test-jwt-secret';
-    process.env.ADMIN_SECRET = 'test-admin-secret';
+    // ADMIN_SECRET removed
 
     // Create test server
     serverContext = await createTestServer(connectionString);
@@ -85,7 +86,7 @@ describe('Packages Routes', () => {
         method: 'POST',
         url: '/v1/packages',
         headers: {
-          authorization: 'Bearer test-admin-secret',
+          authorization: `Bearer ${createAdminJWT()}`,
         },
         payload: {
           packageId: 'test-package',
@@ -125,7 +126,7 @@ describe('Packages Routes', () => {
         method: 'POST',
         url: '/v1/packages',
         headers: {
-          authorization: 'Bearer test-admin-secret',
+          authorization: `Bearer ${createAdminJWT()}`,
         },
         payload: {
           packageId: 'duplicate-pkg',
@@ -367,7 +368,7 @@ describe('Packages Routes', () => {
 
   describe('PATCH /v1/packages/:id', () => {
     it('should update package by author', async () => {
-      const authorId = 'anonymous'; // requireAdminAuth sets userId to 'anonymous' by default
+      const authorId = 'usr_admin_001';
 
       const pkg = await packageDAL.create(
         SkillPackageFactory.create({
@@ -381,7 +382,7 @@ describe('Packages Routes', () => {
         method: 'PATCH',
         url: `/v1/packages/${pkg.id}`,
         headers: {
-          authorization: 'Bearer test-admin-secret',
+          authorization: `Bearer ${createAdminJWT()}`,
         },
         payload: {
           displayName: 'Updated Name',
@@ -412,7 +413,7 @@ describe('Packages Routes', () => {
         method: 'PATCH',
         url: `/v1/packages/${pkg.id}`,
         headers: {
-          authorization: 'Bearer test-admin-secret',
+          authorization: `Bearer ${createAdminJWT()}`,
         },
         payload: {
           displayName: 'Unauthorized Update',
@@ -430,7 +431,7 @@ describe('Packages Routes', () => {
         method: 'PATCH',
         url: '/v1/packages/non_existent_id',
         headers: {
-          authorization: 'Bearer test-admin-secret',
+          authorization: `Bearer ${createAdminJWT()}`,
         },
         payload: {
           displayName: 'Update Non-existent',

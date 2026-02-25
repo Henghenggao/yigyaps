@@ -14,6 +14,7 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { SkillPackageDAL, SkillMintDAL, RoyaltyLedgerDAL } from "@yigyaps/db";
+import { requireAuth } from "../middleware/auth-v2.js";
 
 const mintSchema = z.object({
   skillPackageId: z.string().min(1),
@@ -36,9 +37,19 @@ export async function mintsRoutes(fastify: FastifyInstance) {
   const mintDAL = new SkillMintDAL(db);
   const royaltyLedgerDAL = new RoyaltyLedgerDAL(db);
 
-  fastify.post("/", async (request, reply) => {
-    const userId = (request as any).userId ?? "anonymous";
-    const body = mintSchema.parse(request.body);
+  fastify.post("/", { preHandler: requireAuth() }, async (request, reply) => {
+    const userId = request.user?.userId;
+    if (!userId) return reply.code(401).send({ error: "Unauthorized" });
+
+    const parsed = mintSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.code(400).send({
+        error: "Bad Request",
+        message: "Validation failed",
+        details: parsed.error.issues,
+      });
+    }
+    const body = parsed.data;
     const now = Date.now();
 
     const pkg = await packageDAL.getById(body.skillPackageId);
@@ -99,8 +110,9 @@ export async function mintsRoutes(fastify: FastifyInstance) {
     return reply.code(201).send(mint);
   });
 
-  fastify.get("/my-earnings", async (request, reply) => {
-    const userId = (request as any).userId ?? "anonymous";
+  fastify.get("/my-earnings", { preHandler: requireAuth() }, async (request, reply) => {
+    const userId = request.user?.userId;
+    if (!userId) return reply.code(401).send({ error: "Unauthorized" });
     const { totalUsd, count } = await royaltyLedgerDAL.getTotalEarnings(userId);
     const recent = await royaltyLedgerDAL.getByCreator(userId, 20);
     return reply.send({ totalUsd, count, recent });

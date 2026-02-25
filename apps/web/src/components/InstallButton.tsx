@@ -11,6 +11,7 @@ import { useAuth } from '../contexts/AuthContext';
 import { YigYapsRegistryClient } from '@yigyaps/client';
 import type { SkillPackage } from '@yigyaps/types';
 import { getTierName, canAccessTier } from '../utils/tierHelpers';
+import { API_URL } from '../lib/api';
 
 interface InstallButtonProps {
   skill: SkillPackage;
@@ -19,10 +20,8 @@ interface InstallButtonProps {
 
 type InstallStatus = 'idle' | 'checking_tier' | 'installing' | 'success' | 'error';
 
-const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3100';
-
 export function InstallButton({ skill, onInstallSuccess }: InstallButtonProps) {
-  const { user, token, login } = useAuth();
+  const { user, login } = useAuth();
   const [status, setStatus] = useState<InstallStatus>('idle');
   const [error, setError] = useState<string | null>(null);
 
@@ -53,8 +52,7 @@ export function InstallButton({ skill, onInstallSuccess }: InstallButtonProps) {
 
     try {
       const client = new YigYapsRegistryClient({
-        baseUrl,
-        apiKey: token || undefined,
+        baseUrl: API_URL,
       });
 
       // Call install API

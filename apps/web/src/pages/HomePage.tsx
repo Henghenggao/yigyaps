@@ -5,6 +5,7 @@ import { UserMenu } from '../components/UserMenu';
 import { SearchBar } from '../components/SearchBar';
 import { FilterPanel } from '../components/FilterPanel';
 import { SkillCard } from '../components/SkillCard';
+import { SkeletonGrid } from '../components/SkeletonLoader';
 import { Pagination } from '../components/Pagination';
 import type { SkillPackageSearchQuery, SkillPackageCategory, SkillPackageLicense, SkillPackageMaturity } from '@yigyaps/types';
 
@@ -163,9 +164,7 @@ export function HomePage() {
             {/* Skills Grid (Main Content) */}
             <div className="skills-main">
               {loading && (
-                <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--color-text-muted)' }}>
-                  Loading skills...
-                </div>
+                <SkeletonGrid count={8} />
               )}
 
               {error && (

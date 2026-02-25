@@ -8,18 +8,18 @@
 
 import { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { useAuth } from '../contexts/AuthContext';
 
 export function AuthCallback() {
   const [status, setStatus] = useState<'processing' | 'success' | 'error'>('processing');
   const [message, setMessage] = useState('Completing sign in...');
   const navigate = useNavigate();
+  const { refreshUser } = useAuth();
 
   useEffect(() => {
-    const handleCallback = () => {
+    const handleCallback = async () => {
       try {
-        // Extract token from URL query params
         const params = new URLSearchParams(window.location.search);
-        const token = params.get('token');
         const error = params.get('error');
 
         if (error) {
@@ -29,33 +29,24 @@ export function AuthCallback() {
           return;
         }
 
-        if (!token) {
-          setStatus('error');
-          setMessage('No authentication token received');
-          setTimeout(() => navigate('/'), 3000);
-          return;
-        }
-
-        // Store token and notify auth context
-        if ((window as any).__yigyapsSetToken) {
-          (window as any).__yigyapsSetToken(token);
-        } else {
-          localStorage.setItem('yigyaps_token', token);
-        }
-
         setStatus('success');
         setMessage('Sign in successful! Redirecting...');
+        await refreshUser();
         setTimeout(() => navigate('/'), 1000);
-      } catch (err: any) {
+      } catch (err: unknown) {
         console.error('OAuth callback error:', err);
         setStatus('error');
-        setMessage(`Error: ${err.message}`);
+        if (err instanceof Error) {
+          setMessage(`Error: ${err.message}`);
+        } else {
+          setMessage('Error: An unknown error occurred');
+        }
         setTimeout(() => navigate('/'), 3000);
       }
     };
 
     handleCallback();
-  }, [navigate]);
+  }, [navigate, refreshUser]);
 
   return (
     <div style={{
@@ -108,7 +99,7 @@ export function AuthCallback() {
           color: status === 'error' ? '#ff4444' : status === 'success' ? '#00ff88' : '#e0e0e0',
         }}>
           {status === 'processing' ? 'Authenticating...' :
-           status === 'success' ? 'Success!' : 'Authentication Failed'}
+            status === 'success' ? 'Success!' : 'Authentication Failed'}
         </h1>
 
         <p style={{ color: '#888' }}>{message}</p>

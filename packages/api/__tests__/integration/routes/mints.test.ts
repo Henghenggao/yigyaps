@@ -13,6 +13,7 @@ import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { Pool } from 'pg';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { createTestJWT } from '../../unit/helpers/jwt-helpers.js';
 import { createTestServer, closeTestServer, type TestServerContext } from '../helpers/test-server.js';
 import { SkillPackageDAL, SkillMintDAL, RoyaltyLedgerDAL } from '@yigyaps/db';
 import { SkillPackageFactory } from '../../../../db/__tests__/helpers/factories.js';
@@ -94,6 +95,7 @@ describe('Mints Routes', () => {
       const response = await serverContext.fastify.inject({
         method: 'POST',
         url: '/v1/mints',
+        headers: { authorization: `Bearer ${createTestJWT({ userId: 'anonymous', tier: 'legendary', role: 'user' })}` },
         payload: {
           skillPackageId: pkg.id,
           rarity: 'common',
@@ -134,6 +136,7 @@ describe('Mints Routes', () => {
       const response = await serverContext.fastify.inject({
         method: 'POST',
         url: '/v1/mints',
+        headers: { authorization: `Bearer ${createTestJWT({ userId: 'anonymous', tier: 'legendary', role: 'user' })}` },
         payload: {
           skillPackageId: pkg.id,
           rarity: 'rare',
@@ -166,6 +169,7 @@ describe('Mints Routes', () => {
       const response = await serverContext.fastify.inject({
         method: 'POST',
         url: '/v1/mints',
+        headers: { authorization: `Bearer ${createTestJWT({ userId: 'anonymous', tier: 'legendary', role: 'user' })}` },
         payload: {
           skillPackageId: pkg.id,
           rarity: 'epic',
@@ -193,6 +197,7 @@ describe('Mints Routes', () => {
       const response = await serverContext.fastify.inject({
         method: 'POST',
         url: '/v1/mints',
+        headers: { authorization: `Bearer ${createTestJWT({ userId: 'anonymous', tier: 'legendary', role: 'user' })}` },
         payload: {
           skillPackageId: pkg.id,
           rarity: 'legendary',
@@ -220,6 +225,7 @@ describe('Mints Routes', () => {
       const response = await serverContext.fastify.inject({
         method: 'POST',
         url: '/v1/mints',
+        headers: { authorization: `Bearer ${createTestJWT({ userId: 'anonymous', tier: 'legendary', role: 'user' })}` },
         payload: {
           skillPackageId: pkg.id,
           rarity: 'rare',
@@ -237,6 +243,7 @@ describe('Mints Routes', () => {
       const response = await serverContext.fastify.inject({
         method: 'POST',
         url: '/v1/mints',
+        headers: { authorization: `Bearer ${createTestJWT({ userId: 'anonymous', tier: 'legendary', role: 'user' })}` },
         payload: {
           skillPackageId: 'non_existent_pkg',
           rarity: 'common',
@@ -260,6 +267,7 @@ describe('Mints Routes', () => {
       const response = await serverContext.fastify.inject({
         method: 'POST',
         url: '/v1/mints',
+        headers: { authorization: `Bearer ${createTestJWT({ userId: 'anonymous', tier: 'legendary', role: 'user' })}` },
         payload: {
           skillPackageId: pkg.id,
           rarity: 'common',
@@ -284,6 +292,7 @@ describe('Mints Routes', () => {
       await serverContext.fastify.inject({
         method: 'POST',
         url: '/v1/mints',
+        headers: { authorization: `Bearer ${createTestJWT({ userId: 'anonymous', tier: 'legendary', role: 'user' })}` },
         payload: {
           skillPackageId: pkg.id,
           rarity: 'common',
@@ -294,6 +303,7 @@ describe('Mints Routes', () => {
       const response = await serverContext.fastify.inject({
         method: 'POST',
         url: '/v1/mints',
+        headers: { authorization: `Bearer ${createTestJWT({ userId: 'anonymous', tier: 'legendary', role: 'user' })}` },
         payload: {
           skillPackageId: pkg.id,
           rarity: 'rare',
@@ -319,6 +329,7 @@ describe('Mints Routes', () => {
       const response = await serverContext.fastify.inject({
         method: 'POST',
         url: '/v1/mints',
+        headers: { authorization: `Bearer ${createTestJWT({ userId: 'anonymous', tier: 'legendary', role: 'user' })}` },
         payload: {
           skillPackageId: pkg.id,
           rarity: 'rare',
@@ -343,6 +354,7 @@ describe('Mints Routes', () => {
       const response = await serverContext.fastify.inject({
         method: 'POST',
         url: '/v1/mints',
+        headers: { authorization: `Bearer ${createTestJWT({ userId: 'anonymous', tier: 'legendary', role: 'user' })}` },
         payload: {
           skillPackageId: pkg.id,
           rarity: 'epic',
@@ -366,6 +378,7 @@ describe('Mints Routes', () => {
       const response = await serverContext.fastify.inject({
         method: 'POST',
         url: '/v1/mints',
+        headers: { authorization: `Bearer ${createTestJWT({ userId: 'anonymous', tier: 'legendary', role: 'user' })}` },
         payload: {
           skillPackageId: pkg.id,
           rarity: 'legendary',
@@ -389,6 +402,7 @@ describe('Mints Routes', () => {
       const response = await serverContext.fastify.inject({
         method: 'POST',
         url: '/v1/mints',
+        headers: { authorization: `Bearer ${createTestJWT({ userId: 'anonymous', tier: 'legendary', role: 'user' })}` },
         payload: {
           skillPackageId: pkg.id,
           rarity: 'common',
@@ -408,6 +422,7 @@ describe('Mints Routes', () => {
       const response = await serverContext.fastify.inject({
         method: 'GET',
         url: '/v1/mints/my-earnings',
+        headers: { authorization: `Bearer ${createTestJWT({ userId: 'anonymous', tier: 'legendary', role: 'user' })}` },
       });
 
       expect(response.statusCode).toBe(200);
@@ -470,6 +485,7 @@ describe('Mints Routes', () => {
       const response = await serverContext.fastify.inject({
         method: 'GET',
         url: '/v1/mints/my-earnings',
+        headers: { authorization: `Bearer ${createTestJWT({ userId: 'anonymous', tier: 'legendary', role: 'user' })}` },
       });
 
       expect(response.statusCode).toBe(200);
@@ -523,6 +539,7 @@ describe('Mints Routes', () => {
       const response = await serverContext.fastify.inject({
         method: 'GET',
         url: '/v1/mints/my-earnings',
+        headers: { authorization: `Bearer ${createTestJWT({ userId: 'anonymous', tier: 'legendary', role: 'user' })}` },
       });
 
       expect(response.statusCode).toBe(200);

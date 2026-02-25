@@ -18,19 +18,36 @@ import {
 import { eq } from "drizzle-orm";
 import crypto from "crypto";
 import { randomUUID } from "crypto";
+import { z } from "zod";
+import { requireAuth } from "../middleware/auth-v2.js";
+
+const encryptBodySchema = z.object({
+    plaintextRules: z.string().max(100_000),
+});
+
+const paramsSchema = z.object({
+    packageId: z.string().min(1),
+});
 
 export const securityRoutes: FastifyPluginAsync = async (fastify) => {
     /**
      * Encrypt and store knowledge on the edge/client simulator
      * This represents the end of the "Extraction Pipeline" where data goes to the Vault.
      */
-    fastify.post("/knowledge/:packageId", async (request, reply) => {
-        const { packageId } = request.params as { packageId: string };
-        const { plaintextRules } = request.body as { plaintextRules: string };
+    fastify.post("/knowledge/:packageId", { preHandler: requireAuth() }, async (request, reply) => {
+        const paramsParsed = paramsSchema.safeParse(request.params);
+        const bodyParsed = encryptBodySchema.safeParse(request.body);
 
-        if (!packageId || !plaintextRules) {
-            return reply.code(400).send({ error: "Missing required fields" });
+        if (!paramsParsed.success || !bodyParsed.success) {
+            return reply.code(400).send({
+                error: "Bad Request",
+                message: "Validation failed",
+                details: paramsParsed.error?.issues || bodyParsed.error?.issues,
+            });
         }
+
+        const { packageId } = paramsParsed.data;
+        const { plaintextRules } = bodyParsed.data;
 
         // 1. Generate DEK
         const dek = KMS.generateDek();
@@ -74,8 +91,16 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
      * Simulate Invocation in the Memory-Only Sandbox
      * Decrypts in SecureBuffer, processes, then zeroizes immediately.
      */
-    fastify.post("/invoke/:packageId", async (request, reply) => {
-        const { packageId } = request.params as { packageId: string };
+    fastify.post("/invoke/:packageId", { preHandler: requireAuth() }, async (request, reply) => {
+        const paramsParsed = paramsSchema.safeParse(request.params);
+        if (!paramsParsed.success) {
+            return reply.code(400).send({
+                error: "Bad Request",
+                message: "Validation failed",
+                details: paramsParsed.error.issues,
+            });
+        }
+        const { packageId } = paramsParsed.data;
 
         const knowledgeRecords = await fastify.db
             .select()

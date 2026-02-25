@@ -2,16 +2,15 @@ import { useState } from 'react';
 import type { FormEvent } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import type { SkillPackage } from '@yigyaps/types';
+import { fetchApi } from '../lib/api';
 
 interface ReviewFormProps {
   skill: SkillPackage;
   onReviewSubmitted: () => void;
 }
 
-const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3100';
-
 export function ReviewForm({ skill, onReviewSubmitted }: ReviewFormProps) {
-  const { user, token } = useAuth();
+  const { user } = useAuth();
   const [rating, setRating] = useState(5);
   const [hoveredRating, setHoveredRating] = useState(0);
   const [title, setTitle] = useState('');
@@ -57,12 +56,8 @@ export function ReviewForm({ skill, onReviewSubmitted }: ReviewFormProps) {
     try {
       setSubmitting(true);
 
-      const response = await fetch(`${baseUrl}/v1/reviews`, {
+      await fetchApi('/v1/reviews', {
         method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
         body: JSON.stringify({
           packageId: skill.packageId,
           packageVersion: skill.version,
@@ -71,11 +66,6 @@ export function ReviewForm({ skill, onReviewSubmitted }: ReviewFormProps) {
           comment: comment.trim(),
         }),
       });
-
-      if (!response.ok) {
-        const errorData = await response.json();
-        throw new Error(errorData.message || 'Failed to submit review');
-      }
 
       // Success
       setSuccess(true);

@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
 import { YigYapsPublisherClient, YigYapsSecurityClient } from '@yigyaps/client';
+import { API_URL } from '../lib/api';
 
 export function PublishSkillPage() {
     const { user, login } = useAuth();
@@ -29,7 +30,7 @@ export function PublishSkillPage() {
                         Yig<span>Yaps</span>
                     </Link>
                 </header>
-                <main className="main-content" style={{ textAlign: 'center', padding: '5rem' }}>
+                <main className="main-content auth-required-panel">
                     <h2>Authentication Required</h2>
                     <p>You must be signed in to publish a new secure skill.</p>
                     <button className="btn btn-primary" onClick={login} style={{ marginTop: '2rem' }}>
@@ -50,12 +51,11 @@ export function PublishSkillPage() {
         setLoading(true);
         setError(null);
 
-        const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3100';
         // Dummy JWT handling for MVP UI
-        const token = localStorage.getItem('auth_token') || 'dummy-token';
+        const token = 'dummy-token';
 
-        const publisher = new YigYapsPublisherClient({ baseUrl, apiKey: token });
-        const security = new YigYapsSecurityClient({ baseUrl, apiKey: token });
+        const publisher = new YigYapsPublisherClient({ baseUrl: API_URL, apiKey: token });
+        const security = new YigYapsSecurityClient({ baseUrl: API_URL, apiKey: token });
 
         try {
             // Step 1: Create package metadata
@@ -96,69 +96,69 @@ export function PublishSkillPage() {
                 </nav>
             </header>
 
-            <main className="main-content" style={{ maxWidth: '800px', margin: '0 auto', padding: '2rem' }}>
-                <h1 style={{ marginBottom: '1rem' }}>Publish Secure Skill</h1>
-                <p style={{ color: 'var(--color-text-muted)', marginBottom: '2rem' }}>
+            <main className="main-content publish-container">
+                <h1 className="publish-header">Publish Secure Skill</h1>
+                <p className="publish-desc">
                     Deploy your expert knowledge. Your rules will be instantly AES-256 Envelope Encrypted upon reaching the Vault. The platform guarantees these rules will never be handed out to an external AI model in plaintext.
                 </p>
 
                 {success && (
-                    <div style={{ padding: '1rem', background: 'rgba(0,255,100,0.1)', color: '#2ecc71', borderRadius: '8px', marginBottom: '2rem' }}>
+                    <div className="alert-success">
                         🎉 Skill published securely! Redirecting to the detail page...
                     </div>
                 )}
 
                 {error && (
-                    <div style={{ padding: '1rem', background: 'rgba(255,0,0,0.1)', color: '#e74c3c', borderRadius: '8px', marginBottom: '2rem' }}>
+                    <div className="alert-error">
                         ❌ {error}
                     </div>
                 )}
 
-                <form onSubmit={handleSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+                <form onSubmit={handleSubmit} className="publish-form">
 
-                    <div>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Unique Package ID *</label>
+                    <div className="form-group-spaced">
+                        <label>Unique Package ID *</label>
                         <input
                             required
                             name="packageId"
                             value={formData.packageId}
                             onChange={handleChange}
                             placeholder="e.g. legal-contract-reviewer"
-                            style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--color-border)', background: 'var(--color-card)', color: 'white' }}
+                            className="publish-input"
                         />
                     </div>
 
-                    <div>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Display Name *</label>
+                    <div className="form-group-spaced">
+                        <label>Display Name *</label>
                         <input
                             required
                             name="displayName"
                             value={formData.displayName}
                             onChange={handleChange}
                             placeholder="Legal Contract Reviewer Pro"
-                            style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--color-border)', background: 'var(--color-card)', color: 'white' }}
+                            className="publish-input"
                         />
                     </div>
 
-                    <div>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Short Description *</label>
+                    <div className="form-group-spaced">
+                        <label>Short Description *</label>
                         <input
                             required
                             name="description"
                             value={formData.description}
                             onChange={handleChange}
                             placeholder="A secure skill that reviews contracts for loopholes."
-                            style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--color-border)', background: 'var(--color-card)', color: 'white' }}
+                            className="publish-input"
                         />
                     </div>
 
-                    <div>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>Category</label>
+                    <div className="form-group-spaced">
+                        <label>Category</label>
                         <select
                             name="category"
                             value={formData.category}
                             onChange={handleChange}
-                            style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--color-border)', background: 'var(--color-card)', color: 'white' }}
+                            className="publish-select"
                         >
                             <option value="legal">Legal & Compliance</option>
                             <option value="medical">Medical Check</option>
@@ -168,11 +168,11 @@ export function PublishSkillPage() {
                         </select>
                     </div>
 
-                    <div>
-                        <label style={{ display: 'block', marginBottom: '0.5rem', fontWeight: 600 }}>
+                    <div className="form-group-spaced">
+                        <label>
                             Expert IP Rules (Plaintext - Safe in Form)
                         </label>
-                        <p style={{ fontSize: '0.85rem', color: 'var(--color-text-muted)', marginBottom: '0.5rem' }}>
+                        <p className="rule-help-text">
                             These rules are sent via TLS and encrypted at rest using AES-GCM. They are only ever decrypted in volatile memory for sandbox execution.
                         </p>
                         <textarea
@@ -182,15 +182,14 @@ export function PublishSkillPage() {
                             onChange={handleChange}
                             rows={8}
                             placeholder="Rule 1: If condition A matches, do B..."
-                            style={{ width: '100%', padding: '0.75rem', borderRadius: '6px', border: '1px solid var(--color-border)', background: 'var(--color-card)', color: 'white', fontFamily: 'monospace' }}
+                            className="publish-textarea"
                         />
                     </div>
 
                     <button
                         type="submit"
-                        className="btn btn-primary"
+                        className="btn btn-primary publish-btn"
                         disabled={loading || success}
-                        style={{ padding: '1rem', fontSize: '1.1rem', marginTop: '1rem' }}
                     >
                         {loading ? 'Encrypting & Committing IP...' : 'Secure & Publish Skill'}
                     </button>

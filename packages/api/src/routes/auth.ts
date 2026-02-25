@@ -210,8 +210,17 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
         path: "/",
       });
 
-      // Redirect to frontend with JWT
-      return reply.redirect(`${FRONTEND_URL}/auth/success?token=${jwt}`);
+      // Set JWT cookie
+      reply.setCookie("yigyaps_jwt", jwt, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 7 * 24 * 60 * 60, // 7 days
+        path: "/",
+      });
+
+      // Redirect to frontend with JWT (no token in URL)
+      return reply.redirect(`${FRONTEND_URL}/auth/success`);
     } catch (error) {
       request.log.error({ error }, "GitHub OAuth callback failed");
       return reply.redirect(
@@ -228,6 +237,8 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       await sessionDAL.deleteByToken(sessionToken);
       reply.clearCookie("session_token");
     }
+
+    reply.clearCookie("yigyaps_jwt");
 
     return reply.send({ success: true });
   });

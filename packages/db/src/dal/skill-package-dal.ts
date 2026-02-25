@@ -58,7 +58,7 @@ export interface SkillPackageSearchResult {
 // ─── Skill Package DAL ────────────────────────────────────────────────────────
 
 export class SkillPackageDAL {
-  constructor(private db: NodePgDatabase<any>) { }
+  constructor(private db: NodePgDatabase<any> | any) { }
 
   async create(pkg: SkillPackageInsert): Promise<SkillPackageRow> {
     return dbOperation(
@@ -252,7 +252,7 @@ export class SkillPackageDAL {
 // ─── Skill Installation DAL ───────────────────────────────────────────────────
 
 export class SkillInstallationDAL {
-  constructor(private db: NodePgDatabase<any>) { }
+  constructor(private db: NodePgDatabase<any> | any) { }
 
   async install(
     data: SkillPackageInstallationInsert,
@@ -360,7 +360,7 @@ export class SkillInstallationDAL {
 // ─── Skill Review DAL ─────────────────────────────────────────────────────────
 
 export class SkillReviewDAL {
-  constructor(private db: NodePgDatabase<any>) { }
+  constructor(private db: NodePgDatabase<any> | any) { }
 
   async create(
     review: SkillPackageReviewInsert,
@@ -425,7 +425,7 @@ export class SkillReviewDAL {
 // ─── Skill Mint DAL ───────────────────────────────────────────────────────────
 
 export class SkillMintDAL {
-  constructor(private db: NodePgDatabase<any>) { }
+  constructor(private db: NodePgDatabase<any> | any) { }
 
   async create(mint: SkillMintInsert): Promise<SkillMintRow> {
     return dbOperation(
@@ -546,7 +546,7 @@ export class SkillMintDAL {
 // ─── Royalty Ledger DAL ───────────────────────────────────────────────────────
 
 export class RoyaltyLedgerDAL {
-  constructor(private db: NodePgDatabase<any>) { }
+  constructor(private db: NodePgDatabase<any> | any) { }
 
   async create(entry: RoyaltyLedgerInsert): Promise<RoyaltyLedgerRow> {
     return dbOperation(

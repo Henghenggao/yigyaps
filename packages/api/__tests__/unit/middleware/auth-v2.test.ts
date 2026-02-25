@@ -34,7 +34,7 @@ function createMockRequest(authHeader?: string): MockRequest {
   return {
     headers: authHeader ? { authorization: authHeader } : {},
     log: {
-      warn: () => {},
+      warn: () => { },
     },
     server: {
       db: {}, // Mock database connection
@@ -158,37 +158,7 @@ describe('optionalAuth', () => {
     expect(mockRequest.user).toBeUndefined();
   });
 
-  it('should attach admin context from valid ADMIN_SECRET', async () => {
-    process.env.ADMIN_SECRET = 'super-secret-admin-key';
 
-    const mockRequest = createMockRequest('Bearer super-secret-admin-key');
-    const mockReply = createMockReply();
-
-    await optionalAuth(mockRequest as any, mockReply as any);
-
-    expect(mockRequest.user).toMatchObject({
-      userId: 'usr_admin_legacy',
-      userName: 'Admin',
-      tier: 'legendary',
-      role: 'admin',
-      authMethod: 'admin_secret',
-    });
-
-    delete process.env.ADMIN_SECRET;
-  });
-
-  it('should continue without user context when ADMIN_SECRET does not match', async () => {
-    process.env.ADMIN_SECRET = 'correct-secret';
-
-    const mockRequest = createMockRequest('Bearer wrong-secret');
-    const mockReply = createMockReply();
-
-    await optionalAuth(mockRequest as any, mockReply as any);
-
-    expect(mockRequest.user).toBeUndefined();
-
-    delete process.env.ADMIN_SECRET;
-  });
 });
 
 // ─── requireAuth Tests ────────────────────────────────────────────────────────
@@ -208,7 +178,7 @@ describe('requireAuth', () => {
     expect(mockReply.statusCode).toBe(401);
     expect(mockReply.sentPayload).toMatchObject({
       error: 'Unauthorized',
-      message: 'Missing Authorization header',
+      message: 'Missing or invalid authentication token',
     });
   });
 
@@ -222,7 +192,7 @@ describe('requireAuth', () => {
     expect(mockReply.statusCode).toBe(401);
     expect(mockReply.sentPayload).toMatchObject({
       error: 'Unauthorized',
-      message: 'Invalid Authorization header format. Expected: Bearer <token>',
+      message: 'Missing or invalid authentication token',
     });
   });
 
@@ -293,47 +263,7 @@ describe('requireAuth', () => {
     });
   });
 
-  it('should attach admin context from valid ADMIN_SECRET', async () => {
-    process.env.ADMIN_SECRET = 'admin-secret-key';
 
-    const mockRequest = createMockRequest('Bearer admin-secret-key');
-    const mockReply = createMockReply();
-
-    let warnCalled = false;
-    mockRequest.log = {
-      warn: (msg: string) => {
-        warnCalled = true;
-        expect(msg).toContain('deprecated');
-      },
-    };
-
-    const middleware = requireAuth();
-    await middleware(mockRequest as any, mockReply as any);
-
-    expect(mockRequest.user).toMatchObject({
-      userId: 'usr_admin_legacy',
-      role: 'admin',
-      authMethod: 'admin_secret',
-    });
-    expect(warnCalled).toBe(true); // Deprecation warning logged
-    expect(mockReply.statusCode).toBe(200);
-
-    delete process.env.ADMIN_SECRET;
-  });
-
-  it('should return 403 when ADMIN_SECRET does not match', async () => {
-    process.env.ADMIN_SECRET = 'correct-admin-secret';
-
-    const mockRequest = createMockRequest('Bearer wrong-admin-secret');
-    const mockReply = createMockReply();
-
-    const middleware = requireAuth();
-    await middleware(mockRequest as any, mockReply as any);
-
-    expect(mockReply.statusCode).toBe(403);
-
-    delete process.env.ADMIN_SECRET;
-  });
 
   it('should handle different user tiers correctly', async () => {
     const tiers: Array<'free' | 'pro' | 'epic' | 'legendary'> = [

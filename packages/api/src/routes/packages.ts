@@ -16,14 +16,20 @@ import {
   SkillPackageDAL,
   SkillInstallationDAL,
 } from "@yigyaps/db";
-import { requireAdminAuth } from "../middleware/auth.js";
+import { requireAuth } from "../middleware/auth-v2.js";
 
 const createPackageSchema = z.object({
   packageId: z.string().min(1).max(100),
   version: z.string().min(1).max(20),
   displayName: z.string().min(1).max(200),
   description: z.string().min(10).max(500),
-  readme: z.string().max(5000).optional(),
+  readme: z
+    .string()
+    .max(5000)
+    .optional()
+    .refine((val) => !val || !/<script\b[^>]*>[\s\S]*?<\/script>/gi.test(val), {
+      message: "README contains forbidden script tags",
+    }),
   authorName: z.string().min(1).max(100),
   authorUrl: z.string().url().optional(),
   license: z
@@ -106,10 +112,18 @@ export async function packagesRoutes(fastify: FastifyInstance) {
 
   fastify.post(
     "/",
-    { preHandler: requireAdminAuth },
+    { preHandler: requireAuth(["admin"]) },
     async (request, reply) => {
-      const userId = (request as any).userId ?? "anonymous";
-      const body = createPackageSchema.parse(request.body);
+      const userId = request.user?.userId ?? "anonymous";
+      const parsed = createPackageSchema.safeParse(request.body);
+      if (!parsed.success) {
+        return reply.code(400).send({
+          error: "Bad Request",
+          message: "Validation failed",
+          details: parsed.error.issues,
+        });
+      }
+      const body = parsed.data;
       const now = Date.now();
 
       const existing = await packageDAL.getByPackageId(body.packageId);
@@ -181,9 +195,9 @@ export async function packagesRoutes(fastify: FastifyInstance) {
 
   fastify.patch<{ Params: { id: string } }>(
     "/:id",
-    { preHandler: requireAdminAuth },
+    { preHandler: requireAuth(["admin"]) },
     async (request, reply) => {
-      const userId = (request as any).userId ?? "anonymous";
+      const userId = request.user?.userId ?? "anonymous";
       const pkg = await packageDAL.getById(request.params.id);
       if (!pkg) return reply.code(404).send({ error: "Package not found" });
       if (pkg.author !== userId) {
@@ -199,8 +213,11 @@ export async function packagesRoutes(fastify: FastifyInstance) {
     },
   );
 
-  fastify.get("/my-packages", async (request, reply) => {
-    const userId = (request as any).userId ?? "anonymous";
+  fastify.get("/my-packages", { preHandler: requireAuth() }, async (request, reply) => {
+    const userId = request.user?.userId;
+    if (!userId) {
+      return reply.code(401).send({ error: "Unauthorized" });
+    }
     const packages = await packageDAL.getByAuthor(userId);
     return reply.send({ packages });
   });

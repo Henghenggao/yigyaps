@@ -1,8 +1,7 @@
 import { useState, useEffect } from 'react';
 import { YigYapsRegistryClient } from '@yigyaps/client';
 import type { SkillPackage, SkillPackageReview } from '@yigyaps/types';
-
-const baseUrl = import.meta.env.VITE_API_URL || 'http://localhost:3100';
+import { API_URL, fetchApi } from '../lib/api';
 
 export function useSkillDetail(packageId: string) {
   const [skillDetail, setSkillDetail] = useState<SkillPackage | null>(null);
@@ -12,11 +11,7 @@ export function useSkillDetail(packageId: string) {
 
   const refreshReviews = async () => {
     try {
-      const response = await fetch(`${baseUrl}/v1/reviews/${packageId}`);
-      if (!response.ok) {
-        throw new Error('Failed to fetch reviews');
-      }
-      const data = await response.json();
+      const data = await fetchApi<{ reviews: SkillPackageReview[] }>(`/v1/reviews/${packageId}`);
       setReviews(data.reviews || []);
     } catch (err) {
       console.error('Failed to refresh reviews:', err);
@@ -29,19 +24,13 @@ export function useSkillDetail(packageId: string) {
         setLoading(true);
         setError(null);
 
-        const client = new YigYapsRegistryClient({ baseUrl });
+        const client = new YigYapsRegistryClient({ baseUrl: API_URL });
 
         // Parallel fetch for better performance
-        const [pkg, reviewsResponse] = await Promise.all([
+        const [pkg, reviewsData] = await Promise.all([
           client.getByPackageId(packageId),
-          fetch(`${baseUrl}/v1/reviews/${packageId}`),
+          fetchApi<{ reviews: SkillPackageReview[] }>(`/v1/reviews/${packageId}`),
         ]);
-
-        if (!reviewsResponse.ok) {
-          throw new Error('Failed to fetch reviews');
-        }
-
-        const reviewsData = await reviewsResponse.json();
 
         setSkillDetail(pkg);
         setReviews(reviewsData.reviews || []);

@@ -17,6 +17,8 @@ import { migrate } from 'drizzle-orm/node-postgres/migrator';
 import { Pool } from 'pg';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { createTestJWT } from '../../unit/helpers/jwt-helpers.js';
+
 import { createTestServer, closeTestServer, type TestServerContext } from '../helpers/test-server.js';
 import { SkillPackageDAL, SkillMintDAL } from '@yigyaps/db';
 import { SkillPackageFactory, SkillMintFactory } from '../../../../db/__tests__/helpers/factories.js';
@@ -109,6 +111,7 @@ describe('Concurrent Stress Tests - Race Condition Detection', () => {
         serverContext.fastify.inject({
           method: 'POST',
           url: '/v1/installations',
+          headers: { authorization: `Bearer ${createTestJWT({ userId: `usr_test_${i}`, tier: 'legendary', role: 'user' })}` },
           payload: {
             packageId: pkg.id,
             agentId: `agt_concurrent_${i}`,
@@ -175,6 +178,7 @@ describe('Concurrent Stress Tests - Race Condition Detection', () => {
         serverContext.fastify.inject({
           method: 'POST',
           url: '/v1/installations',
+          headers: { authorization: `Bearer ${createTestJWT({ userId: `usr_test_${i}`, tier: 'legendary', role: 'user' })}` },
           payload: {
             packageId: pkg.id,
             agentId: `agt_boundary_${i}`,
@@ -219,6 +223,7 @@ describe('Concurrent Stress Tests - Race Condition Detection', () => {
         serverContext.fastify.inject({
           method: 'POST',
           url: '/v1/installations',
+          headers: { authorization: `Bearer ${createTestJWT({ userId: `usr_test_${i}`, tier: 'legendary', role: 'user' })}` },
           payload: {
             packageId: pkg.id,
             agentId: `agt_epic_${i}`,
@@ -269,6 +274,7 @@ describe('Concurrent Stress Tests - Race Condition Detection', () => {
         serverContext.fastify.inject({
           method: 'POST',
           url: '/v1/installations',
+          headers: { authorization: `Bearer ${createTestJWT({ userId: `usr_test_${i}`, tier: 'legendary', role: 'user' })}` },
           payload: {
             packageId: pkg.id,
             agentId: `agt_rare_${i}`,
@@ -319,6 +325,7 @@ describe('Concurrent Stress Tests - Race Condition Detection', () => {
         serverContext.fastify.inject({
           method: 'POST',
           url: '/v1/installations',
+          headers: { authorization: `Bearer ${createTestJWT({ userId: `usr_test_${i}`, tier: 'legendary', role: 'user' })}` },
           payload: {
             packageId: pkg.id,
             agentId: `agt_common_${i}`,
@@ -362,6 +369,7 @@ describe('Concurrent Stress Tests - Race Condition Detection', () => {
         serverContext.fastify.inject({
           method: 'POST',
           url: '/v1/installations',
+          headers: { authorization: `Bearer ${createTestJWT({ userId: `usr_test_${i}`, tier: 'legendary', role: 'user' })}` },
           payload: {
             packageId: pkg.id,
             agentId: `agt_perf_${i}`,
