@@ -1,1 +1,1 @@
-export * from "./skill-packages.js";
+export * from "./skill-packages";

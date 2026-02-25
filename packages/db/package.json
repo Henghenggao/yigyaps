@@ -12,19 +12,25 @@
       "types": "./dist/index.d.ts"
     }
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "build": "tsc -b",
-    "clean": "tsc -b --clean"
+    "clean": "tsc -b --clean",
+    "db:generate": "drizzle-kit generate",
+    "db:push": "drizzle-kit push",
+    "db:studio": "drizzle-kit studio"
   },
   "dependencies": {
     "@yigyaps/types": "*",
     "drizzle-orm": "^0.38.0"
   },
   "devDependencies": {
-    "typescript": "^5.7.0",
+    "@types/pg": "^8.11.0",
+    "drizzle-kit": "^0.31.9",
     "pg": "^8.13.0",
-    "@types/pg": "^8.11.0"
+    "typescript": "^5.7.0"
   },
   "peerDependencies": {
     "drizzle-orm": "^0.38.0"

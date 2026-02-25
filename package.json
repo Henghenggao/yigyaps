@@ -19,7 +19,9 @@
     "test:watch": "vitest",
     "lint": "eslint .",
     "format": "prettier --write .",
-    "dev:api": "npm run dev --workspace=@yigyaps/api"
+    "dev:api": "npm run dev --workspace=@yigyaps/api",
+    "db:generate": "npm run db:generate --workspace=@yigyaps/db",
+    "db:migrate": "node scripts/migrate.js"
   },
   "devDependencies": {
     "typescript": "^5.7.0",
