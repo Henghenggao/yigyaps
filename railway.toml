@@ -15,9 +15,12 @@
 [build]
 builder = "NIXPACKS"
 buildCommand = "npm install && npm run build"
+watchPatterns = ["packages/**"]
 
 [deploy]
 startCommand = "npm run db:migrate && npm run start --workspace=@yigyaps/api"
+healthcheckTimeout = 300
+restartPolicyMaxRetries = 10
 healthcheckPath = "/v1/health"
 healthcheckTimeout = 100
 restartPolicyType = "ON_FAILURE"
