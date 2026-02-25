@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YigYaps API Integration Test</title>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 2rem;
+            background: #0a0a0a;
+            color: #e0e0e0;
+        }
+        h1 { color: #00ff88; }
+        pre {
+            background: #1a1a1a;
+            padding: 1rem;
+            border-radius: 8px;
+            overflow-x: auto;
+        }
+        .skill-card {
+            background: #1a1a1a;
+            border: 1px solid #333;
+            border-radius: 8px;
+            padding: 1rem;
+            margin: 1rem 0;
+        }
+        .skill-card h3 { color: #00ff88; margin: 0 0 0.5rem 0; }
+        .status { display: inline-block; padding: 0.25rem 0.5rem; background: #00ff8820; color: #00ff88; border-radius: 4px; font-size: 0.75rem; }
+        .error { color: #ff4444; }
+        .success { color: #00ff88; }
+    </style>
+</head>
+<body>
+    <h1>🎯 YigYaps API Integration Test</h1>
+
+    <h2>API Connection Status</h2>
+    <div id="status">Testing...</div>
+
+    <h2>Raw API Response</h2>
+    <pre id="raw-response">Loading...</pre>
+
+    <h2>Rendered Skill Cards</h2>
+    <div id="skills">Loading...</div>
+
+    <script>
+        const API_URL = 'http://localhost:3100';
+
+        async function testIntegration() {
+            const statusEl = document.getElementById('status');
+            const rawEl = document.getElementById('raw-response');
+            const skillsEl = document.getElementById('skills');
+
+            try {
+                // Test API connection
+                const response = await fetch(`${API_URL}/v1/packages?limit=10&sortBy=popularity`);
+
+                if (!response.ok) {
+                    throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+                }
+
+                const data = await response.json();
+
+                // Display status
+                statusEl.innerHTML = `<span class="success">✅ Connected to API at ${API_URL}</span>`;
+
+                // Display raw response
+                rawEl.textContent = JSON.stringify(data, null, 2);
+
+                // Render skill cards
+                if (data.packages && data.packages.length > 0) {
+                    skillsEl.innerHTML = data.packages.map(skill => `
+                        <div class="skill-card">
+                            <h3>${skill.displayName}</h3>
+                            <p>${skill.description}</p>
+                            <div>
+                                <span class="status">${skill.maturity}</span>
+                                <span style="margin-left: 1rem; color: #888;">
+                                    📦 ${skill.installCount} installs
+                                    ${Number(skill.rating) > 0 ? `⭐ ${Number(skill.rating).toFixed(1)}` : ''}
+                                </span>
+                            </div>
+                            <div style="margin-top: 0.5rem; font-size: 0.85rem; color: #666;">
+                                Package ID: ${skill.packageId}<br>
+                                Author: ${skill.authorName}<br>
+                                License: ${skill.license} | Price: $${skill.priceUsd}
+                            </div>
+                        </div>
+                    `).join('');
+                } else {
+                    skillsEl.innerHTML = '<p class="error">No skills found in response</p>';
+                }
+
+            } catch (error) {
+                statusEl.innerHTML = `<span class="error">❌ Connection failed: ${error.message}</span>`;
+                rawEl.textContent = error.stack;
+                skillsEl.innerHTML = `<p class="error">Failed to load skills</p>`;
+            }
+        }
+
+        // Run test on page load
+        testIntegration();
+    </script>
+</body>
+</html>

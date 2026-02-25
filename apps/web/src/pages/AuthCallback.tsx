@@ -90,14 +90,16 @@ export function AuthCallback() {
           <div style={{
             fontSize: '3rem',
             marginBottom: '1rem',
-          }}>✅</div>
+            color: '#00ff88',
+          }}>✓</div>
         )}
 
         {status === 'error' && (
           <div style={{
             fontSize: '3rem',
             marginBottom: '1rem',
-          }}>❌</div>
+            color: '#ff4444',
+          }}>✗</div>
         )}
 
         <h1 style={{
