@@ -17,11 +17,16 @@ export default tseslint.config(
                 projectService: {
                     allowDefaultProject: [
                         "*.js",
+                        "*.ts",
                         "scripts/*.js",
+                        "packages/*/vitest.config.ts",
+                        "packages/*/drizzle.config.ts",
+                        "packages/cli/bin/*.js",
                         "packages/*/__tests__/*/*/*.ts",
                         "packages/*/__tests__/*/*.ts",
                         "packages/*/__tests__/*.ts"
-                    ]
+                    ],
+                    maximumDefaultProjectFileMatchCount_THIS_WILL_SLOW_DOWN_LINTING: 100
                 },
                 tsconfigRootDir: import.meta.dirname,
             },
