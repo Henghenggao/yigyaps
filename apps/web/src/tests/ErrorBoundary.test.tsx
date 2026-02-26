@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 import { describe, it, expect, afterEach } from 'vitest';
-import { render, screen, act, cleanup } from '@testing-library/react';
+import { render, screen, cleanup } from '@testing-library/react';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 
 const ThrowError = () => {

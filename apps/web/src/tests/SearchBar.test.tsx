@@ -26,9 +26,7 @@ describe('SearchBar', () => {
         const input = inputs[0];
         fireEvent.change(input, { target: { value: 'react' } });
 
-        // Simulate form submit
-        const form = input.closest('form');
-        // If it's not a form, we just ensure it rendered
+        // Ensure it rendered
         expect(input).toBeTruthy();
     });
 });
