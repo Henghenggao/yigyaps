@@ -41,6 +41,7 @@ async function main() {
             async (dekBuffer) => {
                 console.log(`  -> Inside Software Enclave: Decrypting rules directly to memory...`);
                 const plaintextRules = KMS.decryptKnowledge(contentCiphertext, dekBuffer);
+                console.log(`  -> Rules decrypted successfully (${plaintextRules.length} characters)`);
 
                 console.log(`  -> Running Agent Logic (simulated format without leaking rules)...`);
                 const mockScore = Math.floor(Math.random() * 10) + 1;

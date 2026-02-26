@@ -5,6 +5,8 @@ import { Pool } from 'pg';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
+import * as schema from '../../src/schema/index.js';
+
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 console.log('🚀 Starting PostgreSQL container for DB test run...');
@@ -16,7 +18,7 @@ const container = await new PostgreSqlContainer('postgres:16-alpine')
 
 const connectionString = container.getConnectionUri();
 const pool = new Pool({ connectionString });
-const db = drizzle(pool);
+const db = drizzle(pool, { schema });
 
 // Run migrations
 const migrationsPath = path.resolve(__dirname, '../../migrations');

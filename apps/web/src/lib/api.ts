@@ -44,8 +44,9 @@ export async function fetchApi<T = unknown>(
             const message = errorData.error || response.statusText;
 
             if (response.status === 401) {
-                // Here we could trigger a global event to force logout on the client.
-                console.warn('Unauthorized request, user should be logged out.');
+                // Trigger global auth expiration event for automatic logout
+                window.dispatchEvent(new Event('auth:expired'));
+                console.warn('Unauthorized request, triggering automatic logout.');
             } else if (response.status === 429) {
                 console.warn('Rate limit exceeded.');
             }

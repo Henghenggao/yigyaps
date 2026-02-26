@@ -1,5 +1,7 @@
 import { useState } from 'react';
+import { Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
+import { sanitizeUrl } from '../utils/sanitizeUrl';
 
 export function UserMenu() {
   const { user, logout } = useAuth();
@@ -7,15 +9,18 @@ export function UserMenu() {
 
   if (!user) return null;
 
+  // Sanitize avatar URL to prevent XSS via javascript: protocol
+  const safeAvatarUrl = sanitizeUrl(user.avatarUrl);
+
   return (
     <div className="user-menu-wrapper">
       <button
         className="user-menu-btn"
         onClick={() => setIsOpen(!isOpen)}
       >
-        {user.avatarUrl ? (
+        {safeAvatarUrl ? (
           <img
-            src={user.avatarUrl}
+            src={safeAvatarUrl}
             alt={user.displayName}
             className="user-avatar-img"
           />
@@ -47,11 +52,21 @@ export function UserMenu() {
             </div>
 
             <div className="user-menu-body">
-              <button className="user-menu-item">
+              <Link
+                to={`/?author=${user.id}`}
+                className="user-menu-item"
+                onClick={() => setIsOpen(false)}
+                style={{ textDecoration: 'none', display: 'block' }}
+              >
                 My Packages
-              </button>
+              </Link>
 
-              <button className="user-menu-item">
+              <button
+                className="user-menu-item"
+                disabled
+                title="Coming soon"
+                style={{ opacity: 0.6, cursor: 'not-allowed' }}
+              >
                 Settings
               </button>
 

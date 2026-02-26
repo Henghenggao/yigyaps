@@ -16,6 +16,7 @@ import {
   jsonb,
   numeric,
   index,
+  uniqueIndex,
 } from "drizzle-orm/pg-core";
 
 // ─── Skill Packages Registry ──────────────────────────────────────────────────
@@ -101,6 +102,8 @@ export const skillPackagesTable = pgTable(
     index("idx_yy_skill_packages_install_count").on(table.installCount),
     index("idx_yy_skill_packages_rating").on(table.rating),
     index("idx_yy_skill_packages_released_at").on(table.releasedAt),
+    // Ensure same author cannot create duplicate package names
+    uniqueIndex("idx_unique_author_pkg").on(table.author, table.packageId),
   ],
 );
 
@@ -164,6 +167,8 @@ export const skillPackageReviewsTable = pgTable(
   (table) => [
     index("idx_yy_reviews_package").on(table.packageId),
     index("idx_yy_reviews_user").on(table.userId),
+    // Prevent duplicate reviews from same user on same package
+    uniqueIndex("idx_unique_user_review").on(table.userId, table.packageId),
   ],
 );
 

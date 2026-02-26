@@ -12,11 +12,30 @@
 
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
+import sanitizeHtml from "sanitize-html";
 import {
   SkillPackageDAL,
-  SkillInstallationDAL,
 } from "@yigyaps/db";
 import { requireAuth } from "../middleware/auth-v2.js";
+
+// Sanitize HTML configuration - allow safe formatting tags only
+const sanitizeOptions: sanitizeHtml.IOptions = {
+  allowedTags: [
+    'p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+    'ul', 'ol', 'li', 'blockquote', 'code', 'pre', 'a', 'img',
+  ],
+  allowedAttributes: {
+    a: ['href', 'title', 'target', 'rel'],
+    img: ['src', 'alt', 'title', 'width', 'height'],
+    code: ['class'], // for syntax highlighting
+  },
+  allowedSchemes: ['http', 'https', 'mailto'],
+  allowedSchemesByTag: {
+    img: ['https', 'data'], // Only HTTPS images or data URIs
+  },
+  // Remove all event handlers and javascript: protocol
+  disallowedTagsMode: 'discard',
+};
 
 const createPackageSchema = z.object({
   packageId: z.string().min(1).max(100),
@@ -26,10 +45,7 @@ const createPackageSchema = z.object({
   readme: z
     .string()
     .max(5000)
-    .optional()
-    .refine((val) => !val || !/<script\b[^>]*>[\s\S]*?<\/script>/gi.test(val), {
-      message: "README contains forbidden script tags",
-    }),
+    .optional(),
   authorName: z.string().min(1).max(100),
   authorUrl: z.string().url().optional(),
   license: z
@@ -114,13 +130,16 @@ const searchSchema = z.object({
 export async function packagesRoutes(fastify: FastifyInstance) {
   const db = fastify.db;
   const packageDAL = new SkillPackageDAL(db);
-  const installDAL = new SkillInstallationDAL(db);
 
   fastify.post(
     "/",
-    { preHandler: requireAuth(["admin"]) },
+    { preHandler: requireAuth() },
     async (request, reply) => {
-      const userId = request.user?.userId ?? "anonymous";
+      // Author is automatically set from authenticated user
+      const userId = request.user?.userId;
+      if (!userId) {
+        return reply.code(401).send({ error: "Unauthorized" });
+      }
       const parsed = createPackageSchema.safeParse(request.body);
       if (!parsed.success) {
         return reply.code(400).send({
@@ -139,6 +158,11 @@ export async function packagesRoutes(fastify: FastifyInstance) {
           .send({ error: "Package ID already exists", packageId: body.packageId });
       }
 
+      // Sanitize README to prevent XSS
+      const sanitizedReadme = body.readme
+        ? sanitizeHtml(body.readme, sanitizeOptions)
+        : null;
+
       const id = `spkg_${now}_${Math.random().toString(36).slice(2, 8)}`;
       const pkg = await packageDAL.create({
         id,
@@ -146,7 +170,7 @@ export async function packagesRoutes(fastify: FastifyInstance) {
         version: body.version,
         displayName: body.displayName,
         description: body.description,
-        readme: body.readme ?? null,
+        readme: sanitizedReadme,
         author: userId,
         authorName: body.authorName,
         authorUrl: body.authorUrl ?? null,
@@ -201,11 +225,17 @@ export async function packagesRoutes(fastify: FastifyInstance) {
 
   fastify.patch<{ Params: { id: string } }>(
     "/:id",
-    { preHandler: requireAuth(["admin"]) },
+    { preHandler: requireAuth() },
     async (request, reply) => {
-      const userId = request.user?.userId ?? "anonymous";
+      const userId = request.user?.userId;
+      if (!userId) {
+        return reply.code(401).send({ error: "Unauthorized" });
+      }
+
       const pkg = await packageDAL.getById(request.params.id);
       if (!pkg) return reply.code(404).send({ error: "Package not found" });
+
+      // Only package owner can update their package
       if (pkg.author !== userId) {
         return reply
           .code(403)
@@ -219,9 +249,16 @@ export async function packagesRoutes(fastify: FastifyInstance) {
           details: parsed.error.issues,
         });
       }
+
+      // Sanitize README if present in update
+      const updateData = { ...parsed.data };
+      if (updateData.readme !== undefined && updateData.readme !== null) {
+        updateData.readme = sanitizeHtml(updateData.readme, sanitizeOptions);
+      }
+
       const updated = await packageDAL.update(
         request.params.id,
-        parsed.data,
+        updateData,
       );
       return reply.send(updated);
     },

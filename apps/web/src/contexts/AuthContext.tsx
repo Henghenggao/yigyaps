@@ -71,6 +71,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
     initAuth();
   }, []);
 
+  // Listen for auth expiration events (401 responses)
+  useEffect(() => {
+    const handleAuthExpired = () => {
+      console.log('Auth expired, clearing user session');
+      setUser(null);
+      setError('Your session has expired. Please sign in again.');
+    };
+
+    window.addEventListener('auth:expired', handleAuthExpired);
+    return () => window.removeEventListener('auth:expired', handleAuthExpired);
+  }, []);
+
   // Fetch user profile securely with cookie
   const fetchUserProfile = async () => {
     try {

@@ -49,7 +49,23 @@ async function buildServer() {
   });
 
   // ── Security ──────────────────────────────────────────────────────────────
-  await fastify.register(helmet);
+  await fastify.register(helmet, {
+    contentSecurityPolicy: {
+      directives: {
+        defaultSrc: ["'self'"],
+        scriptSrc: ["'self'"],
+        styleSrc: ["'self'", "'unsafe-inline'"],  // CSS-in-JS requires unsafe-inline
+        imgSrc: ["'self'", "https:", "data:"],    // Allow external avatars and data URIs
+        connectSrc: ["'self'", ...(env.CORS_ORIGIN || "").split(",").filter(Boolean)],
+        fontSrc: ["'self'", "https://fonts.gstatic.com"],
+        objectSrc: ["'none'"],
+        baseUri: ["'self'"],
+        formAction: ["'self'"],
+        frameAncestors: ["'none'"],
+        upgradeInsecureRequests: [],
+      },
+    },
+  });
   await fastify.register(cors, {
     origin: (env.CORS_ORIGIN || "").split(",").filter(Boolean),
     credentials: true,
@@ -71,6 +87,57 @@ async function buildServer() {
   });
   const db = drizzle(pool, { schema });
   fastify.decorate("db", db);
+
+  // ── CSRF Protection (Origin Validation) ───────────────────────────────────
+  const allowedOrigins = (env.CORS_ORIGIN || "").split(",").filter(Boolean);
+  fastify.addHook('preHandler', async (request, reply) => {
+    const method = request.method;
+
+    // Skip CSRF check for safe methods
+    if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') {
+      return;
+    }
+
+    // For state-changing methods (POST, PUT, PATCH, DELETE), verify Origin
+    const origin = request.headers.origin;
+    const referer = request.headers.referer;
+
+    // Extract origin from referer if origin header is not present
+    let requestOrigin = origin;
+    if (!requestOrigin && referer) {
+      try {
+        const refererUrl = new URL(referer);
+        requestOrigin = refererUrl.origin;
+      } catch {
+        // Invalid referer URL, skip
+      }
+    }
+
+    // If no origin/referer, reject (prevents CSRF from untracked sources)
+    if (!requestOrigin) {
+      fastify.log.warn({ method, url: request.url }, 'CSRF check failed: No origin or referer header');
+      return reply.code(403).send({
+        error: 'Forbidden',
+        message: 'Origin verification failed',
+      });
+    }
+
+    // Verify origin is in allowed list
+    const isAllowed = allowedOrigins.some(allowed => {
+      // Normalize trailing slashes
+      const normalizedAllowed = allowed.replace(/\/$/, '');
+      const normalizedRequest = requestOrigin.replace(/\/$/, '');
+      return normalizedRequest === normalizedAllowed;
+    });
+
+    if (!isAllowed) {
+      fastify.log.warn({ method, url: request.url, origin: requestOrigin }, 'CSRF check failed: Origin not allowed');
+      return reply.code(403).send({
+        error: 'Forbidden',
+        message: 'Origin verification failed',
+      });
+    }
+  });
 
   // ── OpenAPI ────────────────────────────────────────────────────────────────
   await fastify.register(swagger, {
@@ -113,6 +180,13 @@ async function buildServer() {
 
   // ── Error Handling ─────────────────────────────────────────────────────────
   fastify.setErrorHandler(function (err, request, reply) {
+    // Add request context for better error logging
+    const requestContext = {
+      method: request.method,
+      url: request.url,
+      userId: request.user?.userId || 'anonymous',
+    };
+
     if (err instanceof z.ZodError) {
       return reply.status(400).send({
         error: "Bad Request",
@@ -121,11 +195,34 @@ async function buildServer() {
       });
     }
 
-    const error = err as Error & { code?: string; statusCode?: number };
+    const error = err as Error & { code?: string; statusCode?: number; constraint?: string };
 
     // Database / Postgres error heuristics
     if (error.code && typeof error.code === 'string' && error.code.match(/^[A-Z0-9]{5}$/)) {
-      request.log.error({ err: error }, "Database error");
+      // Handle unique constraint violations (23505)
+      if (error.code === '23505') {
+        const constraintName = error.constraint || 'unknown';
+        let message = 'A record with these values already exists';
+
+        // Provide user-friendly messages for known constraints
+        if (constraintName.includes('author_pkg')) {
+          message = 'You have already published a package with this name';
+        } else if (constraintName.includes('user_review')) {
+          message = 'You have already reviewed this package';
+        } else if (constraintName.includes('package_id')) {
+          message = 'This package ID is already in use';
+        }
+
+        request.log.warn({ err: error, constraint: constraintName, ...requestContext }, "Unique constraint violation");
+        return reply.status(409).send({
+          error: "Conflict",
+          message,
+          constraint: constraintName,
+        });
+      }
+
+      // Other database errors
+      request.log.error({ err: error, ...requestContext }, "Database error");
       return reply.status(500).send({
         error: "Internal Server Error",
         message: "A database error occurred",
@@ -140,8 +237,8 @@ async function buildServer() {
       });
     }
 
-    // Log unexpected errors
-    request.log.error({ err: error }, "Unhandled server error");
+    // Log unexpected errors with request context
+    request.log.error({ err: error, ...requestContext }, "Unhandled server error");
     return reply.status(500).send({
       error: "Internal Server Error",
       message: "An unexpected error occurred",

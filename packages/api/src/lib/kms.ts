@@ -11,8 +11,45 @@
 import crypto from "crypto";
 
 const KEK_ID = "local-dev-kek";
-// In production, this should be an actual KMS call or a securely injected 32-byte key.
-const LOCAL_KEK = process.env.KMS_KEK || crypto.randomBytes(32).toString('hex');
+
+/**
+ * Initializes and validates the KMS Key Encryption Key (KEK).
+ *
+ * PRODUCTION: KMS_KEK environment variable MUST be set.
+ * DEVELOPMENT: Uses random key with warning (data will not persist across restarts).
+ */
+function initializeKEK(): string {
+    const kmsKek = process.env.KMS_KEK;
+    const nodeEnv = process.env.NODE_ENV || 'development';
+
+    if (nodeEnv === 'production') {
+        if (!kmsKek) {
+            throw new Error(
+                '❌ FATAL: KMS_KEK environment variable is required in production. ' +
+                'Generate one with: node -e "console.log(require(\'crypto\').randomBytes(32).toString(\'hex\'))"'
+            );
+        }
+        if (kmsKek.length !== 64) {
+            throw new Error('❌ FATAL: KMS_KEK must be exactly 64 hex characters (32 bytes).');
+        }
+        return kmsKek;
+    }
+
+    // Development/Test environment
+    if (!kmsKek) {
+        const randomKek = crypto.randomBytes(32).toString('hex');
+        console.warn(
+            '⚠️  WARNING: KMS_KEK not set in development environment.\n' +
+            '⚠️  Using random key. Encrypted data will NOT persist across server restarts.\n' +
+            '⚠️  Set KMS_KEK in .env to persist encrypted data.'
+        );
+        return randomKek;
+    }
+
+    return kmsKek;
+}
+
+const LOCAL_KEK = initializeKEK();
 
 export class KMS {
     /**

@@ -46,7 +46,7 @@ async function validateJWT(token: string): Promise<UserContext | null> {
       role: payload.role,
       authMethod: "jwt",
     };
-  } catch (error) {
+  } catch {
     return null;
   }
 }
@@ -97,7 +97,7 @@ async function validateApiKey(
       role: user.role as "user" | "admin",
       authMethod: "apikey",
     };
-  } catch (error) {
+  } catch {
     return null;
   }
 }
@@ -112,7 +112,7 @@ async function validateApiKey(
  */
 export async function optionalAuth(
   request: FastifyRequest,
-  reply: FastifyReply,
+  _reply: FastifyReply,
 ): Promise<void> {
   let tokenToValidate: string | undefined;
 
@@ -133,7 +133,7 @@ export async function optionalAuth(
   }
 
   // Try validation in order: JWT -> API Key
-  let userContext: UserContext | null = null;
+  let userContext: UserContext | null;
   const token = tokenToValidate;
 
   // Try JWT first
@@ -182,7 +182,7 @@ export function requireAuth(scopes?: string[]) {
     }
 
     // Try validation in order: JWT -> API Key
-    let userContext: UserContext | null = null;
+    let userContext: UserContext | null;
     const token = tokenToValidate;
 
     // Try JWT first

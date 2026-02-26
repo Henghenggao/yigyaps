@@ -1,8 +1,7 @@
 import { useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { useAuth } from '../contexts/AuthContext';
-import { YigYapsPublisherClient, YigYapsSecurityClient } from '@yigyaps/client';
-import { API_URL } from '../lib/api';
+import { fetchApi } from '../lib/api';
 
 export function PublishSkillPage() {
     const { user, login } = useAuth();
@@ -51,26 +50,29 @@ export function PublishSkillPage() {
         setLoading(true);
         setError(null);
 
-        // Dummy JWT handling for MVP UI
-        const token = 'dummy-token';
-
-        const publisher = new YigYapsPublisherClient({ baseUrl: API_URL, apiKey: token });
-        const security = new YigYapsSecurityClient({ baseUrl: API_URL, apiKey: token });
-
         try {
             // Step 1: Create package metadata
-            await publisher.publishPackage({
-                packageId: formData.packageId,
-                displayName: formData.displayName,
-                description: formData.description,
-                authorName: formData.authorName,
-                category: formData.category,
-                maturity: 'experimental',
-                license: 'proprietary',
+            // Uses httpOnly cookie authentication automatically via fetchApi
+            await fetchApi('/v1/packages', {
+                method: 'POST',
+                body: JSON.stringify({
+                    packageId: formData.packageId,
+                    displayName: formData.displayName,
+                    description: formData.description,
+                    authorName: formData.authorName,
+                    category: formData.category,
+                    maturity: 'experimental',
+                    license: 'proprietary',
+                }),
             });
 
             // Step 2: Encrypt knowledge rules into Vault
-            await security.encryptKnowledge(formData.packageId, formData.rules);
+            await fetchApi(`/knowledge/${formData.packageId}`, {
+                method: 'POST',
+                body: JSON.stringify({
+                    plaintextRules: formData.rules,
+                }),
+            });
 
             setSuccess(true);
             setTimeout(() => navigate(`/skill/${formData.packageId}`), 2000);

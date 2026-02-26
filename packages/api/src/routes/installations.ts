@@ -19,6 +19,8 @@ import {
   SkillMintDAL,
   RoyaltyLedgerDAL,
 } from "@yigyaps/db";
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
+import * as schema from "@yigyaps/db";
 import { requireAuth } from "../middleware/auth-v2.js";
 
 const TIER_RANK: Record<string, number> = {
@@ -39,10 +41,7 @@ const installSchema = z.object({
 
 export async function installationsRoutes(fastify: FastifyInstance) {
   const db = fastify.db;
-  const packageDAL = new SkillPackageDAL(db);
   const installDAL = new SkillInstallationDAL(db);
-  const mintDAL = new SkillMintDAL(db);
-  const royaltyLedgerDAL = new RoyaltyLedgerDAL(db);
 
   fastify.post("/", { preHandler: requireAuth() }, async (request, reply) => {
     const userId = request.user?.userId;
@@ -60,7 +59,7 @@ export async function installationsRoutes(fastify: FastifyInstance) {
     const now = Date.now();
 
     const db = fastify.db;
-    const result = await db.transaction(async (tx: any) => {
+    const result = await db.transaction(async (tx: NodePgDatabase<typeof schema>) => {
       const pkgDalTx = new SkillPackageDAL(tx);
       const installDalTx = new SkillInstallationDAL(tx);
       const mintDalTx = new SkillMintDAL(tx);

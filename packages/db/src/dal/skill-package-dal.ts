@@ -9,6 +9,7 @@
 
 import { eq, and, desc, sql, ilike, or } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
+import * as schema from "../schema/index.js";
 import {
   skillPackagesTable,
   skillPackageInstallationsTable,
@@ -58,7 +59,7 @@ export interface SkillPackageSearchResult {
 // ─── Skill Package DAL ────────────────────────────────────────────────────────
 
 export class SkillPackageDAL {
-  constructor(private db: NodePgDatabase<any> | any) { }
+  constructor(private db: NodePgDatabase<typeof schema>) { }
 
   async create(pkg: SkillPackageInsert): Promise<SkillPackageRow> {
     return dbOperation(
@@ -252,7 +253,7 @@ export class SkillPackageDAL {
 // ─── Skill Installation DAL ───────────────────────────────────────────────────
 
 export class SkillInstallationDAL {
-  constructor(private db: NodePgDatabase<any> | any) { }
+  constructor(private db: NodePgDatabase<typeof schema>) { }
 
   async install(
     data: SkillPackageInstallationInsert,
@@ -360,7 +361,7 @@ export class SkillInstallationDAL {
 // ─── Skill Review DAL ─────────────────────────────────────────────────────────
 
 export class SkillReviewDAL {
-  constructor(private db: NodePgDatabase<any> | any) { }
+  constructor(private db: NodePgDatabase<typeof schema>) { }
 
   async create(
     review: SkillPackageReviewInsert,
@@ -425,7 +426,7 @@ export class SkillReviewDAL {
 // ─── Skill Mint DAL ───────────────────────────────────────────────────────────
 
 export class SkillMintDAL {
-  constructor(private db: NodePgDatabase<any> | any) { }
+  constructor(private db: NodePgDatabase<typeof schema>) { }
 
   async create(mint: SkillMintInsert): Promise<SkillMintRow> {
     return dbOperation(
@@ -546,7 +547,7 @@ export class SkillMintDAL {
 // ─── Royalty Ledger DAL ───────────────────────────────────────────────────────
 
 export class RoyaltyLedgerDAL {
-  constructor(private db: NodePgDatabase<any> | any) { }
+  constructor(private db: NodePgDatabase<typeof schema>) { }
 
   async create(entry: RoyaltyLedgerInsert): Promise<RoyaltyLedgerRow> {
     return dbOperation(

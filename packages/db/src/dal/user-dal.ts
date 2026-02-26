@@ -9,6 +9,7 @@
 
 import { eq, and, lt, sql, isNull } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
+import * as schema from "../schema/index.js";
 import {
   usersTable,
   apiKeysTable,
@@ -27,7 +28,7 @@ import { dbOperation } from "./error-utils.js";
 // ─── User DAL ─────────────────────────────────────────────────────────────────
 
 export class UserDAL {
-  constructor(private db: NodePgDatabase<any>) {}
+  constructor(private db: NodePgDatabase<typeof schema>) {}
 
   async create(user: UserInsert): Promise<UserRow> {
     return dbOperation(
@@ -131,7 +132,7 @@ export class UserDAL {
 // ─── API Key DAL ──────────────────────────────────────────────────────────────
 
 export class ApiKeyDAL {
-  constructor(private db: NodePgDatabase<any>) {}
+  constructor(private db: NodePgDatabase<typeof schema>) {}
 
   async create(apiKey: ApiKeyInsert): Promise<ApiKeyRow> {
     return dbOperation(
@@ -239,7 +240,7 @@ export class ApiKeyDAL {
 // ─── Session DAL ──────────────────────────────────────────────────────────────
 
 export class SessionDAL {
-  constructor(private db: NodePgDatabase<any>) {}
+  constructor(private db: NodePgDatabase<typeof schema>) {}
 
   async create(session: SessionInsert): Promise<SessionRow> {
     return dbOperation(

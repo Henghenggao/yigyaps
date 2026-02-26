@@ -10,6 +10,8 @@
 import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { SkillPackageDAL, SkillInstallationDAL, SkillReviewDAL } from "@yigyaps/db";
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
+import * as schema from "@yigyaps/db";
 import { requireAuth } from "../middleware/auth-v2.js";
 
 const reviewSchema = z.object({
@@ -22,8 +24,6 @@ const reviewSchema = z.object({
 
 export async function reviewsRoutes(fastify: FastifyInstance) {
   const db = fastify.db;
-  const packageDAL = new SkillPackageDAL(db);
-  const installDAL = new SkillInstallationDAL(db);
   const reviewDAL = new SkillReviewDAL(db);
 
   fastify.post("/", { preHandler: requireAuth() }, async (request, reply) => {
@@ -47,7 +47,7 @@ export async function reviewsRoutes(fastify: FastifyInstance) {
     const now = Date.now();
 
     const db = fastify.db;
-    const result = await db.transaction(async (tx: any) => {
+    const result = await db.transaction(async (tx: NodePgDatabase<typeof schema>) => {
       const pkgDalTx = new SkillPackageDAL(tx);
       const installDalTx = new SkillInstallationDAL(tx);
       const reviewDalTx = new SkillReviewDAL(tx);

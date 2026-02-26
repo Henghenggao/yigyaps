@@ -1,7 +1,7 @@
 import { useSearchParams } from 'react-router-dom';
 import { useSkills } from '../hooks/useSkills';
 import { useAuth } from '../contexts/AuthContext';
-import { UserMenu } from '../components/UserMenu';
+import { Header } from '../components/Header';
 import { SearchBar } from '../components/SearchBar';
 import { FilterPanel } from '../components/FilterPanel';
 import { SkillCard } from '../components/SkillCard';
@@ -106,28 +106,7 @@ export function HomePage() {
 
   return (
     <div className="app-container">
-      {/* Header */}
-      <header className="header">
-        <div className="logo">
-          Yig<span>Yaps</span>
-        </div>
-        <nav className="nav-links">
-          <a href="#">Marketplace</a>
-          <a href="/publish">Publish Skill</a>
-          <a href="#">Creators</a>
-          <a href="#">Docs</a>
-        </nav>
-        <div className="header-actions">
-          {user ? (
-            <UserMenu />
-          ) : (
-            <button className="btn btn-outline" onClick={login}>
-              Sign In
-            </button>
-          )}
-          <button className="btn btn-primary">Connect Agent</button>
-        </div>
-      </header>
+      <Header user={user} login={login} />
 
       {/* Main Content */}
       <main className="main-content">
