@@ -84,7 +84,14 @@ async function buildServer() {
     max: env.DB_POOL_MAX,
     idleTimeoutMillis: env.DB_POOL_IDLE_TIMEOUT,
     connectionTimeoutMillis: env.DB_POOL_CONN_TIMEOUT,
+    ssl: env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
   });
+
+  fastify.log.info({
+    db: env.DATABASE_URL.replace(/:[^:@]+@/, ':****@'),
+    ssl: !!(env.NODE_ENV === "production")
+  }, "Initializing database connection pool");
+
   const db = drizzle(pool, { schema });
   fastify.decorate("db", db);
 

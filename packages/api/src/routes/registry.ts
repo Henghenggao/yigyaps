@@ -12,6 +12,7 @@
  * License: Apache 2.0
  */
 
+import { sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 
 export async function registryRoutes(fastify: FastifyInstance) {
@@ -28,7 +29,7 @@ export async function registryRoutes(fastify: FastifyInstance) {
       request.log.warn("Database health check skipped: No connection string provided");
     } else {
       try {
-        await fastify.db.execute("SELECT 1");
+        await fastify.db.execute(sql`SELECT 1`);
         dbStatus = "connected";
       } catch (error) {
         dbError = error instanceof Error ? error.message : String(error);

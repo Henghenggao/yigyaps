@@ -23,7 +23,7 @@ const envSchema = z.object({
     // DB Pool
     DB_POOL_MAX: z.coerce.number().default(20),
     DB_POOL_IDLE_TIMEOUT: z.coerce.number().default(30000),
-    DB_POOL_CONN_TIMEOUT: z.coerce.number().default(2000),
+    DB_POOL_CONN_TIMEOUT: z.coerce.number().default(10000),
 
     // KMS - Key Encryption Key (64 hex chars = 32 bytes)
     KMS_KEK: z.string().length(64).optional(),
