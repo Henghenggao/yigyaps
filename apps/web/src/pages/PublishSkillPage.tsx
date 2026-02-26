@@ -1,7 +1,8 @@
 import { useState } from "react";
-import { useNavigate, Link } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { fetchApi } from "../lib/api";
+import { Header } from "../components/Header";
 
 export function PublishSkillPage() {
   const { user, login } = useAuth();
@@ -9,9 +10,10 @@ export function PublishSkillPage() {
 
   const [formData, setFormData] = useState({
     packageId: "",
+    version: "1.0.0",
     displayName: "",
     description: "",
-    category: "legal",
+    category: "security",
     authorName: user?.githubUsername || "anonymous",
     rules: "",
   });
@@ -24,11 +26,7 @@ export function PublishSkillPage() {
   if (!user) {
     return (
       <div className="app-container">
-        <header className="header">
-          <Link to="/" className="logo">
-            Yig<span>Yaps</span>
-          </Link>
-        </header>
+        <Header user={user} login={login} />
         <main className="main-content auth-required-panel">
           <h2>Authentication Required</h2>
           <p>You must be signed in to publish a new secure skill.</p>
@@ -65,17 +63,18 @@ export function PublishSkillPage() {
         method: "POST",
         body: JSON.stringify({
           packageId: formData.packageId,
+          version: formData.version,
           displayName: formData.displayName,
           description: formData.description,
           authorName: formData.authorName,
           category: formData.category,
           maturity: "experimental",
-          license: "proprietary",
+          license: "open-source",
         }),
       });
 
       // Step 2: Encrypt knowledge rules into Vault
-      await fetchApi(`/knowledge/${formData.packageId}`, {
+      await fetchApi(`/v1/security/knowledge/${formData.packageId}`, {
         method: "POST",
         body: JSON.stringify({
           plaintextRules: formData.rules,
@@ -97,14 +96,7 @@ export function PublishSkillPage() {
 
   return (
     <div className="app-container">
-      <header className="header">
-        <Link to="/" className="logo">
-          Yig<span>Yaps</span>
-        </Link>
-        <nav className="nav-links">
-          <Link to="/">Marketplace</Link>
-        </nav>
-      </header>
+      <Header user={user} login={login} />
 
       <main className="main-content publish-container">
         <h1 className="publish-header">Publish Secure Skill</h1>
@@ -132,6 +124,18 @@ export function PublishSkillPage() {
               value={formData.packageId}
               onChange={handleChange}
               placeholder="e.g. legal-contract-reviewer"
+              className="publish-input"
+            />
+          </div>
+
+          <div className="form-group-spaced">
+            <label>Version *</label>
+            <input
+              required
+              name="version"
+              value={formData.version}
+              onChange={handleChange}
+              placeholder="1.0.0"
               className="publish-input"
             />
           </div>
@@ -168,10 +172,12 @@ export function PublishSkillPage() {
               onChange={handleChange}
               className="publish-select"
             >
-              <option value="legal">Legal & Compliance</option>
-              <option value="medical">Medical Check</option>
-              <option value="finance">Financial Analysis</option>
-              <option value="engineering">Engineering</option>
+              <option value="security">Security & Privacy</option>
+              <option value="research">Research & Analysis</option>
+              <option value="data">Data & Knowledge</option>
+              <option value="ai-ml">AI & Machine Learning</option>
+              <option value="automation">Automation</option>
+              <option value="wisdom">Domain Wisdom</option>
               <option value="other">Other</option>
             </select>
           </div>

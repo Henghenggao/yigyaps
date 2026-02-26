@@ -57,18 +57,18 @@ export async function reviewsRoutes(fastify: FastifyInstance) {
         const installDalTx = new SkillInstallationDAL(tx);
         const reviewDalTx = new SkillReviewDAL(tx);
 
-        const pkg = await pkgDalTx.getById(body.packageId);
+        const pkg = await pkgDalTx.getByPackageId(body.packageId);
         if (!pkg) return { status: 404, error: "Package not found" };
 
         const hasInstalled = await installDalTx.hasInstallation(
           userId,
-          body.packageId,
+          pkg.id,
         );
 
         const id = `srev_${now}_${Math.random().toString(36).slice(2, 8)}`;
         const review = await reviewDalTx.create({
           id,
-          packageId: body.packageId,
+          packageId: pkg.id,
           packageVersion: body.packageVersion,
           userId,
           userName,
@@ -81,10 +81,10 @@ export async function reviewsRoutes(fastify: FastifyInstance) {
         });
 
         const { avgRating, count } = await reviewDalTx.calculateAverageRating(
-          body.packageId,
+          pkg.id,
         );
         await pkgDalTx.updateRatingStats(
-          body.packageId,
+          pkg.id,
           avgRating,
           count,
           count,
@@ -106,8 +106,20 @@ export async function reviewsRoutes(fastify: FastifyInstance) {
   }>("/:packageId", async (request, reply) => {
     const limit = Math.min(Number(request.query.limit) || 20, 100);
     const offset = Number(request.query.offset) || 0;
+
+    // Resolve slug-based packageId to internal ID for review lookup
+    const pkgDAL = new SkillPackageDAL(fastify.db);
+    let internalId = request.params.packageId;
+    // If it doesn't look like an internal ID (spkg_...), resolve via slug
+    if (!internalId.startsWith("spkg_")) {
+      const pkg = await pkgDAL.getByPackageId(internalId);
+      if (pkg) {
+        internalId = pkg.id;
+      }
+    }
+
     const reviews = await reviewDAL.getByPackage(
-      request.params.packageId,
+      internalId,
       limit,
       offset,
     );

@@ -2,13 +2,13 @@ import { useState } from "react";
 import { useParams, Link } from "react-router-dom";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import { YigYapsSecurityClient } from "@yigyaps/client";
 import { useSkillDetail } from "../hooks/useSkillDetail";
 import { useAuth } from "../contexts/AuthContext";
 import { Header } from "../components/Header";
 import { ReviewList } from "../components/ReviewList";
 import { ReviewForm } from "../components/ReviewForm";
 import { InstallButton } from "../components/InstallButton";
+import { fetchApi } from "../lib/api";
 
 export function SkillDetailPage() {
   const { packageId } = useParams<{ packageId: string }>();
@@ -65,8 +65,8 @@ export function SkillDetailPage() {
     detailData.maxEditions !== null && detailData.maxEditions !== undefined;
   const mintProgress = hasLimitedEdition
     ? ((Number(detailData.mintedCount) || 0) /
-        (Number(detailData.maxEditions) || 1)) *
-      100
+      (Number(detailData.maxEditions) || 1)) *
+    100
     : 0;
 
   return (
@@ -257,10 +257,13 @@ function SimulationSandbox({ packageId }: { packageId: string }) {
     setResult(null);
 
     try {
-      const baseUrl = import.meta.env.VITE_API_URL || "http://localhost:3100";
-      const security = new YigYapsSecurityClient({ baseUrl });
-
-      const response = await security.invokeEvr(packageId);
+      const response = await fetchApi<{
+        success: boolean;
+        conclusion: string;
+        disclaimer: string;
+      }>(`/v1/security/invoke/${packageId}`, {
+        method: "POST",
+      });
       setResult({
         conclusion: response.conclusion,
         disclaimer: response.disclaimer,

@@ -111,6 +111,12 @@ async function buildServer() {
       return;
     }
 
+    // Skip CSRF check for clients using Bearer tokens (CLI, API keys)
+    // as these are not subject to traditional CSRF attacks.
+    if (request.headers.authorization) {
+      return;
+    }
+
     // For state-changing methods (POST, PUT, PATCH, DELETE), verify Origin
     const origin = request.headers.origin;
     const referer = request.headers.referer;

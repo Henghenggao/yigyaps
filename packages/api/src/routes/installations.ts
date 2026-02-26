@@ -31,14 +31,24 @@ const TIER_RANK: Record<string, number> = {
   legendary: 3,
 };
 
-const installSchema = z.object({
-  packageId: z.string().min(1),
-  agentId: z.string().min(1),
-  configuration: z.record(z.string(), z.unknown()).optional(),
-  enabled: z.boolean().default(true),
-  /** User's subscription tier (from JWT or passed by the platform) */
-  userTier: z.string().default("free"),
-});
+const installSchema = z
+  .object({
+    packageId: z.string().min(1),
+    agentId: z.string().min(1).optional(),
+    yigbotId: z.string().min(1).optional(),
+    configuration: z.record(z.string(), z.unknown()).optional(),
+    enabled: z.boolean().default(true),
+    /** User's subscription tier (from JWT or passed by the platform) */
+    userTier: z.string().default("free"),
+  })
+  .refine((data) => data.agentId || data.yigbotId, {
+    message: "Either agentId or yigbotId must be provided",
+    path: ["agentId"],
+  })
+  .transform((data) => ({
+    ...data,
+    agentId: (data.agentId || data.yigbotId)!,
+  }));
 
 export async function installationsRoutes(fastify: FastifyInstance) {
   const db = fastify.db;
@@ -67,7 +77,11 @@ export async function installationsRoutes(fastify: FastifyInstance) {
         const mintDalTx = new SkillMintDAL(tx);
         const rlDALTx = new RoyaltyLedgerDAL(tx);
 
-        const pkg = await pkgDalTx.getById(body.packageId);
+        // Support both internal ID (spkg_...) and slug-based packageId
+        let pkg = await pkgDalTx.getById(body.packageId);
+        if (!pkg) {
+          pkg = await pkgDalTx.getByPackageId(body.packageId);
+        }
         if (!pkg)
           return { status: 404, payload: { error: "Package not found" } };
 
@@ -90,11 +104,11 @@ export async function installationsRoutes(fastify: FastifyInstance) {
           }
         }
 
-        const mint = await mintDalTx.getBySkillPackageId(body.packageId);
+        const mint = await mintDalTx.getBySkillPackageId(pkg.id);
 
         const hasExisting = await installDalTx.hasInstallation(
           userId,
-          body.packageId,
+          pkg.id,
         );
         if (hasExisting) {
           return {
@@ -106,7 +120,7 @@ export async function installationsRoutes(fastify: FastifyInstance) {
         const id = `sinst_${now}_${Math.random().toString(36).slice(2, 8)}`;
         const installation = await installDalTx.install({
           id,
-          packageId: body.packageId,
+          packageId: pkg.id,
           packageVersion: pkg.version,
           agentId: body.agentId,
           userId,
@@ -116,11 +130,11 @@ export async function installationsRoutes(fastify: FastifyInstance) {
           installedAt: now,
         });
 
-        await pkgDalTx.incrementInstallCount(body.packageId);
+        await pkgDalTx.incrementInstallCount(pkg.id);
 
         if (mint) {
           const incrementSucceeded = await mintDalTx.tryIncrementMintedCount(
-            body.packageId,
+            pkg.id,
           );
           if (!incrementSucceeded) {
             await installDalTx.updateStatus(installation.id, "failed");
