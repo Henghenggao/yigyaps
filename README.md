@@ -63,13 +63,13 @@ npm run dev --workspace=apps/web
 
 ### Packages Architecture
 
-| Package | Description |
-|---------|-------------|
-| [`@yigyaps/types`](packages/types) | Shared TypeScript interfaces and Zod schemas |
-| [`@yigyaps/db`](packages/db) | Drizzle ORM schema and database access layer |
-| [`@yigyaps/api`](packages/api) | Fastify REST API server |
+| Package                              | Description                                    |
+| ------------------------------------ | ---------------------------------------------- |
+| [`@yigyaps/types`](packages/types)   | Shared TypeScript interfaces and Zod schemas   |
+| [`@yigyaps/db`](packages/db)         | Drizzle ORM schema and database access layer   |
+| [`@yigyaps/api`](packages/api)       | Fastify REST API server                        |
 | [`@yigyaps/client`](packages/client) | TypeScript/JS SDK for consumers and publishers |
-| [`@yigyaps/web`](apps/web) | React frontend marketplace interface |
+| [`@yigyaps/web`](apps/web)           | React frontend marketplace interface           |
 
 ## 🤝 Why Independent?
 

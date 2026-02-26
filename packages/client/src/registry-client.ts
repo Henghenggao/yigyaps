@@ -15,12 +15,21 @@ import type {
   McpRegistryDiscovery,
 } from "@yigyaps/types";
 
-interface AuthUser {
-  userId: string;
-  userName: string;
+export interface AuthUser {
+  id: string;
+  githubUsername: string;
+  displayName: string;
   email?: string;
-  avatar?: string;
-  gitHubId?: string;
+  avatarUrl: string;
+  tier: string;
+  role: string;
+  isVerifiedCreator: boolean;
+  totalPackages: number;
+  totalEarningsUsd?: string;
+  bio?: string;
+  websiteUrl?: string;
+  createdAt: number;
+  lastLoginAt: number;
 }
 
 export interface RegistryClientOptions {
@@ -81,7 +90,8 @@ export class YigYapsRegistryClient {
       `${this.baseUrl}/v1/packages/by-pkg/${encodeURIComponent(packageId)}`,
       { headers: this.headers },
     );
-    if (!res.ok) throw new Error(`YigYaps getByPackageId failed: ${res.status}`);
+    if (!res.ok)
+      throw new Error(`YigYaps getByPackageId failed: ${res.status}`);
     return res.json() as Promise<SkillPackage>;
   }
 
@@ -105,11 +115,14 @@ export class YigYapsRegistryClient {
     return res.json() as Promise<{ id: string; status: string }>;
   }
 
-  async getInstallations(): Promise<{ installations: SkillPackageInstallation[] }> {
+  async getInstallations(): Promise<{
+    installations: SkillPackageInstallation[];
+  }> {
     const res = await fetch(`${this.baseUrl}/v1/installations/me`, {
       headers: this.headers,
     });
-    if (!res.ok) throw new Error(`YigYaps getInstallations failed: ${res.status}`);
+    if (!res.ok)
+      throw new Error(`YigYaps getInstallations failed: ${res.status}`);
     return res.json() as Promise<{ installations: SkillPackageInstallation[] }>;
   }
 
@@ -121,8 +134,11 @@ export class YigYapsRegistryClient {
     if (!res.ok) throw new Error(`YigYaps uninstall failed: ${res.status}`);
   }
 
-  async getRules(packageIdOrId: string): Promise<{ rules: { path: string; content: string }[] }> {
-    const isUuid = packageIdOrId.includes("-") || packageIdOrId.startsWith("spkg_");
+  async getRules(
+    packageIdOrId: string,
+  ): Promise<{ rules: { path: string; content: string }[] }> {
+    const isUuid =
+      packageIdOrId.includes("-") || packageIdOrId.startsWith("spkg_");
     const endpoint = isUuid
       ? `/v1/packages/${packageIdOrId}/rules`
       : `/v1/packages/by-pkg/${encodeURIComponent(packageIdOrId)}/rules`;
@@ -131,7 +147,9 @@ export class YigYapsRegistryClient {
       headers: this.headers,
     });
     if (!res.ok) throw new Error(`YigYaps getRules failed: ${res.status}`);
-    return res.json() as Promise<{ rules: { path: string; content: string }[] }>;
+    return res.json() as Promise<{
+      rules: { path: string; content: string }[];
+    }>;
   }
 
   async getMe(): Promise<AuthUser> {

@@ -1,13 +1,18 @@
-import { useSearchParams } from 'react-router-dom';
-import { useSkills } from '../hooks/useSkills';
-import { useAuth } from '../contexts/AuthContext';
-import { Header } from '../components/Header';
-import { SearchBar } from '../components/SearchBar';
-import { FilterPanel } from '../components/FilterPanel';
-import { SkillCard } from '../components/SkillCard';
-import { SkeletonGrid } from '../components/SkeletonLoader';
-import { Pagination } from '../components/Pagination';
-import type { SkillPackageSearchQuery, SkillPackageCategory, SkillPackageLicense, SkillPackageMaturity } from '@yigyaps/types';
+import { useSearchParams } from "react-router-dom";
+import { useSkills } from "../hooks/useSkills";
+import { useAuth } from "../contexts/AuthContext";
+import { Header } from "../components/Header";
+import { SearchBar } from "../components/SearchBar";
+import { FilterPanel } from "../components/FilterPanel";
+import { SkillCard } from "../components/SkillCard";
+import { SkeletonGrid } from "../components/SkeletonLoader";
+import { Pagination } from "../components/Pagination";
+import type {
+  SkillPackageSearchQuery,
+  SkillPackageCategory,
+  SkillPackageLicense,
+  SkillPackageMaturity,
+} from "@yigyaps/types";
 
 const ITEMS_PER_PAGE = 20;
 
@@ -16,13 +21,16 @@ export function HomePage() {
   const { user, login } = useAuth();
 
   // Extract search parameters from URL
-  const query = searchParams.get('q') || '';
-  const category = searchParams.get('category') as SkillPackageCategory | null;
-  const license = searchParams.get('license') as SkillPackageLicense | null;
-  const maturity = searchParams.get('maturity') as SkillPackageMaturity | null;
-  const maxPriceUsd = searchParams.get('maxPrice') ? parseInt(searchParams.get('maxPrice')!, 10) : undefined;
-  const sortBy = (searchParams.get('sort') || 'popularity') as SkillPackageSearchQuery['sortBy'];
-  const page = parseInt(searchParams.get('page') || '1', 10);
+  const query = searchParams.get("q") || "";
+  const category = searchParams.get("category") as SkillPackageCategory | null;
+  const license = searchParams.get("license") as SkillPackageLicense | null;
+  const maturity = searchParams.get("maturity") as SkillPackageMaturity | null;
+  const maxPriceUsd = searchParams.get("maxPrice")
+    ? parseInt(searchParams.get("maxPrice")!, 10)
+    : undefined;
+  const sortBy = (searchParams.get("sort") ||
+    "popularity") as SkillPackageSearchQuery["sortBy"];
+  const page = parseInt(searchParams.get("page") || "1", 10);
 
   // Build search query object
   const searchQuery: SkillPackageSearchQuery = {
@@ -43,11 +51,11 @@ export function HomePage() {
     setSearchParams((prev) => {
       const params = new URLSearchParams(prev);
       if (newQuery) {
-        params.set('q', newQuery);
+        params.set("q", newQuery);
       } else {
-        params.delete('q');
+        params.delete("q");
       }
-      params.set('page', '1'); // Reset to page 1 on search
+      params.set("page", "1"); // Reset to page 1 on search
       return params;
     });
   };
@@ -60,37 +68,37 @@ export function HomePage() {
       // Update each filter
       if (filters.category !== undefined) {
         if (filters.category) {
-          params.set('category', filters.category);
+          params.set("category", filters.category);
         } else {
-          params.delete('category');
+          params.delete("category");
         }
       }
 
       if (filters.license !== undefined) {
         if (filters.license) {
-          params.set('license', filters.license);
+          params.set("license", filters.license);
         } else {
-          params.delete('license');
+          params.delete("license");
         }
       }
 
       if (filters.maturity !== undefined) {
         if (filters.maturity) {
-          params.set('maturity', filters.maturity);
+          params.set("maturity", filters.maturity);
         } else {
-          params.delete('maturity');
+          params.delete("maturity");
         }
       }
 
       if (filters.maxPriceUsd !== undefined && filters.maxPriceUsd !== null) {
-        params.set('maxPrice', filters.maxPriceUsd.toString());
+        params.set("maxPrice", filters.maxPriceUsd.toString());
       }
 
       if (filters.sortBy !== undefined) {
-        params.set('sort', filters.sortBy);
+        params.set("sort", filters.sortBy);
       }
 
-      params.set('page', '1'); // Reset to page 1 on filter change
+      params.set("page", "1"); // Reset to page 1 on filter change
       return params;
     });
   };
@@ -99,7 +107,7 @@ export function HomePage() {
   const handlePageChange = (newPage: number) => {
     setSearchParams((prev) => {
       const params = new URLSearchParams(prev);
-      params.set('page', newPage.toString());
+      params.set("page", newPage.toString());
       return params;
     });
   };
@@ -114,7 +122,8 @@ export function HomePage() {
         <section className="hero">
           <h1>Assetize Your Wisdom.</h1>
           <p>
-            The open marketplace for high-value AI skills. Package your expertise, license your identity, and generate royalties.
+            The open marketplace for high-value AI skills. Package your
+            expertise, license your identity, and generate royalties.
           </p>
           <SearchBar
             value={query}
@@ -127,33 +136,46 @@ export function HomePage() {
         <section className="skills-section">
           <div className="section-header">
             <div className="section-title">
-              {query ? `Search Results for "${query}"` : 'Top Minted Skills'}
+              {query ? `Search Results for "${query}"` : "Top Minted Skills"}
             </div>
             {total > 0 && (
               <div className="section-subtitle">
-                {total} {total === 1 ? 'skill' : 'skills'} found
+                {total} {total === 1 ? "skill" : "skills"} found
               </div>
             )}
           </div>
 
           <div className="skills-content">
             {/* Filter Panel (Left Sidebar) */}
-            <FilterPanel filters={searchQuery} onFilterChange={handleFilterChange} />
+            <FilterPanel
+              filters={searchQuery}
+              onFilterChange={handleFilterChange}
+            />
 
             {/* Skills Grid (Main Content) */}
             <div className="skills-main">
-              {loading && (
-                <SkeletonGrid count={8} />
-              )}
+              {loading && <SkeletonGrid count={8} />}
 
               {error && (
-                <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--color-accent)' }}>
+                <div
+                  style={{
+                    textAlign: "center",
+                    padding: "3rem",
+                    color: "var(--color-accent)",
+                  }}
+                >
                   {error}
                 </div>
               )}
 
               {!loading && !error && skills.length === 0 && (
-                <div style={{ textAlign: 'center', padding: '3rem', color: 'var(--color-text-muted)' }}>
+                <div
+                  style={{
+                    textAlign: "center",
+                    padding: "3rem",
+                    color: "var(--color-text-muted)",
+                  }}
+                >
                   No skills found. Try adjusting your filters.
                 </div>
               )}
@@ -182,11 +204,11 @@ export function HomePage() {
       {/* Footer */}
       <footer
         style={{
-          borderTop: '1px solid var(--color-border)',
-          padding: '2rem',
-          textAlign: 'center',
-          color: 'var(--color-text-muted)',
-          fontSize: '0.85rem',
+          borderTop: "1px solid var(--color-border)",
+          padding: "2rem",
+          textAlign: "center",
+          color: "var(--color-text-muted)",
+          fontSize: "0.85rem",
         }}
       >
         <p>&copy; {new Date().getFullYear()} YigYaps. Apache 2.0 Licensed.</p>

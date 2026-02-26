@@ -215,12 +215,8 @@
           "name": "yy_skill_mints_skill_package_id_yy_skill_packages_id_fk",
           "tableFrom": "yy_skill_mints",
           "tableTo": "yy_skill_packages",
-          "columnsFrom": [
-            "skill_package_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["skill_package_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -356,12 +352,8 @@
           "name": "yy_skill_package_installations_package_id_yy_skill_packages_id_fk",
           "tableFrom": "yy_skill_package_installations",
           "tableTo": "yy_skill_packages",
-          "columnsFrom": [
-            "package_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["package_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -488,12 +480,8 @@
           "name": "yy_skill_package_reviews_package_id_yy_skill_packages_id_fk",
           "tableFrom": "yy_skill_package_reviews",
           "tableTo": "yy_skill_packages",
-          "columnsFrom": [
-            "package_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["package_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -795,9 +783,7 @@
         "yy_skill_packages_package_id_unique": {
           "name": "yy_skill_packages_package_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "package_id"
-          ]
+          "columns": ["package_id"]
         }
       },
       "policies": {},

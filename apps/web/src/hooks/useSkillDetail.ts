@@ -1,7 +1,7 @@
-import { useState, useEffect } from 'react';
-import { YigYapsRegistryClient } from '@yigyaps/client';
-import type { SkillPackage, SkillPackageReview } from '@yigyaps/types';
-import { API_URL, fetchApi } from '../lib/api';
+import { useState, useEffect } from "react";
+import { YigYapsRegistryClient } from "@yigyaps/client";
+import type { SkillPackage, SkillPackageReview } from "@yigyaps/types";
+import { API_URL, fetchApi } from "../lib/api";
 
 export function useSkillDetail(packageId: string) {
   const [skillDetail, setSkillDetail] = useState<SkillPackage | null>(null);
@@ -11,10 +11,12 @@ export function useSkillDetail(packageId: string) {
 
   const refreshReviews = async () => {
     try {
-      const data = await fetchApi<{ reviews: SkillPackageReview[] }>(`/v1/reviews/${packageId}`);
+      const data = await fetchApi<{ reviews: SkillPackageReview[] }>(
+        `/v1/reviews/${packageId}`,
+      );
       setReviews(data.reviews || []);
     } catch (err) {
-      console.error('Failed to refresh reviews:', err);
+      console.error("Failed to refresh reviews:", err);
     }
   };
 
@@ -29,14 +31,17 @@ export function useSkillDetail(packageId: string) {
         // Parallel fetch for better performance
         const [pkg, reviewsData] = await Promise.all([
           client.getByPackageId(packageId),
-          fetchApi<{ reviews: SkillPackageReview[] }>(`/v1/reviews/${packageId}`),
+          fetchApi<{ reviews: SkillPackageReview[] }>(
+            `/v1/reviews/${packageId}`,
+          ),
         ]);
 
         setSkillDetail(pkg);
         setReviews(reviewsData.reviews || []);
       } catch (err) {
-        console.error('Failed to fetch skill detail:', err);
-        const errorMessage = err instanceof Error ? err.message : 'Failed to load skill details';
+        console.error("Failed to fetch skill detail:", err);
+        const errorMessage =
+          err instanceof Error ? err.message : "Failed to load skill details";
         setError(errorMessage);
       } finally {
         setLoading(false);

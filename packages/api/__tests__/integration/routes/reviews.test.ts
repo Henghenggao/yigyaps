@@ -7,37 +7,53 @@
  * License: Apache 2.0
  */
 
-import { describe, it, expect, beforeAll, afterAll, beforeEach } from 'vitest';
-import { PostgreSqlContainer, StartedPostgreSqlContainer } from '@testcontainers/postgresql';
-import { drizzle } from 'drizzle-orm/node-postgres';
-import { migrate } from 'drizzle-orm/node-postgres/migrator';
-import { Pool } from 'pg';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import { createTestServer, closeTestServer, type TestServerContext } from '../helpers/test-server.js';
-import { SkillPackageDAL, SkillReviewDAL, SkillInstallationDAL } from '@yigyaps/db';
-import { SkillPackageFactory } from '../../../../db/__tests__/helpers/factories.js';
-import { createAdminJWT, createTestJWT } from '../../unit/helpers/jwt-helpers.js';
-import { sql } from 'drizzle-orm';
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
+import {
+  PostgreSqlContainer,
+  StartedPostgreSqlContainer,
+} from "@testcontainers/postgresql";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { migrate } from "drizzle-orm/node-postgres/migrator";
+import { Pool } from "pg";
+import path from "path";
+import { fileURLToPath } from "url";
+import {
+  createTestServer,
+  closeTestServer,
+  type TestServerContext,
+} from "../helpers/test-server.js";
+import {
+  SkillPackageDAL,
+  SkillReviewDAL,
+  SkillInstallationDAL,
+} from "@yigyaps/db";
+import { SkillPackageFactory } from "../../../../db/__tests__/helpers/factories.js";
+import {
+  createAdminJWT,
+  createTestJWT,
+} from "../../unit/helpers/jwt-helpers.js";
+import { sql } from "drizzle-orm";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Local database cleanup function for integration tests
 async function clearDatabase(db: any) {
   const tables = [
-    'yy_royalty_ledger',
-    'yy_skill_package_reviews',
-    'yy_skill_package_installations',
-    'yy_skill_mints',
-    'yy_skill_packages',
+    "yy_royalty_ledger",
+    "yy_skill_package_reviews",
+    "yy_skill_package_installations",
+    "yy_skill_mints",
+    "yy_skill_packages",
   ];
 
   for (const table of tables) {
-    await db.execute(sql.raw(`TRUNCATE TABLE ${table} RESTART IDENTITY CASCADE`));
+    await db.execute(
+      sql.raw(`TRUNCATE TABLE ${table} RESTART IDENTITY CASCADE`),
+    );
   }
 }
 
-describe('Reviews Routes Integration Tests', () => {
+describe("Reviews Routes Integration Tests", () => {
   let container: StartedPostgreSqlContainer;
   let pool: Pool;
   let testDb: ReturnType<typeof drizzle>;
@@ -48,10 +64,10 @@ describe('Reviews Routes Integration Tests', () => {
 
   beforeAll(async () => {
     // Start PostgreSQL container
-    container = await new PostgreSqlContainer('postgres:16-alpine')
-      .withDatabase('yigyaps_test')
-      .withUsername('test_user')
-      .withPassword('test_password')
+    container = await new PostgreSqlContainer("postgres:16-alpine")
+      .withDatabase("yigyaps_test")
+      .withUsername("test_user")
+      .withPassword("test_password")
       .start();
 
     const connectionString = container.getConnectionUri();
@@ -59,11 +75,11 @@ describe('Reviews Routes Integration Tests', () => {
     testDb = drizzle(pool);
 
     // Run migrations
-    const migrationsPath = path.resolve(__dirname, '../../../../db/migrations');
+    const migrationsPath = path.resolve(__dirname, "../../../../db/migrations");
     await migrate(testDb, { migrationsFolder: migrationsPath });
 
     // Set environment variables for tests
-    process.env.JWT_SECRET = 'test-jwt-secret';
+    process.env.JWT_SECRET = "test-jwt-secret";
     // ADMIN_SECRET removed
 
     // Create test server
@@ -85,25 +101,25 @@ describe('Reviews Routes Integration Tests', () => {
     await clearDatabase(testDb);
   });
 
-  describe('POST /v1/reviews', () => {
-    it('should create a review with verified badge when user has installed the package', async () => {
+  describe("POST /v1/reviews", () => {
+    it("should create a review with verified badge when user has installed the package", async () => {
       // Create a test package
       const pkg = await packageDAL.create(
         SkillPackageFactory.create({
-          packageId: 'test-author/test-package',
-          author: 'usr_author_123',
-        })
+          packageId: "test-author/test-package",
+          author: "usr_author_123",
+        }),
       );
 
       // Create an installation to mark user as verified
-      const userId = 'usr_test_reviewer';
+      const userId = "usr_test_reviewer";
       await installDAL.install({
         id: `spi_${Date.now()}_test`,
         packageId: pkg.id,
-        packageVersion: '1.0.0',
-        agentId: 'agt_test_agent',
+        packageVersion: "1.0.0",
+        agentId: "agt_test_agent",
         userId,
-        status: 'active',
+        status: "active",
         enabled: true,
         configuration: null,
         errorMessage: null,
@@ -111,18 +127,19 @@ describe('Reviews Routes Integration Tests', () => {
         uninstalledAt: null,
       });
 
-      const jwt = createTestJWT({ userId, userName: 'Test Reviewer' });
+      const jwt = createTestJWT({ userId, userName: "Test Reviewer" });
 
       const response = await serverContext.fastify.inject({
-        method: 'POST',
-        url: '/v1/reviews',
+        method: "POST",
+        url: "/v1/reviews",
         headers: { authorization: `Bearer ${jwt}` },
         payload: {
           packageId: pkg.id,
-          packageVersion: '1.0.0',
+          packageVersion: "1.0.0",
           rating: 5,
-          title: 'Excellent Package',
-          comment: 'This package is amazing and works perfectly for my use case!',
+          title: "Excellent Package",
+          comment:
+            "This package is amazing and works perfectly for my use case!",
         },
       });
 
@@ -130,7 +147,7 @@ describe('Reviews Routes Integration Tests', () => {
       const review = JSON.parse(response.payload);
       expect(review.rating).toBe(5);
       expect(review.verified).toBe(true);
-      expect(review.title).toBe('Excellent Package');
+      expect(review.title).toBe("Excellent Package");
 
       // Verify rating stats were updated
       const updatedPkg = await packageDAL.getById(pkg.id);
@@ -138,26 +155,26 @@ describe('Reviews Routes Integration Tests', () => {
       expect(updatedPkg?.reviewCount).toBe(1);
     });
 
-    it('should create a review without verified badge when user has not installed', async () => {
+    it("should create a review without verified badge when user has not installed", async () => {
       const pkg = await packageDAL.create(
         SkillPackageFactory.create({
-          packageId: 'test-author/test-package-2',
-          author: 'usr_author_456',
-        })
+          packageId: "test-author/test-package-2",
+          author: "usr_author_456",
+        }),
       );
 
-      const userId = 'usr_unverified_reviewer';
-      const jwt = createTestJWT({ userId, userName: 'Unverified Reviewer' });
+      const userId = "usr_unverified_reviewer";
+      const jwt = createTestJWT({ userId, userName: "Unverified Reviewer" });
 
       const response = await serverContext.fastify.inject({
-        method: 'POST',
-        url: '/v1/reviews',
+        method: "POST",
+        url: "/v1/reviews",
         headers: { authorization: `Bearer ${jwt}` },
         payload: {
           packageId: pkg.id,
-          packageVersion: '1.0.0',
+          packageVersion: "1.0.0",
           rating: 4,
-          comment: 'Good package, but I have not installed it yet.',
+          comment: "Good package, but I have not installed it yet.",
         },
       });
 
@@ -167,160 +184,160 @@ describe('Reviews Routes Integration Tests', () => {
       expect(review.rating).toBe(4);
     });
 
-    it('should reject review with invalid rating (below 1)', async () => {
+    it("should reject review with invalid rating (below 1)", async () => {
       const pkg = await packageDAL.create(
-        SkillPackageFactory.create({ packageId: 'test-author/test-package-3' })
+        SkillPackageFactory.create({ packageId: "test-author/test-package-3" }),
       );
 
-      const jwt = createTestJWT({ userId: 'usr_test_123' });
+      const jwt = createTestJWT({ userId: "usr_test_123" });
 
       const response = await serverContext.fastify.inject({
-        method: 'POST',
-        url: '/v1/reviews',
+        method: "POST",
+        url: "/v1/reviews",
         headers: { authorization: `Bearer ${jwt}` },
         payload: {
           packageId: pkg.id,
-          packageVersion: '1.0.0',
+          packageVersion: "1.0.0",
           rating: 0,
-          comment: 'Invalid rating test',
+          comment: "Invalid rating test",
         },
       });
 
       expect(response.statusCode).toBe(400);
     });
 
-    it('should reject review with invalid rating (above 5)', async () => {
+    it("should reject review with invalid rating (above 5)", async () => {
       const pkg = await packageDAL.create(
-        SkillPackageFactory.create({ packageId: 'test-author/test-package-4' })
+        SkillPackageFactory.create({ packageId: "test-author/test-package-4" }),
       );
 
-      const jwt = createTestJWT({ userId: 'usr_test_456' });
+      const jwt = createTestJWT({ userId: "usr_test_456" });
 
       const response = await serverContext.fastify.inject({
-        method: 'POST',
-        url: '/v1/reviews',
+        method: "POST",
+        url: "/v1/reviews",
         headers: { authorization: `Bearer ${jwt}` },
         payload: {
           packageId: pkg.id,
-          packageVersion: '1.0.0',
+          packageVersion: "1.0.0",
           rating: 6,
-          comment: 'Invalid rating test',
+          comment: "Invalid rating test",
         },
       });
 
       expect(response.statusCode).toBe(400);
     });
 
-    it('should reject review with title too short (< 3 chars)', async () => {
+    it("should reject review with title too short (< 3 chars)", async () => {
       const pkg = await packageDAL.create(
-        SkillPackageFactory.create({ packageId: 'test-author/test-package-5' })
+        SkillPackageFactory.create({ packageId: "test-author/test-package-5" }),
       );
 
-      const jwt = createTestJWT({ userId: 'usr_test_789' });
+      const jwt = createTestJWT({ userId: "usr_test_789" });
 
       const response = await serverContext.fastify.inject({
-        method: 'POST',
-        url: '/v1/reviews',
+        method: "POST",
+        url: "/v1/reviews",
         headers: { authorization: `Bearer ${jwt}` },
         payload: {
           packageId: pkg.id,
-          packageVersion: '1.0.0',
+          packageVersion: "1.0.0",
           rating: 3,
-          title: 'OK', // Too short
-          comment: 'This is a valid comment',
+          title: "OK", // Too short
+          comment: "This is a valid comment",
         },
       });
 
       expect(response.statusCode).toBe(400);
     });
 
-    it('should reject review with comment too short (< 10 chars)', async () => {
+    it("should reject review with comment too short (< 10 chars)", async () => {
       const pkg = await packageDAL.create(
-        SkillPackageFactory.create({ packageId: 'test-author/test-package-6' })
+        SkillPackageFactory.create({ packageId: "test-author/test-package-6" }),
       );
 
-      const jwt = createTestJWT({ userId: 'usr_test_101' });
+      const jwt = createTestJWT({ userId: "usr_test_101" });
 
       const response = await serverContext.fastify.inject({
-        method: 'POST',
-        url: '/v1/reviews',
+        method: "POST",
+        url: "/v1/reviews",
         headers: { authorization: `Bearer ${jwt}` },
         payload: {
           packageId: pkg.id,
-          packageVersion: '1.0.0',
+          packageVersion: "1.0.0",
           rating: 3,
-          comment: 'Short', // Too short
+          comment: "Short", // Too short
         },
       });
 
       expect(response.statusCode).toBe(400);
     });
 
-    it('should return 404 when package does not exist', async () => {
-      const jwt = createTestJWT({ userId: 'usr_test_404' });
+    it("should return 404 when package does not exist", async () => {
+      const jwt = createTestJWT({ userId: "usr_test_404" });
 
       const response = await serverContext.fastify.inject({
-        method: 'POST',
-        url: '/v1/reviews',
+        method: "POST",
+        url: "/v1/reviews",
         headers: { authorization: `Bearer ${jwt}` },
         payload: {
-          packageId: 'spkg_nonexistent',
-          packageVersion: '1.0.0',
+          packageId: "spkg_nonexistent",
+          packageVersion: "1.0.0",
           rating: 5,
-          comment: 'This should fail',
+          comment: "This should fail",
         },
       });
 
       expect(response.statusCode).toBe(404);
       const error = JSON.parse(response.payload);
-      expect(error.error).toBe('Package not found');
+      expect(error.error).toBe("Package not found");
     });
 
-    it('should calculate average rating correctly with multiple reviews', async () => {
+    it("should calculate average rating correctly with multiple reviews", async () => {
       const pkg = await packageDAL.create(
-        SkillPackageFactory.create({ packageId: 'test-author/test-package-7' })
+        SkillPackageFactory.create({ packageId: "test-author/test-package-7" }),
       );
 
-      const jwt1 = createTestJWT({ userId: 'usr_reviewer_1' });
-      const jwt2 = createTestJWT({ userId: 'usr_reviewer_2' });
-      const jwt3 = createTestJWT({ userId: 'usr_reviewer_3' });
+      const jwt1 = createTestJWT({ userId: "usr_reviewer_1" });
+      const jwt2 = createTestJWT({ userId: "usr_reviewer_2" });
+      const jwt3 = createTestJWT({ userId: "usr_reviewer_3" });
 
       // Review 1: Rating 5
       await serverContext.fastify.inject({
-        method: 'POST',
-        url: '/v1/reviews',
+        method: "POST",
+        url: "/v1/reviews",
         headers: { authorization: `Bearer ${jwt1}` },
         payload: {
           packageId: pkg.id,
-          packageVersion: '1.0.0',
+          packageVersion: "1.0.0",
           rating: 5,
-          comment: 'Excellent!',
+          comment: "Excellent!",
         },
       });
 
       // Review 2: Rating 4
       await serverContext.fastify.inject({
-        method: 'POST',
-        url: '/v1/reviews',
+        method: "POST",
+        url: "/v1/reviews",
         headers: { authorization: `Bearer ${jwt2}` },
         payload: {
           packageId: pkg.id,
-          packageVersion: '1.0.0',
+          packageVersion: "1.0.0",
           rating: 4,
-          comment: 'Very good package!',
+          comment: "Very good package!",
         },
       });
 
       // Review 3: Rating 3
       await serverContext.fastify.inject({
-        method: 'POST',
-        url: '/v1/reviews',
+        method: "POST",
+        url: "/v1/reviews",
         headers: { authorization: `Bearer ${jwt3}` },
         payload: {
           packageId: pkg.id,
-          packageVersion: '1.0.0',
+          packageVersion: "1.0.0",
           rating: 3,
-          comment: 'Decent package',
+          comment: "Decent package",
         },
       });
 
@@ -331,43 +348,51 @@ describe('Reviews Routes Integration Tests', () => {
     });
   });
 
-  describe('GET /v1/reviews/:packageId', () => {
-    it('should return reviews for a package', async () => {
+  describe("GET /v1/reviews/:packageId", () => {
+    it("should return reviews for a package", async () => {
       const pkg = await packageDAL.create(
-        SkillPackageFactory.create({ packageId: 'test-author/test-package-get' })
+        SkillPackageFactory.create({
+          packageId: "test-author/test-package-get",
+        }),
       );
 
       // Create multiple reviews
-      const jwt1 = createTestJWT({ userId: 'usr_rev_1', userName: 'Reviewer One' });
-      const jwt2 = createTestJWT({ userId: 'usr_rev_2', userName: 'Reviewer Two' });
+      const jwt1 = createTestJWT({
+        userId: "usr_rev_1",
+        userName: "Reviewer One",
+      });
+      const jwt2 = createTestJWT({
+        userId: "usr_rev_2",
+        userName: "Reviewer Two",
+      });
 
       await serverContext.fastify.inject({
-        method: 'POST',
-        url: '/v1/reviews',
+        method: "POST",
+        url: "/v1/reviews",
         headers: { authorization: `Bearer ${jwt1}` },
         payload: {
           packageId: pkg.id,
-          packageVersion: '1.0.0',
+          packageVersion: "1.0.0",
           rating: 5,
-          comment: 'First review',
+          comment: "First review",
         },
       });
 
       await serverContext.fastify.inject({
-        method: 'POST',
-        url: '/v1/reviews',
+        method: "POST",
+        url: "/v1/reviews",
         headers: { authorization: `Bearer ${jwt2}` },
         payload: {
           packageId: pkg.id,
-          packageVersion: '1.0.0',
+          packageVersion: "1.0.0",
           rating: 4,
-          comment: 'Second review',
+          comment: "Second review",
         },
       });
 
       // Get reviews
       const response = await serverContext.fastify.inject({
-        method: 'GET',
+        method: "GET",
         url: `/v1/reviews/${pkg.id}`,
       });
 
@@ -377,13 +402,13 @@ describe('Reviews Routes Integration Tests', () => {
       expect(data.reviews[0].userName).toMatch(/Reviewer (One|Two)/);
     });
 
-    it('should return empty array when no reviews exist', async () => {
+    it("should return empty array when no reviews exist", async () => {
       const pkg = await packageDAL.create(
-        SkillPackageFactory.create({ packageId: 'test-author/no-reviews' })
+        SkillPackageFactory.create({ packageId: "test-author/no-reviews" }),
       );
 
       const response = await serverContext.fastify.inject({
-        method: 'GET',
+        method: "GET",
         url: `/v1/reviews/${pkg.id}`,
       });
 
@@ -392,21 +417,23 @@ describe('Reviews Routes Integration Tests', () => {
       expect(data.reviews).toHaveLength(0);
     });
 
-    it('should paginate reviews correctly with limit and offset', async () => {
+    it("should paginate reviews correctly with limit and offset", async () => {
       const pkg = await packageDAL.create(
-        SkillPackageFactory.create({ packageId: 'test-author/pagination-test' })
+        SkillPackageFactory.create({
+          packageId: "test-author/pagination-test",
+        }),
       );
 
       // Create 5 reviews
       for (let i = 1; i <= 5; i++) {
         const jwt = createTestJWT({ userId: `usr_rev_${i}` });
         await serverContext.fastify.inject({
-          method: 'POST',
-          url: '/v1/reviews',
+          method: "POST",
+          url: "/v1/reviews",
           headers: { authorization: `Bearer ${jwt}` },
           payload: {
             packageId: pkg.id,
-            packageVersion: '1.0.0',
+            packageVersion: "1.0.0",
             rating: i,
             comment: `Review number ${i}`,
           },
@@ -415,7 +442,7 @@ describe('Reviews Routes Integration Tests', () => {
 
       // Test limit
       const response1 = await serverContext.fastify.inject({
-        method: 'GET',
+        method: "GET",
         url: `/v1/reviews/${pkg.id}?limit=2`,
       });
       expect(response1.statusCode).toBe(200);
@@ -424,7 +451,7 @@ describe('Reviews Routes Integration Tests', () => {
 
       // Test offset
       const response2 = await serverContext.fastify.inject({
-        method: 'GET',
+        method: "GET",
         url: `/v1/reviews/${pkg.id}?limit=2&offset=2`,
       });
       expect(response2.statusCode).toBe(200);
@@ -433,7 +460,7 @@ describe('Reviews Routes Integration Tests', () => {
 
       // Test offset beyond total
       const response3 = await serverContext.fastify.inject({
-        method: 'GET',
+        method: "GET",
         url: `/v1/reviews/${pkg.id}?offset=10`,
       });
       expect(response3.statusCode).toBe(200);
@@ -441,21 +468,21 @@ describe('Reviews Routes Integration Tests', () => {
       expect(data3.reviews).toHaveLength(0);
     });
 
-    it('should respect max limit of 100 reviews', async () => {
+    it("should respect max limit of 100 reviews", async () => {
       const pkg = await packageDAL.create(
-        SkillPackageFactory.create({ packageId: 'test-author/max-limit' })
+        SkillPackageFactory.create({ packageId: "test-author/max-limit" }),
       );
 
       // Create 20 reviews
       for (let i = 1; i <= 20; i++) {
         const jwt = createTestJWT({ userId: `usr_bulk_${i}` });
         await serverContext.fastify.inject({
-          method: 'POST',
-          url: '/v1/reviews',
+          method: "POST",
+          url: "/v1/reviews",
           headers: { authorization: `Bearer ${jwt}` },
           payload: {
             packageId: pkg.id,
-            packageVersion: '1.0.0',
+            packageVersion: "1.0.0",
             rating: 5,
             comment: `Bulk review ${i}`,
           },
@@ -464,7 +491,7 @@ describe('Reviews Routes Integration Tests', () => {
 
       // Request 200 but should only get 100 max
       const response = await serverContext.fastify.inject({
-        method: 'GET',
+        method: "GET",
         url: `/v1/reviews/${pkg.id}?limit=200`,
       });
 
@@ -474,4 +501,3 @@ describe('Reviews Routes Integration Tests', () => {
     });
   });
 });
-

@@ -24,8 +24,7 @@ const isGithubConfigured =
   GITHUB_CLIENT_SECRET !== "UNCONFIGURED_GITHUB_CLIENT_SECRET";
 
 const GITHUB_CALLBACK_URL =
-  env.GITHUB_CALLBACK_URL ??
-  "http://localhost:3100/v1/auth/github/callback";
+  env.GITHUB_CALLBACK_URL ?? "http://localhost:3100/v1/auth/github/callback";
 const FRONTEND_URL = env.FRONTEND_URL;
 
 // ─── GitHub API Types ─────────────────────────────────────────────────────────
@@ -192,8 +191,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
         expiresAt: now + 7 * 24 * 60 * 60 * 1000, // 7 days
         createdAt: now,
         lastActiveAt: now,
-        ipAddress:
-          request.headers["x-forwarded-for"]?.toString() ?? request.ip,
+        ipAddress: request.headers["x-forwarded-for"]?.toString() ?? request.ip,
         userAgent: request.headers["user-agent"],
       });
 
@@ -228,25 +226,27 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       return reply.redirect(`${FRONTEND_URL}/auth/success`);
     } catch (error) {
       request.log.error({ error }, "GitHub OAuth callback failed");
-      return reply.redirect(
-        `${FRONTEND_URL}/auth/error?error=oauth_failed`,
-      );
+      return reply.redirect(`${FRONTEND_URL}/auth/error?error=oauth_failed`);
     }
   });
 
   // POST /v1/auth/logout - Logout user
-  fastify.post("/logout", { preHandler: requireAuth() }, async (request, reply) => {
-    const sessionToken = request.cookies.session_token;
-    if (sessionToken) {
-      const sessionDAL = new SessionDAL(fastify.db);
-      await sessionDAL.deleteByToken(sessionToken);
-      reply.clearCookie("session_token");
-    }
+  fastify.post(
+    "/logout",
+    { preHandler: requireAuth() },
+    async (request, reply) => {
+      const sessionToken = request.cookies.session_token;
+      if (sessionToken) {
+        const sessionDAL = new SessionDAL(fastify.db);
+        await sessionDAL.deleteByToken(sessionToken);
+        reply.clearCookie("session_token");
+      }
 
-    reply.clearCookie("yigyaps_jwt");
+      reply.clearCookie("yigyaps_jwt");
 
-    return reply.send({ success: true });
-  });
+      return reply.send({ success: true });
+    },
+  );
 
   // GET /v1/auth/me - Get current user info
   fastify.get("/me", { preHandler: requireAuth() }, async (request, reply) => {

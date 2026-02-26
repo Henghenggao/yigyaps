@@ -6,23 +6,28 @@
  * License: Apache 2.0
  */
 
-import { useState } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import { YigYapsRegistryClient } from '@yigyaps/client';
-import type { SkillPackage } from '@yigyaps/types';
-import { getTierName, canAccessTier } from '../utils/tierHelpers';
-import { API_URL } from '../lib/api';
+import { useState } from "react";
+import { useAuth } from "../contexts/AuthContext";
+import { YigYapsRegistryClient } from "@yigyaps/client";
+import type { SkillPackage } from "@yigyaps/types";
+import { getTierName, canAccessTier } from "../utils/tierHelpers";
+import { API_URL } from "../lib/api";
 
 interface InstallButtonProps {
   skill: SkillPackage;
   onInstallSuccess?: () => void;
 }
 
-type InstallStatus = 'idle' | 'checking_tier' | 'installing' | 'success' | 'error';
+type InstallStatus =
+  | "idle"
+  | "checking_tier"
+  | "installing"
+  | "success"
+  | "error";
 
 export function InstallButton({ skill, onInstallSuccess }: InstallButtonProps) {
   const { user, login } = useAuth();
-  const [status, setStatus] = useState<InstallStatus>('idle');
+  const [status, setStatus] = useState<InstallStatus>("idle");
   const [error, setError] = useState<string | null>(null);
 
   // Check if user is not logged in
@@ -39,16 +44,16 @@ export function InstallButton({ skill, onInstallSuccess }: InstallButtonProps) {
 
   const handleInstall = async () => {
     setError(null);
-    setStatus('checking_tier');
+    setStatus("checking_tier");
 
     // Frontend tier check
     if (tierLocked) {
-      setStatus('error');
+      setStatus("error");
       setError(`Requires ${getTierName(skill.requiredTier)} tier or higher`);
       return;
     }
 
-    setStatus('installing');
+    setStatus("installing");
 
     try {
       const client = new YigYapsRegistryClient({
@@ -64,30 +69,33 @@ export function InstallButton({ skill, onInstallSuccess }: InstallButtonProps) {
       });
 
       // Success
-      setStatus('success');
+      setStatus("success");
       onInstallSuccess?.();
 
       // Auto-reset to idle after 2 seconds
       setTimeout(() => {
-        setStatus('idle');
+        setStatus("idle");
       }, 2000);
     } catch (err: unknown) {
-      console.error('Installation failed:', err);
-      setStatus('error');
+      console.error("Installation failed:", err);
+      setStatus("error");
 
       // Extract user-friendly error message
-      let errorMessage = 'Installation failed';
+      let errorMessage = "Installation failed";
       if (err instanceof Error) {
         errorMessage = err.message;
       }
 
       // Parse specific error cases
-      if (errorMessage.includes('tier')) {
+      if (errorMessage.includes("tier")) {
         setError(`Requires ${getTierName(skill.requiredTier)} tier or higher`);
-      } else if (errorMessage.includes('sold out') || errorMessage.includes('edition limit')) {
-        setError('This limited edition is sold out');
-      } else if (errorMessage.includes('already installed')) {
-        setError('Already installed');
+      } else if (
+        errorMessage.includes("sold out") ||
+        errorMessage.includes("edition limit")
+      ) {
+        setError("This limited edition is sold out");
+      } else if (errorMessage.includes("already installed")) {
+        setError("Already installed");
       } else {
         setError(errorMessage);
       }
@@ -97,9 +105,12 @@ export function InstallButton({ skill, onInstallSuccess }: InstallButtonProps) {
   // Render button based on status
   const renderButton = () => {
     // Tier locked state
-    if (tierLocked && status === 'idle') {
+    if (tierLocked && status === "idle") {
       return (
-        <button className="btn btn-primary btn-large install-btn-locked" disabled>
+        <button
+          className="btn btn-primary btn-large install-btn-locked"
+          disabled
+        >
           Requires {getTierName(skill.requiredTier)}
         </button>
       );
@@ -107,32 +118,42 @@ export function InstallButton({ skill, onInstallSuccess }: InstallButtonProps) {
 
     // Status-based rendering
     switch (status) {
-      case 'checking_tier':
-      case 'installing':
+      case "checking_tier":
+      case "installing":
         return (
-          <button className="btn btn-primary btn-large install-btn-loading" disabled>
+          <button
+            className="btn btn-primary btn-large install-btn-loading"
+            disabled
+          >
             <span className="spinner" />
             Installing...
           </button>
         );
 
-      case 'success':
+      case "success":
         return (
-          <button className="btn btn-primary btn-large install-btn-success" disabled>
+          <button
+            className="btn btn-primary btn-large install-btn-success"
+            disabled
+          >
             Installed
           </button>
         );
 
-      case 'error':
+      case "error":
         return (
-          <button className="btn btn-primary btn-large install-btn-error" onClick={handleInstall}>
+          <button
+            className="btn btn-primary btn-large install-btn-error"
+            onClick={handleInstall}
+          >
             Retry
           </button>
         );
 
-      case 'idle':
+      case "idle":
       default: {
-        const priceLabel = skill.priceUsd > 0 ? `Install - $${skill.priceUsd}` : 'Install Free';
+        const priceLabel =
+          skill.priceUsd > 0 ? `Install - $${skill.priceUsd}` : "Install Free";
         return (
           <button className="btn btn-primary btn-large" onClick={handleInstall}>
             {priceLabel}
@@ -145,7 +166,7 @@ export function InstallButton({ skill, onInstallSuccess }: InstallButtonProps) {
   return (
     <div className="install-button-container">
       {renderButton()}
-      {error && status === 'error' && (
+      {error && status === "error" && (
         <div className="install-error-message">{error}</div>
       )}
     </div>

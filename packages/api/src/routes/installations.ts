@@ -60,91 +60,103 @@ export async function installationsRoutes(fastify: FastifyInstance) {
     const now = Date.now();
 
     const db = fastify.db;
-    const result = await db.transaction(async (tx: NodePgDatabase<typeof schema>) => {
-      const pkgDalTx = new SkillPackageDAL(tx);
-      const installDalTx = new SkillInstallationDAL(tx);
-      const mintDalTx = new SkillMintDAL(tx);
-      const rlDALTx = new RoyaltyLedgerDAL(tx);
+    const result = await db.transaction(
+      async (tx: NodePgDatabase<typeof schema>) => {
+        const pkgDalTx = new SkillPackageDAL(tx);
+        const installDalTx = new SkillInstallationDAL(tx);
+        const mintDalTx = new SkillMintDAL(tx);
+        const rlDALTx = new RoyaltyLedgerDAL(tx);
 
-      const pkg = await pkgDalTx.getById(body.packageId);
-      if (!pkg) return { status: 404, payload: { error: "Package not found" } };
+        const pkg = await pkgDalTx.getById(body.packageId);
+        if (!pkg)
+          return { status: 404, payload: { error: "Package not found" } };
 
-      if (pkg.requiredTier > 0) {
-        const userTierRank = TIER_RANK[body.userTier] ?? 0;
-        if (userTierRank < pkg.requiredTier) {
-          const requiredTierName =
-            Object.entries(TIER_RANK).find(([, v]) => v === pkg.requiredTier)?.[0] ??
-            "pro";
-          return {
-            status: 403, payload: {
-              error: "Subscription tier required",
-              requiredTier: pkg.requiredTier,
-              requiredTierName,
-              currentTier: body.userTier,
-            }
-          };
+        if (pkg.requiredTier > 0) {
+          const userTierRank = TIER_RANK[body.userTier] ?? 0;
+          if (userTierRank < pkg.requiredTier) {
+            const requiredTierName =
+              Object.entries(TIER_RANK).find(
+                ([, v]) => v === pkg.requiredTier,
+              )?.[0] ?? "pro";
+            return {
+              status: 403,
+              payload: {
+                error: "Subscription tier required",
+                requiredTier: pkg.requiredTier,
+                requiredTierName,
+                currentTier: body.userTier,
+              },
+            };
+          }
         }
-      }
 
-      const mint = await mintDalTx.getBySkillPackageId(body.packageId);
+        const mint = await mintDalTx.getBySkillPackageId(body.packageId);
 
-      const hasExisting = await installDalTx.hasInstallation(userId, body.packageId);
-      if (hasExisting) {
-        return { status: 409, payload: { error: "Package already installed" } };
-      }
-
-      const id = `sinst_${now}_${Math.random().toString(36).slice(2, 8)}`;
-      const installation = await installDalTx.install({
-        id,
-        packageId: body.packageId,
-        packageVersion: pkg.version,
-        agentId: body.agentId,
-        userId,
-        status: "active",
-        enabled: body.enabled,
-        configuration: body.configuration ?? null,
-        installedAt: now,
-      });
-
-      await pkgDalTx.incrementInstallCount(body.packageId);
-
-      if (mint) {
-        const incrementSucceeded = await mintDalTx.tryIncrementMintedCount(
+        const hasExisting = await installDalTx.hasInstallation(
+          userId,
           body.packageId,
         );
-        if (!incrementSucceeded) {
-          await installDalTx.updateStatus(installation.id, "failed");
+        if (hasExisting) {
           return {
-            status: 409, payload: {
-              error: "Edition limit reached",
-              rarity: mint.rarity,
-              maxEditions: mint.maxEditions,
-              message:
-                "Installation was attempted but edition limit was reached. Please try again.",
-            }
+            status: 409,
+            payload: { error: "Package already installed" },
           };
         }
-      }
 
-      if (mint && Number(pkg.priceUsd) > 0) {
-        const royaltyPct = Number(mint.creatorRoyaltyPercent) || 70;
-        const gross = Number(pkg.priceUsd);
-        const royalty = +((gross * royaltyPct) / 100).toFixed(4);
-        await rlDALTx.create({
-          id: `rlgr_${now}_${Math.random().toString(36).slice(2, 8)}`,
-          skillPackageId: pkg.id,
-          creatorId: mint.creatorId,
-          buyerId: userId,
-          installationId: installation.id,
-          grossAmountUsd: String(gross),
-          royaltyAmountUsd: String(royalty),
-          royaltyPercent: String(royaltyPct),
-          createdAt: now,
+        const id = `sinst_${now}_${Math.random().toString(36).slice(2, 8)}`;
+        const installation = await installDalTx.install({
+          id,
+          packageId: body.packageId,
+          packageVersion: pkg.version,
+          agentId: body.agentId,
+          userId,
+          status: "active",
+          enabled: body.enabled,
+          configuration: body.configuration ?? null,
+          installedAt: now,
         });
-      }
 
-      return { status: 201, payload: installation };
-    });
+        await pkgDalTx.incrementInstallCount(body.packageId);
+
+        if (mint) {
+          const incrementSucceeded = await mintDalTx.tryIncrementMintedCount(
+            body.packageId,
+          );
+          if (!incrementSucceeded) {
+            await installDalTx.updateStatus(installation.id, "failed");
+            return {
+              status: 409,
+              payload: {
+                error: "Edition limit reached",
+                rarity: mint.rarity,
+                maxEditions: mint.maxEditions,
+                message:
+                  "Installation was attempted but edition limit was reached. Please try again.",
+              },
+            };
+          }
+        }
+
+        if (mint && Number(pkg.priceUsd) > 0) {
+          const royaltyPct = Number(mint.creatorRoyaltyPercent) || 70;
+          const gross = Number(pkg.priceUsd);
+          const royalty = +((gross * royaltyPct) / 100).toFixed(4);
+          await rlDALTx.create({
+            id: `rlgr_${now}_${Math.random().toString(36).slice(2, 8)}`,
+            skillPackageId: pkg.id,
+            creatorId: mint.creatorId,
+            buyerId: userId,
+            installationId: installation.id,
+            grossAmountUsd: String(gross),
+            royaltyAmountUsd: String(royalty),
+            royaltyPercent: String(royaltyPct),
+            createdAt: now,
+          });
+        }
+
+        return { status: 201, payload: installation };
+      },
+    );
 
     return reply.code(result.status).send(result.payload);
   });
@@ -165,9 +177,7 @@ export async function installationsRoutes(fastify: FastifyInstance) {
   fastify.get<{ Params: { agentId: string } }>(
     "/agent/:agentId",
     async (request, reply) => {
-      const installations = await installDAL.getByAgent(
-        request.params.agentId,
-      );
+      const installations = await installDAL.getByAgent(request.params.agentId);
       return reply.send({ installations });
     },
   );

@@ -5,6 +5,8 @@ import { logger } from "../lib/logger.js";
  * Logout Command
  */
 export async function logoutCommand() {
-    clearConfig();
-    logger.success("Logged out successfully. Local credentials have been cleared.");
+  clearConfig();
+  logger.success(
+    "Logged out successfully. Local credentials have been cleared.",
+  );
 }

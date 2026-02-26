@@ -7,11 +7,19 @@
  * License: Apache 2.0
  */
 
-import { describe, it, expect, beforeEach } from 'vitest';
-import { optionalAuth, requireAuth, type UserContext } from '../../../src/middleware/auth-v2.js';
-import { createTestJWT, createAdminJWT, createExpiredJWT } from '../helpers/jwt-helpers.js';
-import type { FastifyRequest, FastifyReply, FastifyBaseLogger } from 'fastify';
-import crypto from 'crypto';
+import { describe, it, expect, beforeEach } from "vitest";
+import {
+  optionalAuth,
+  requireAuth,
+  type UserContext,
+} from "../../../src/middleware/auth-v2.js";
+import {
+  createTestJWT,
+  createAdminJWT,
+  createExpiredJWT,
+} from "../helpers/jwt-helpers.js";
+import type { FastifyRequest, FastifyReply, FastifyBaseLogger } from "fastify";
+import crypto from "crypto";
 
 // ─── Mock Helpers ─────────────────────────────────────────────────────────────
 
@@ -33,15 +41,15 @@ function createMockRequest(authHeader?: string): MockRequest {
     headers: authHeader ? { authorization: authHeader } : {},
     cookies: {},
     log: {
-      warn: () => { },
-      info: () => { },
-      error: () => { },
-      debug: () => { },
-      fatal: () => { },
-      trace: () => { },
-      silent: () => { },
+      warn: () => {},
+      info: () => {},
+      error: () => {},
+      debug: () => {},
+      fatal: () => {},
+      trace: () => {},
+      silent: () => {},
       child: () => ({}) as any,
-      level: 'info',
+      level: "info",
     } as unknown as FastifyBaseLogger,
     server: {
       db: {}, // Mock database connection
@@ -70,13 +78,13 @@ function createMockReply(): MockReply {
 
 // ─── optionalAuth Tests ───────────────────────────────────────────────────────
 
-describe('optionalAuth', () => {
+describe("optionalAuth", () => {
   beforeEach(() => {
     // Set JWT_SECRET for tests
-    process.env.JWT_SECRET = 'test-secret-key-for-jwt-testing';
+    process.env.JWT_SECRET = "test-secret-key-for-jwt-testing";
   });
 
-  it('should continue without user context when no Authorization header', async () => {
+  it("should continue without user context when no Authorization header", async () => {
     const mockRequest = createMockRequest();
     const mockReply = createMockReply();
 
@@ -85,13 +93,13 @@ describe('optionalAuth', () => {
     expect(mockRequest.user).toBeUndefined();
   });
 
-  it('should attach user context from valid JWT', async () => {
+  it("should attach user context from valid JWT", async () => {
     const token = createTestJWT({
-      userId: 'usr_123',
-      userName: 'John Doe',
-      githubUsername: 'johndoe',
-      tier: 'pro',
-      role: 'user',
+      userId: "usr_123",
+      userName: "John Doe",
+      githubUsername: "johndoe",
+      tier: "pro",
+      role: "user",
     });
 
     const mockRequest = createMockRequest(`Bearer ${token}`);
@@ -100,15 +108,15 @@ describe('optionalAuth', () => {
     await optionalAuth(mockRequest as any, mockReply as any);
 
     expect(mockRequest.user).toMatchObject({
-      userId: 'usr_123',
-      userName: 'John Doe',
-      tier: 'pro',
-      role: 'user',
-      authMethod: 'jwt',
+      userId: "usr_123",
+      userName: "John Doe",
+      tier: "pro",
+      role: "user",
+      authMethod: "jwt",
     });
   });
 
-  it('should attach admin user context from valid JWT', async () => {
+  it("should attach admin user context from valid JWT", async () => {
     const token = createAdminJWT();
 
     const mockRequest = createMockRequest(`Bearer ${token}`);
@@ -117,14 +125,14 @@ describe('optionalAuth', () => {
     await optionalAuth(mockRequest as any, mockReply as any);
 
     expect(mockRequest.user).toMatchObject({
-      userId: 'usr_admin_001',
-      role: 'admin',
-      tier: 'legendary',
-      authMethod: 'jwt',
+      userId: "usr_admin_001",
+      role: "admin",
+      tier: "legendary",
+      authMethod: "jwt",
     });
   });
 
-  it('should continue without user context for expired JWT', async () => {
+  it("should continue without user context for expired JWT", async () => {
     const token = createExpiredJWT();
 
     // Wait a bit to ensure token is expired
@@ -138,8 +146,8 @@ describe('optionalAuth', () => {
     expect(mockRequest.user).toBeUndefined();
   });
 
-  it('should continue without user context for invalid JWT', async () => {
-    const mockRequest = createMockRequest('Bearer invalid.token.here');
+  it("should continue without user context for invalid JWT", async () => {
+    const mockRequest = createMockRequest("Bearer invalid.token.here");
     const mockReply = createMockReply();
 
     await optionalAuth(mockRequest as any, mockReply as any);
@@ -147,8 +155,8 @@ describe('optionalAuth', () => {
     expect(mockRequest.user).toBeUndefined();
   });
 
-  it('should continue without user context for invalid Authorization format', async () => {
-    const mockRequest = createMockRequest('InvalidFormat token123');
+  it("should continue without user context for invalid Authorization format", async () => {
+    const mockRequest = createMockRequest("InvalidFormat token123");
     const mockReply = createMockReply();
 
     await optionalAuth(mockRequest as any, mockReply as any);
@@ -156,26 +164,24 @@ describe('optionalAuth', () => {
     expect(mockRequest.user).toBeUndefined();
   });
 
-  it('should continue without user context when Bearer token is missing', async () => {
-    const mockRequest = createMockRequest('Bearer ');
+  it("should continue without user context when Bearer token is missing", async () => {
+    const mockRequest = createMockRequest("Bearer ");
     const mockReply = createMockReply();
 
     await optionalAuth(mockRequest as any, mockReply as any);
 
     expect(mockRequest.user).toBeUndefined();
   });
-
-
 });
 
 // ─── requireAuth Tests ────────────────────────────────────────────────────────
 
-describe('requireAuth', () => {
+describe("requireAuth", () => {
   beforeEach(() => {
-    process.env.JWT_SECRET = 'test-secret-key-for-jwt-testing';
+    process.env.JWT_SECRET = "test-secret-key-for-jwt-testing";
   });
 
-  it('should return 401 when no Authorization header', async () => {
+  it("should return 401 when no Authorization header", async () => {
     const mockRequest = createMockRequest();
     const mockReply = createMockReply();
 
@@ -184,13 +190,13 @@ describe('requireAuth', () => {
 
     expect(mockReply.statusCode).toBe(401);
     expect(mockReply.sentPayload).toMatchObject({
-      error: 'Unauthorized',
-      message: 'Missing or invalid authentication token',
+      error: "Unauthorized",
+      message: "Missing or invalid authentication token",
     });
   });
 
-  it('should return 401 for invalid Authorization format', async () => {
-    const mockRequest = createMockRequest('InvalidFormat token123');
+  it("should return 401 for invalid Authorization format", async () => {
+    const mockRequest = createMockRequest("InvalidFormat token123");
     const mockReply = createMockReply();
 
     const middleware = requireAuth();
@@ -198,13 +204,13 @@ describe('requireAuth', () => {
 
     expect(mockReply.statusCode).toBe(401);
     expect(mockReply.sentPayload).toMatchObject({
-      error: 'Unauthorized',
-      message: 'Missing or invalid authentication token',
+      error: "Unauthorized",
+      message: "Missing or invalid authentication token",
     });
   });
 
-  it('should return 401 when Bearer token is missing', async () => {
-    const mockRequest = createMockRequest('Bearer ');
+  it("should return 401 when Bearer token is missing", async () => {
+    const mockRequest = createMockRequest("Bearer ");
     const mockReply = createMockReply();
 
     const middleware = requireAuth();
@@ -213,12 +219,12 @@ describe('requireAuth', () => {
     expect(mockReply.statusCode).toBe(401);
   });
 
-  it('should attach user context from valid JWT', async () => {
+  it("should attach user context from valid JWT", async () => {
     const token = createTestJWT({
-      userId: 'usr_456',
-      userName: 'Jane Smith',
-      tier: 'epic',
-      role: 'user',
+      userId: "usr_456",
+      userName: "Jane Smith",
+      tier: "epic",
+      role: "user",
     });
 
     const mockRequest = createMockRequest(`Bearer ${token}`);
@@ -228,16 +234,16 @@ describe('requireAuth', () => {
     await middleware(mockRequest as any, mockReply as any);
 
     expect(mockRequest.user).toMatchObject({
-      userId: 'usr_456',
-      userName: 'Jane Smith',
-      tier: 'epic',
-      role: 'user',
-      authMethod: 'jwt',
+      userId: "usr_456",
+      userName: "Jane Smith",
+      tier: "epic",
+      role: "user",
+      authMethod: "jwt",
     });
     expect(mockReply.statusCode).toBe(200); // No error
   });
 
-  it('should return 403 for expired JWT', async () => {
+  it("should return 403 for expired JWT", async () => {
     const token = createExpiredJWT();
 
     // Wait a bit to ensure token is expired
@@ -251,13 +257,13 @@ describe('requireAuth', () => {
 
     expect(mockReply.statusCode).toBe(403);
     expect(mockReply.sentPayload).toMatchObject({
-      error: 'Forbidden',
-      message: 'Invalid credentials',
+      error: "Forbidden",
+      message: "Invalid credentials",
     });
   });
 
-  it('should return 403 for invalid JWT', async () => {
-    const mockRequest = createMockRequest('Bearer invalid.token.here');
+  it("should return 403 for invalid JWT", async () => {
+    const mockRequest = createMockRequest("Bearer invalid.token.here");
     const mockReply = createMockReply();
 
     const middleware = requireAuth();
@@ -265,26 +271,24 @@ describe('requireAuth', () => {
 
     expect(mockReply.statusCode).toBe(403);
     expect(mockReply.sentPayload).toMatchObject({
-      error: 'Forbidden',
-      message: 'Invalid credentials',
+      error: "Forbidden",
+      message: "Invalid credentials",
     });
   });
 
-
-
-  it('should handle different user tiers correctly', async () => {
-    const tiers: Array<'free' | 'pro' | 'epic' | 'legendary'> = [
-      'free',
-      'pro',
-      'epic',
-      'legendary',
+  it("should handle different user tiers correctly", async () => {
+    const tiers: Array<"free" | "pro" | "epic" | "legendary"> = [
+      "free",
+      "pro",
+      "epic",
+      "legendary",
     ];
 
     for (const tier of tiers) {
       const token = createTestJWT({
         userId: `usr_${tier}`,
         tier,
-        role: 'user',
+        role: "user",
       });
 
       const mockRequest = createMockRequest(`Bearer ${token}`);

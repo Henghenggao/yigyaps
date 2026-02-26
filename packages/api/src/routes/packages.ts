@@ -15,29 +15,43 @@ import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { z } from "zod";
 import sanitizeHtml from "sanitize-html";
 import * as schema from "@yigyaps/db";
-import {
-  SkillPackageDAL,
-  SkillRuleDAL,
-} from "@yigyaps/db";
+import { SkillPackageDAL, SkillRuleDAL } from "@yigyaps/db";
 import { requireAuth } from "../middleware/auth-v2.js";
 
 // Sanitize HTML configuration - allow safe formatting tags only
 const sanitizeOptions: sanitizeHtml.IOptions = {
   allowedTags: [
-    'p', 'br', 'strong', 'em', 'u', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
-    'ul', 'ol', 'li', 'blockquote', 'code', 'pre', 'a', 'img',
+    "p",
+    "br",
+    "strong",
+    "em",
+    "u",
+    "h1",
+    "h2",
+    "h3",
+    "h4",
+    "h5",
+    "h6",
+    "ul",
+    "ol",
+    "li",
+    "blockquote",
+    "code",
+    "pre",
+    "a",
+    "img",
   ],
   allowedAttributes: {
-    a: ['href', 'title', 'target', 'rel'],
-    img: ['src', 'alt', 'title', 'width', 'height'],
-    code: ['class'], // for syntax highlighting
+    a: ["href", "title", "target", "rel"],
+    img: ["src", "alt", "title", "width", "height"],
+    code: ["class"], // for syntax highlighting
   },
-  allowedSchemes: ['http', 'https', 'mailto'],
+  allowedSchemes: ["http", "https", "mailto"],
   allowedSchemesByTag: {
-    img: ['https', 'data'], // Only HTTPS images or data URIs
+    img: ["https", "data"], // Only HTTPS images or data URIs
   },
   // Remove all event handlers and javascript: protocol
-  disallowedTagsMode: 'discard',
+  disallowedTagsMode: "discard",
 };
 
 const createPackageSchema = z.object({
@@ -45,10 +59,7 @@ const createPackageSchema = z.object({
   version: z.string().min(1).max(20),
   displayName: z.string().min(1).max(200),
   description: z.string().min(10).max(500),
-  readme: z
-    .string()
-    .max(5000)
-    .optional(),
+  readme: z.string().max(5000).optional(),
   authorName: z.string().min(1).max(100),
   authorUrl: z.string().url().optional(),
   license: z
@@ -87,17 +98,24 @@ const createPackageSchema = z.object({
   icon: z.string().max(500).optional(),
   repositoryUrl: z.string().url().optional(),
   homepageUrl: z.string().url().optional(),
-  rules: z.array(z.object({
-    path: z.string().min(1),
-    content: z.string().min(1),
-  })).optional(),
+  rules: z
+    .array(
+      z.object({
+        path: z.string().min(1),
+        content: z.string().min(1),
+      }),
+    )
+    .optional(),
 });
 
-const updatePackageSchema = createPackageSchema
-  .partial()
-  .extend({
-    priceUsd: z.number().min(0).max(9999).transform((val) => String(val)).optional(),
-  });
+const updatePackageSchema = createPackageSchema.partial().extend({
+  priceUsd: z
+    .number()
+    .min(0)
+    .max(9999)
+    .transform((val) => String(val))
+    .optional(),
+});
 
 const searchSchema = z.object({
   query: z.string().max(200).optional(),
@@ -119,12 +137,8 @@ const searchSchema = z.object({
       "other",
     ])
     .optional(),
-  license: z
-    .enum(["open-source", "free", "premium", "enterprise"])
-    .optional(),
-  maturity: z
-    .enum(["experimental", "beta", "stable", "deprecated"])
-    .optional(),
+  license: z.enum(["open-source", "free", "premium", "enterprise"]).optional(),
+  maturity: z.enum(["experimental", "beta", "stable", "deprecated"]).optional(),
   minRating: z.coerce.number().min(0).max(5).optional(),
   maxPriceUsd: z.coerce.number().min(0).optional(),
   sortBy: z
@@ -138,40 +152,41 @@ export async function packagesRoutes(fastify: FastifyInstance) {
   const db = fastify.db;
   const packageDAL = new SkillPackageDAL(db);
 
-  fastify.post(
-    "/",
-    { preHandler: requireAuth() },
-    async (request, reply) => {
-      // Author is automatically set from authenticated user
-      const userId = request.user?.userId;
-      if (!userId) {
-        return reply.code(401).send({ error: "Unauthorized" });
-      }
-      const parsed = createPackageSchema.safeParse(request.body);
-      if (!parsed.success) {
-        return reply.code(400).send({
-          error: "Bad Request",
-          message: "Validation failed",
-          details: parsed.error.issues,
+  fastify.post("/", { preHandler: requireAuth() }, async (request, reply) => {
+    // Author is automatically set from authenticated user
+    const userId = request.user?.userId;
+    if (!userId) {
+      return reply.code(401).send({ error: "Unauthorized" });
+    }
+    const parsed = createPackageSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.code(400).send({
+        error: "Bad Request",
+        message: "Validation failed",
+        details: parsed.error.issues,
+      });
+    }
+    const body = parsed.data;
+    const now = Date.now();
+
+    const existing = await packageDAL.getByPackageId(body.packageId);
+    if (existing) {
+      return reply
+        .code(409)
+        .send({
+          error: "Package ID already exists",
+          packageId: body.packageId,
         });
-      }
-      const body = parsed.data;
-      const now = Date.now();
+    }
 
-      const existing = await packageDAL.getByPackageId(body.packageId);
-      if (existing) {
-        return reply
-          .code(409)
-          .send({ error: "Package ID already exists", packageId: body.packageId });
-      }
+    // Sanitize README to prevent XSS
+    const sanitizedReadme = body.readme
+      ? sanitizeHtml(body.readme, sanitizeOptions)
+      : null;
 
-      // Sanitize README to prevent XSS
-      const sanitizedReadme = body.readme
-        ? sanitizeHtml(body.readme, sanitizeOptions)
-        : null;
-
-      const id = `spkg_${now}_${Math.random().toString(36).slice(2, 8)}`;
-      const pkg = await db.transaction(async (tx: NodePgDatabase<typeof schema>) => {
+    const id = `spkg_${now}_${Math.random().toString(36).slice(2, 8)}`;
+    const pkg = await db.transaction(
+      async (tx: NodePgDatabase<typeof schema>) => {
         const pkgDalTx = new SkillPackageDAL(tx);
         const ruleDalTx = new SkillRuleDAL(tx);
 
@@ -219,11 +234,11 @@ export async function packagesRoutes(fastify: FastifyInstance) {
         }
 
         return createdPkg;
-      });
+      },
+    );
 
-      return reply.code(201).send(pkg);
-    },
-  );
+    return reply.code(201).send(pkg);
+  });
 
   fastify.get("/", async (request, reply) => {
     const params = searchSchema.parse(request.query);
@@ -231,14 +246,11 @@ export async function packagesRoutes(fastify: FastifyInstance) {
     return reply.send(result);
   });
 
-  fastify.get<{ Params: { id: string } }>(
-    "/:id",
-    async (request, reply) => {
-      const pkg = await packageDAL.getById(request.params.id);
-      if (!pkg) return reply.code(404).send({ error: "Package not found" });
-      return reply.send(pkg);
-    },
-  );
+  fastify.get<{ Params: { id: string } }>("/:id", async (request, reply) => {
+    const pkg = await packageDAL.getById(request.params.id);
+    if (!pkg) return reply.code(404).send({ error: "Package not found" });
+    return reply.send(pkg);
+  });
 
   fastify.get<{ Params: { id: string } }>(
     "/:id/rules",
@@ -303,20 +315,21 @@ export async function packagesRoutes(fastify: FastifyInstance) {
         updateData.readme = sanitizeHtml(updateData.readme, sanitizeOptions);
       }
 
-      const updated = await packageDAL.update(
-        request.params.id,
-        updateData,
-      );
+      const updated = await packageDAL.update(request.params.id, updateData);
       return reply.send(updated);
     },
   );
 
-  fastify.get("/my-packages", { preHandler: requireAuth() }, async (request, reply) => {
-    const userId = request.user?.userId;
-    if (!userId) {
-      return reply.code(401).send({ error: "Unauthorized" });
-    }
-    const packages = await packageDAL.getByAuthor(userId);
-    return reply.send({ packages });
-  });
+  fastify.get(
+    "/my-packages",
+    { preHandler: requireAuth() },
+    async (request, reply) => {
+      const userId = request.user?.userId;
+      if (!userId) {
+        return reply.code(401).send({ error: "Unauthorized" });
+      }
+      const packages = await packageDAL.getByAuthor(userId);
+      return reply.send({ packages });
+    },
+  );
 }

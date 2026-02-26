@@ -1,20 +1,20 @@
-import { PostgreSqlContainer } from '@testcontainers/postgresql';
-import { drizzle } from 'drizzle-orm/node-postgres';
-import { migrate } from 'drizzle-orm/node-postgres/migrator';
-import { Pool } from 'pg';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import fs from 'fs';
+import { PostgreSqlContainer } from "@testcontainers/postgresql";
+import { drizzle } from "drizzle-orm/node-postgres";
+import { migrate } from "drizzle-orm/node-postgres/migrator";
+import { Pool } from "pg";
+import path from "path";
+import { fileURLToPath } from "url";
+import fs from "fs";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export async function setup() {
-  console.log('🚀 Starting PostgreSQL test container...');
+  console.log("🚀 Starting PostgreSQL test container...");
 
-  const container = await new PostgreSqlContainer('postgres:16-alpine')
-    .withDatabase('yigyaps_test')
-    .withUsername('test_user')
-    .withPassword('test_password')
+  const container = await new PostgreSqlContainer("postgres:16-alpine")
+    .withDatabase("yigyaps_test")
+    .withUsername("test_user")
+    .withPassword("test_password")
     .start();
 
   const connectionString = container.getConnectionUri();
@@ -22,12 +22,12 @@ export async function setup() {
   const db = drizzle(pool);
 
   // 运行迁移
-  const migrationsPath = path.resolve(__dirname, '../../migrations');
+  const migrationsPath = path.resolve(__dirname, "../../migrations");
   console.log(`📂 Migrations folder: ${migrationsPath}`);
 
   try {
     await migrate(db, { migrationsFolder: migrationsPath });
-    console.log('✅ Migrations completed successfully');
+    console.log("✅ Migrations completed successfully");
 
     // 验证表是否真的存在
     const result = await pool.query(`
@@ -35,18 +35,24 @@ export async function setup() {
       WHERE schemaname = 'public'
       ORDER BY tablename
     `);
-    console.log('📋 Created tables:', result.rows.map(r => r.tablename).join(', '));
+    console.log(
+      "📋 Created tables:",
+      result.rows.map((r) => r.tablename).join(", "),
+    );
   } catch (error) {
-    console.error('❌ Migration failed:', error);
+    console.error("❌ Migration failed:", error);
     throw error;
   }
 
-  console.log('✅ Test database ready');
+  console.log("✅ Test database ready");
 
   // 保存连接信息到环境变量及文件
   process.env.TEST_DATABASE_URL = connectionString;
-  const envPath = path.resolve(__dirname, '../../.test-db-env.json');
-  fs.writeFileSync(envPath, JSON.stringify({ TEST_DATABASE_URL: connectionString }));
+  const envPath = path.resolve(__dirname, "../../.test-db-env.json");
+  fs.writeFileSync(
+    envPath,
+    JSON.stringify({ TEST_DATABASE_URL: connectionString }),
+  );
 
   return async () => {
     await pool.end();
@@ -54,7 +60,7 @@ export async function setup() {
     if (fs.existsSync(envPath)) {
       fs.unlinkSync(envPath);
     }
-    console.log('🛑 Test container stopped');
+    console.log("🛑 Test container stopped");
   };
 }
 

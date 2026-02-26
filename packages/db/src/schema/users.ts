@@ -32,10 +32,7 @@ export const usersTable = pgTable(
       .$type<"free" | "pro" | "epic" | "legendary">()
       .notNull()
       .default("free"),
-    role: text("role")
-      .$type<"user" | "admin">()
-      .notNull()
-      .default("user"),
+    role: text("role").$type<"user" | "admin">().notNull().default("user"),
     bio: text("bio"),
     websiteUrl: text("website_url"),
     isVerifiedCreator: boolean("is_verified_creator").notNull().default(false),

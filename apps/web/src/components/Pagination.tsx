@@ -1,4 +1,4 @@
-import type { ReactNode } from 'react';
+import type { ReactNode } from "react";
 
 interface PaginationProps {
   currentPage: number;
@@ -52,11 +52,11 @@ export function Pagination({
       pages.push(
         <button
           key={i}
-          className={`pagination-btn ${i === currentPage ? 'active' : ''}`}
+          className={`pagination-btn ${i === currentPage ? "active" : ""}`}
           onClick={() => onPageChange(i)}
         >
           {i}
-        </button>
+        </button>,
       );
     }
 

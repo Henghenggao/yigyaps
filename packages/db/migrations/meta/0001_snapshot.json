@@ -215,12 +215,8 @@
           "name": "yy_skill_mints_skill_package_id_yy_skill_packages_id_fk",
           "tableFrom": "yy_skill_mints",
           "tableTo": "yy_skill_packages",
-          "columnsFrom": [
-            "skill_package_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["skill_package_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -356,12 +352,8 @@
           "name": "yy_skill_package_installations_package_id_yy_skill_packages_id_fk",
           "tableFrom": "yy_skill_package_installations",
           "tableTo": "yy_skill_packages",
-          "columnsFrom": [
-            "package_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["package_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -488,12 +480,8 @@
           "name": "yy_skill_package_reviews_package_id_yy_skill_packages_id_fk",
           "tableFrom": "yy_skill_package_reviews",
           "tableTo": "yy_skill_packages",
-          "columnsFrom": [
-            "package_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["package_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -801,9 +789,7 @@
         "yy_skill_packages_package_id_unique": {
           "name": "yy_skill_packages_package_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "package_id"
-          ]
+          "columns": ["package_id"]
         }
       },
       "policies": {},
@@ -927,12 +913,8 @@
           "name": "yy_api_keys_user_id_yy_users_id_fk",
           "tableFrom": "yy_api_keys",
           "tableTo": "yy_users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -942,9 +924,7 @@
         "yy_api_keys_key_hash_unique": {
           "name": "yy_api_keys_key_hash_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "key_hash"
-          ]
+          "columns": ["key_hash"]
         }
       },
       "policies": {},
@@ -1056,12 +1036,8 @@
           "name": "yy_sessions_user_id_yy_users_id_fk",
           "tableFrom": "yy_sessions",
           "tableTo": "yy_users",
-          "columnsFrom": [
-            "user_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["user_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1071,9 +1047,7 @@
         "yy_sessions_session_token_unique": {
           "name": "yy_sessions_session_token_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "session_token"
-          ]
+          "columns": ["session_token"]
         }
       },
       "policies": {},
@@ -1239,9 +1213,7 @@
         "yy_users_github_id_unique": {
           "name": "yy_users_github_id_unique",
           "nullsNotDistinct": false,
-          "columns": [
-            "github_id"
-          ]
+          "columns": ["github_id"]
         }
       },
       "policies": {},
@@ -1318,12 +1290,8 @@
           "name": "yy_encrypted_knowledge_skill_package_id_yy_skill_packages_id_fk",
           "tableFrom": "yy_encrypted_knowledge",
           "tableTo": "yy_skill_packages",
-          "columnsFrom": [
-            "skill_package_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["skill_package_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }
@@ -1483,12 +1451,8 @@
           "name": "yy_ip_registrations_skill_package_id_yy_skill_packages_id_fk",
           "tableFrom": "yy_ip_registrations",
           "tableTo": "yy_skill_packages",
-          "columnsFrom": [
-            "skill_package_id"
-          ],
-          "columnsTo": [
-            "id"
-          ],
+          "columnsFrom": ["skill_package_id"],
+          "columnsTo": ["id"],
           "onDelete": "cascade",
           "onUpdate": "no action"
         }

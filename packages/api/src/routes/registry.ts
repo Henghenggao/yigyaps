@@ -26,7 +26,9 @@ export async function registryRoutes(fastify: FastifyInstance) {
 
     if (!hasDbConfig) {
       dbError = "DATABASE_URL environment variable is missing";
-      request.log.warn("Database health check skipped: No connection string provided");
+      request.log.warn(
+        "Database health check skipped: No connection string provided",
+      );
     } else {
       try {
         await fastify.db.execute(sql`SELECT 1`);
@@ -47,13 +49,13 @@ export async function registryRoutes(fastify: FastifyInstance) {
         configured: hasDbConfig,
         error: dbError,
       },
-      environment: process.env.NODE_ENV || "development"
+      environment: process.env.NODE_ENV || "development",
     };
 
     // Return 200 even if degraded if explicitly allowed, otherwise 503
     // This helps services stay up for debugging even if DB is flaky
-    const allowDegraded = process.env.ALLOW_DEGRADED_HEALTH === 'true';
-    const statusCode = (dbStatus === "connected" || allowDegraded) ? 200 : 503;
+    const allowDegraded = process.env.ALLOW_DEGRADED_HEALTH === "true";
+    const statusCode = dbStatus === "connected" || allowDegraded ? 200 : 503;
 
     return reply.status(statusCode).send(response);
   });
@@ -65,7 +67,8 @@ export async function wellKnownRoutes(fastify: FastifyInstance) {
       registries: [
         {
           name: "YigYaps",
-          description: "The open marketplace for YAP skills — MCP-compatible skill registry",
+          description:
+            "The open marketplace for YAP skills — MCP-compatible skill registry",
           url: `${process.env.YIGYAPS_API_URL ?? "https://api.yigyaps.com"}/v1`,
           version: "1.0.0",
         },

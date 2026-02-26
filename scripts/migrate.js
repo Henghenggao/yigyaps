@@ -27,11 +27,14 @@ async function runMigrations() {
   }
 
   console.log("🚀 Starting YigYaps database migrations...");
-  console.log(`📍 Database: ${databaseUrl.replace(/:[^:@]+@/, ':****@')}`); // Hide password
+  console.log(`📍 Database: ${databaseUrl.replace(/:[^:@]+@/, ":****@")}`); // Hide password
 
   const pool = new Pool({
     connectionString: databaseUrl,
-    ssl: process.env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false
+    ssl:
+      process.env.NODE_ENV === "production"
+        ? { rejectUnauthorized: false }
+        : false,
   });
   const db = drizzle(pool);
 

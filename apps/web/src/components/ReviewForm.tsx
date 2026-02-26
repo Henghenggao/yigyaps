@@ -1,8 +1,8 @@
-import { useState } from 'react';
-import type { FormEvent } from 'react';
-import { useAuth } from '../contexts/AuthContext';
-import type { SkillPackage } from '@yigyaps/types';
-import { fetchApi } from '../lib/api';
+import { useState } from "react";
+import type { FormEvent } from "react";
+import { useAuth } from "../contexts/AuthContext";
+import type { SkillPackage } from "@yigyaps/types";
+import { fetchApi } from "../lib/api";
 
 interface ReviewFormProps {
   skill: SkillPackage;
@@ -13,8 +13,8 @@ export function ReviewForm({ skill, onReviewSubmitted }: ReviewFormProps) {
   const { user } = useAuth();
   const [rating, setRating] = useState(5);
   const [hoveredRating, setHoveredRating] = useState(0);
-  const [title, setTitle] = useState('');
-  const [comment, setComment] = useState('');
+  const [title, setTitle] = useState("");
+  const [comment, setComment] = useState("");
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState(false);
@@ -34,30 +34,30 @@ export function ReviewForm({ skill, onReviewSubmitted }: ReviewFormProps) {
 
     // Validation
     if (rating < 1 || rating > 5) {
-      setError('Please select a rating between 1 and 5 stars');
+      setError("Please select a rating between 1 and 5 stars");
       return;
     }
 
     if (comment.trim().length < 10) {
-      setError('Comment must be at least 10 characters');
+      setError("Comment must be at least 10 characters");
       return;
     }
 
     if (comment.length > 1000) {
-      setError('Comment must not exceed 1000 characters');
+      setError("Comment must not exceed 1000 characters");
       return;
     }
 
     if (title.length > 100) {
-      setError('Title must not exceed 100 characters');
+      setError("Title must not exceed 100 characters");
       return;
     }
 
     try {
       setSubmitting(true);
 
-      await fetchApi('/v1/reviews', {
-        method: 'POST',
+      await fetchApi("/v1/reviews", {
+        method: "POST",
         body: JSON.stringify({
           packageId: skill.packageId,
           packageVersion: skill.version,
@@ -70,15 +70,16 @@ export function ReviewForm({ skill, onReviewSubmitted }: ReviewFormProps) {
       // Success
       setSuccess(true);
       setRating(5);
-      setTitle('');
-      setComment('');
+      setTitle("");
+      setComment("");
       onReviewSubmitted();
 
       // Clear success message after 3s
       setTimeout(() => setSuccess(false), 3000);
     } catch (err) {
-      console.error('Failed to submit review:', err);
-      const errorMessage = err instanceof Error ? err.message : 'Failed to submit review';
+      console.error("Failed to submit review:", err);
+      const errorMessage =
+        err instanceof Error ? err.message : "Failed to submit review";
       setError(errorMessage);
     } finally {
       setSubmitting(false);
@@ -99,7 +100,7 @@ export function ReviewForm({ skill, onReviewSubmitted }: ReviewFormProps) {
             <button
               key={star}
               type="button"
-              className={`star-btn ${star <= (hoveredRating || rating) ? 'active' : ''}`}
+              className={`star-btn ${star <= (hoveredRating || rating) ? "active" : ""}`}
               onClick={() => setRating(star)}
               onMouseEnter={() => setHoveredRating(star)}
               onMouseLeave={() => setHoveredRating(0)}
@@ -107,7 +108,9 @@ export function ReviewForm({ skill, onReviewSubmitted }: ReviewFormProps) {
               ★
             </button>
           ))}
-          <span className="star-label">{rating} star{rating > 1 ? 's' : ''}</span>
+          <span className="star-label">
+            {rating} star{rating > 1 ? "s" : ""}
+          </span>
         </div>
       </div>
 
@@ -152,7 +155,9 @@ export function ReviewForm({ skill, onReviewSubmitted }: ReviewFormProps) {
       {error && <div className="form-error">{error}</div>}
 
       {/* Success Message */}
-      {success && <div className="form-success">Review submitted successfully!</div>}
+      {success && (
+        <div className="form-success">Review submitted successfully!</div>
+      )}
 
       {/* Submit Button */}
       <button
@@ -160,7 +165,7 @@ export function ReviewForm({ skill, onReviewSubmitted }: ReviewFormProps) {
         className="btn btn-primary"
         disabled={submitting || comment.trim().length < 10}
       >
-        {submitting ? 'Submitting...' : 'Submit Review'}
+        {submitting ? "Submitting..." : "Submit Review"}
       </button>
     </form>
   );

@@ -32,13 +32,13 @@ npm test
 
 ## Package Structure
 
-| Package | Scope | Description |
-|---------|-------|-------------|
-| `packages/types` | `@yigyaps/types` | Shared TypeScript types |
-| `packages/db` | `@yigyaps/db` | Drizzle ORM schema and DALs |
-| `packages/api` | `@yigyaps/api` | Fastify REST API server |
+| Package           | Scope             | Description                     |
+| ----------------- | ----------------- | ------------------------------- |
+| `packages/types`  | `@yigyaps/types`  | Shared TypeScript types         |
+| `packages/db`     | `@yigyaps/db`     | Drizzle ORM schema and DALs     |
+| `packages/api`    | `@yigyaps/api`    | Fastify REST API server         |
 | `packages/client` | `@yigyaps/client` | TypeScript/JS SDK for consumers |
-| `apps/web` | — | yigyaps.com portal (Next.js) |
+| `apps/web`        | —                 | yigyaps.com portal (Next.js)    |
 
 ## Submitting Changes
 

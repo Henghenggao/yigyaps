@@ -54,9 +54,12 @@ async function buildServer() {
       directives: {
         defaultSrc: ["'self'"],
         scriptSrc: ["'self'"],
-        styleSrc: ["'self'", "'unsafe-inline'"],  // CSS-in-JS requires unsafe-inline
-        imgSrc: ["'self'", "https:", "data:"],    // Allow external avatars and data URIs
-        connectSrc: ["'self'", ...(env.CORS_ORIGIN || "").split(",").filter(Boolean)],
+        styleSrc: ["'self'", "'unsafe-inline'"], // CSS-in-JS requires unsafe-inline
+        imgSrc: ["'self'", "https:", "data:"], // Allow external avatars and data URIs
+        connectSrc: [
+          "'self'",
+          ...(env.CORS_ORIGIN || "").split(",").filter(Boolean),
+        ],
         fontSrc: ["'self'", "https://fonts.gstatic.com"],
         objectSrc: ["'none'"],
         baseUri: ["'self'"],
@@ -87,21 +90,24 @@ async function buildServer() {
     ssl: env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
   });
 
-  fastify.log.info({
-    db: env.DATABASE_URL.replace(/:[^:@]+@/, ':****@'),
-    ssl: !!(env.NODE_ENV === "production")
-  }, "Initializing database connection pool");
+  fastify.log.info(
+    {
+      db: env.DATABASE_URL.replace(/:[^:@]+@/, ":****@"),
+      ssl: !!(env.NODE_ENV === "production"),
+    },
+    "Initializing database connection pool",
+  );
 
   const db = drizzle(pool, { schema });
   fastify.decorate("db", db);
 
   // ── CSRF Protection (Origin Validation) ───────────────────────────────────
   const allowedOrigins = (env.CORS_ORIGIN || "").split(",").filter(Boolean);
-  fastify.addHook('preHandler', async (request, reply) => {
+  fastify.addHook("preHandler", async (request, reply) => {
     const method = request.method;
 
     // Skip CSRF check for safe methods
-    if (method === 'GET' || method === 'HEAD' || method === 'OPTIONS') {
+    if (method === "GET" || method === "HEAD" || method === "OPTIONS") {
       return;
     }
 
@@ -122,26 +128,32 @@ async function buildServer() {
 
     // If no origin/referer, reject (prevents CSRF from untracked sources)
     if (!requestOrigin) {
-      fastify.log.warn({ method, url: request.url }, 'CSRF check failed: No origin or referer header');
+      fastify.log.warn(
+        { method, url: request.url },
+        "CSRF check failed: No origin or referer header",
+      );
       return reply.code(403).send({
-        error: 'Forbidden',
-        message: 'Origin verification failed',
+        error: "Forbidden",
+        message: "Origin verification failed",
       });
     }
 
     // Verify origin is in allowed list
-    const isAllowed = allowedOrigins.some(allowed => {
+    const isAllowed = allowedOrigins.some((allowed) => {
       // Normalize trailing slashes
-      const normalizedAllowed = allowed.replace(/\/$/, '');
-      const normalizedRequest = requestOrigin.replace(/\/$/, '');
+      const normalizedAllowed = allowed.replace(/\/$/, "");
+      const normalizedRequest = requestOrigin.replace(/\/$/, "");
       return normalizedRequest === normalizedAllowed;
     });
 
     if (!isAllowed) {
-      fastify.log.warn({ method, url: request.url, origin: requestOrigin }, 'CSRF check failed: Origin not allowed');
+      fastify.log.warn(
+        { method, url: request.url, origin: requestOrigin },
+        "CSRF check failed: Origin not allowed",
+      );
       return reply.code(403).send({
-        error: 'Forbidden',
-        message: 'Origin verification failed',
+        error: "Forbidden",
+        message: "Origin verification failed",
       });
     }
   });
@@ -191,7 +203,7 @@ async function buildServer() {
     const requestContext = {
       method: request.method,
       url: request.url,
-      userId: request.user?.userId || 'anonymous',
+      userId: request.user?.userId || "anonymous",
     };
 
     if (err instanceof z.ZodError) {
@@ -202,25 +214,36 @@ async function buildServer() {
       });
     }
 
-    const error = err as Error & { code?: string; statusCode?: number; constraint?: string };
+    const error = err as Error & {
+      code?: string;
+      statusCode?: number;
+      constraint?: string;
+    };
 
     // Database / Postgres error heuristics
-    if (error.code && typeof error.code === 'string' && error.code.match(/^[A-Z0-9]{5}$/)) {
+    if (
+      error.code &&
+      typeof error.code === "string" &&
+      error.code.match(/^[A-Z0-9]{5}$/)
+    ) {
       // Handle unique constraint violations (23505)
-      if (error.code === '23505') {
-        const constraintName = error.constraint || 'unknown';
-        let message = 'A record with these values already exists';
+      if (error.code === "23505") {
+        const constraintName = error.constraint || "unknown";
+        let message = "A record with these values already exists";
 
         // Provide user-friendly messages for known constraints
-        if (constraintName.includes('author_pkg')) {
-          message = 'You have already published a package with this name';
-        } else if (constraintName.includes('user_review')) {
-          message = 'You have already reviewed this package';
-        } else if (constraintName.includes('package_id')) {
-          message = 'This package ID is already in use';
+        if (constraintName.includes("author_pkg")) {
+          message = "You have already published a package with this name";
+        } else if (constraintName.includes("user_review")) {
+          message = "You have already reviewed this package";
+        } else if (constraintName.includes("package_id")) {
+          message = "This package ID is already in use";
         }
 
-        request.log.warn({ err: error, constraint: constraintName, ...requestContext }, "Unique constraint violation");
+        request.log.warn(
+          { err: error, constraint: constraintName, ...requestContext },
+          "Unique constraint violation",
+        );
         return reply.status(409).send({
           error: "Conflict",
           message,
@@ -245,7 +268,10 @@ async function buildServer() {
     }
 
     // Log unexpected errors with request context
-    request.log.error({ err: error, ...requestContext }, "Unhandled server error");
+    request.log.error(
+      { err: error, ...requestContext },
+      "Unhandled server error",
+    );
     return reply.status(500).send({
       error: "Internal Server Error",
       message: "An unexpected error occurred",

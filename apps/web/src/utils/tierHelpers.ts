@@ -24,12 +24,12 @@ export const TIER_RANK: Record<string, number> = {
  */
 export function getTierName(tier: number): string {
   const tierMap: Record<number, string> = {
-    0: 'Free',
-    1: 'Pro',
-    2: 'Epic',
-    3: 'Legendary',
+    0: "Free",
+    1: "Pro",
+    2: "Epic",
+    3: "Legendary",
   };
-  return tierMap[tier] || 'Unknown';
+  return tierMap[tier] || "Unknown";
 }
 
 /**

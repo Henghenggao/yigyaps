@@ -7,9 +7,9 @@
  * License: Apache 2.0
  */
 
-import { createContext, useContext, useState, useEffect } from 'react';
-import type { ReactNode } from 'react';
-import { fetchApi } from '../lib/api';
+import { createContext, useContext, useState, useEffect } from "react";
+import type { ReactNode } from "react";
+import { fetchApi } from "../lib/api";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -19,8 +19,8 @@ export interface User {
   displayName: string;
   email?: string;
   avatarUrl?: string;
-  tier: 'free' | 'pro' | 'epic' | 'legendary';
-  role: 'user' | 'admin';
+  tier: "free" | "pro" | "epic" | "legendary";
+  role: "user" | "admin";
   bio?: string;
   websiteUrl?: string;
   isVerifiedCreator: boolean;
@@ -54,7 +54,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3100';
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3100";
 
   // Initialize auth state
   useEffect(() => {
@@ -62,7 +62,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       try {
         await fetchUserProfile();
       } catch (err) {
-        console.error('Failed to initialize auth:', err);
+        console.error("Failed to initialize auth:", err);
       } finally {
         setLoading(false);
       }
@@ -74,27 +74,27 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Listen for auth expiration events (401 responses)
   useEffect(() => {
     const handleAuthExpired = () => {
-      console.log('Auth expired, clearing user session');
+      console.log("Auth expired, clearing user session");
       setUser(null);
-      setError('Your session has expired. Please sign in again.');
+      setError("Your session has expired. Please sign in again.");
     };
 
-    window.addEventListener('auth:expired', handleAuthExpired);
-    return () => window.removeEventListener('auth:expired', handleAuthExpired);
+    window.addEventListener("auth:expired", handleAuthExpired);
+    return () => window.removeEventListener("auth:expired", handleAuthExpired);
   }, []);
 
   // Fetch user profile securely with cookie
   const fetchUserProfile = async () => {
     try {
-      const userData = await fetchApi<User>('/v1/auth/me');
+      const userData = await fetchApi<User>("/v1/auth/me");
       setUser(userData);
       setError(null);
     } catch (err: unknown) {
-      console.error('Failed to fetch user profile:', err);
+      console.error("Failed to fetch user profile:", err);
       if (err instanceof Error) {
         setError(err.message);
       } else {
-        setError('An unknown error occurred');
+        setError("An unknown error occurred");
       }
       // Clear invalid state
       setUser(null);
@@ -109,9 +109,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Logout user
   const logout = async () => {
     try {
-      await fetchApi('/v1/auth/logout', { method: 'POST' });
+      await fetchApi("/v1/auth/logout", { method: "POST" });
     } catch (err) {
-      console.error('Logout error:', err);
+      console.error("Logout error:", err);
     } finally {
       setUser(null);
       setError(null);
@@ -140,7 +140,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
+    throw new Error("useAuth must be used within an AuthProvider");
   }
   return context;
 }

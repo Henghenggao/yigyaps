@@ -1,12 +1,12 @@
-import { Routes, Route } from 'react-router-dom';
-import { HomePage } from './pages/HomePage';
-import { SkillDetailPage } from './pages/SkillDetailPage';
-import { AuthCallback } from './pages/AuthCallback';
-import { PublishSkillPage } from './pages/PublishSkillPage';
-import { NotFoundPage } from './pages/NotFoundPage';
-import { ErrorBoundary } from './components/ErrorBoundary';
-import { ProtectedRoute } from './components/ProtectedRoute';
-import './App.css';
+import { Routes, Route } from "react-router-dom";
+import { HomePage } from "./pages/HomePage";
+import { SkillDetailPage } from "./pages/SkillDetailPage";
+import { AuthCallback } from "./pages/AuthCallback";
+import { PublishSkillPage } from "./pages/PublishSkillPage";
+import { NotFoundPage } from "./pages/NotFoundPage";
+import { ErrorBoundary } from "./components/ErrorBoundary";
+import { ProtectedRoute } from "./components/ProtectedRoute";
+import "./App.css";
 
 function App() {
   return (

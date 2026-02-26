@@ -1,4 +1,4 @@
-import { brandGradient } from './theme.js';
+import { brandGradient } from "./theme.js";
 
 const LOGO = `
  __   __ _       __   __
@@ -10,6 +10,10 @@ const LOGO = `
 `;
 
 export function showBanner(version: string) {
-    console.log(brandGradient(LOGO));
-    console.log(brandGradient.multiline(`  ✦  The MCP Skill Marketplace  v${version}  ✦\n`));
+  console.log(brandGradient(LOGO));
+  console.log(
+    brandGradient.multiline(`  ✦  The MCP Skill Marketplace  v${version}  ✦\n`),
+  );
 }
+
+export const renderBanner = () => showBanner("0.1.0");

@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect } from "react";
 
 interface SearchBarProps {
   value: string;
@@ -6,7 +6,11 @@ interface SearchBarProps {
   placeholder?: string;
 }
 
-export function SearchBar({ value, onChange, placeholder = 'Search skills...' }: SearchBarProps) {
+export function SearchBar({
+  value,
+  onChange,
+  placeholder = "Search skills...",
+}: SearchBarProps) {
   const [inputValue, setInputValue] = useState(value);
 
   // Debounced search effect (300ms delay)
@@ -24,8 +28,8 @@ export function SearchBar({ value, onChange, placeholder = 'Search skills...' }:
   }, [value]);
 
   const handleClear = () => {
-    setInputValue('');
-    onChange('');
+    setInputValue("");
+    onChange("");
   };
 
   return (

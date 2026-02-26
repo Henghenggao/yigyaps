@@ -1,5 +1,5 @@
-import { Link } from 'react-router-dom';
-import { UserMenu } from './UserMenu';
+import { Link } from "react-router-dom";
+import { UserMenu } from "./UserMenu";
 
 interface HeaderProps {
   user: {
@@ -15,7 +15,7 @@ interface HeaderProps {
 export function Header({ user, login }: HeaderProps) {
   return (
     <header className="header">
-      <Link to="/" className="logo" style={{ textDecoration: 'none' }}>
+      <Link to="/" className="logo" style={{ textDecoration: "none" }}>
         Yig<span>Yaps</span>
       </Link>
       <nav className="nav-links">
@@ -36,7 +36,7 @@ export function Header({ user, login }: HeaderProps) {
           className="btn btn-primary"
           disabled
           title="Coming soon - Connect your AI agent to access installed skills"
-          style={{ opacity: 0.6, cursor: 'not-allowed' }}
+          style={{ opacity: 0.6, cursor: "not-allowed" }}
         >
           Connect Agent
         </button>

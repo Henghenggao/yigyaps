@@ -1,4 +1,9 @@
-import type { SkillPackageSearchQuery, SkillPackageCategory, SkillPackageLicense, SkillPackageMaturity } from '@yigyaps/types';
+import type {
+  SkillPackageSearchQuery,
+  SkillPackageCategory,
+  SkillPackageLicense,
+  SkillPackageMaturity,
+} from "@yigyaps/types";
 
 interface FilterPanelProps {
   filters: SkillPackageSearchQuery;
@@ -6,44 +11,44 @@ interface FilterPanelProps {
 }
 
 const CATEGORIES: { value: SkillPackageCategory; label: string }[] = [
-  { value: 'development', label: 'Development' },
-  { value: 'communication', label: 'Communication' },
-  { value: 'productivity', label: 'Productivity' },
-  { value: 'research', label: 'Research' },
-  { value: 'integration', label: 'Integration' },
-  { value: 'data', label: 'Data' },
-  { value: 'automation', label: 'Automation' },
-  { value: 'security', label: 'Security' },
-  { value: 'ai-ml', label: 'AI/ML' },
-  { value: 'personality', label: 'Personality' },
-  { value: 'wisdom', label: 'Wisdom' },
-  { value: 'voice', label: 'Voice' },
-  { value: 'likeness', label: 'Likeness' },
-  { value: 'other', label: 'Other' },
+  { value: "development", label: "Development" },
+  { value: "communication", label: "Communication" },
+  { value: "productivity", label: "Productivity" },
+  { value: "research", label: "Research" },
+  { value: "integration", label: "Integration" },
+  { value: "data", label: "Data" },
+  { value: "automation", label: "Automation" },
+  { value: "security", label: "Security" },
+  { value: "ai-ml", label: "AI/ML" },
+  { value: "personality", label: "Personality" },
+  { value: "wisdom", label: "Wisdom" },
+  { value: "voice", label: "Voice" },
+  { value: "likeness", label: "Likeness" },
+  { value: "other", label: "Other" },
 ];
 
-const LICENSES: { value: SkillPackageLicense | 'all'; label: string }[] = [
-  { value: 'all', label: 'All' },
-  { value: 'open-source', label: 'Open Source' },
-  { value: 'free', label: 'Free' },
-  { value: 'premium', label: 'Premium' },
-  { value: 'enterprise', label: 'Enterprise' },
+const LICENSES: { value: SkillPackageLicense | "all"; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "open-source", label: "Open Source" },
+  { value: "free", label: "Free" },
+  { value: "premium", label: "Premium" },
+  { value: "enterprise", label: "Enterprise" },
 ];
 
-const MATURITIES: { value: SkillPackageMaturity | 'all'; label: string }[] = [
-  { value: 'all', label: 'All' },
-  { value: 'experimental', label: 'Experimental' },
-  { value: 'beta', label: 'Beta' },
-  { value: 'stable', label: 'Stable' },
-  { value: 'deprecated', label: 'Deprecated' },
+const MATURITIES: { value: SkillPackageMaturity | "all"; label: string }[] = [
+  { value: "all", label: "All" },
+  { value: "experimental", label: "Experimental" },
+  { value: "beta", label: "Beta" },
+  { value: "stable", label: "Stable" },
+  { value: "deprecated", label: "Deprecated" },
 ];
 
 const SORT_OPTIONS = [
-  { value: 'relevance', label: 'Relevance' },
-  { value: 'popularity', label: 'Popularity' },
-  { value: 'rating', label: 'Rating' },
-  { value: 'recent', label: 'Recent' },
-  { value: 'name', label: 'Name' },
+  { value: "relevance", label: "Relevance" },
+  { value: "popularity", label: "Popularity" },
+  { value: "rating", label: "Rating" },
+  { value: "recent", label: "Recent" },
+  { value: "name", label: "Name" },
 ];
 
 export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
@@ -53,7 +58,7 @@ export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
       license: undefined,
       maturity: undefined,
       maxPriceUsd: undefined,
-      sortBy: 'popularity',
+      sortBy: "popularity",
     });
   };
 
@@ -79,10 +84,12 @@ export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
         <label className="filter-label">Category</label>
         <select
           className="filter-select"
-          value={filters.category || ''}
+          value={filters.category || ""}
           onChange={(e) =>
             onFilterChange({
-              category: e.target.value ? (e.target.value as SkillPackageCategory) : undefined,
+              category: e.target.value
+                ? (e.target.value as SkillPackageCategory)
+                : undefined,
             })
           }
         >
@@ -106,14 +113,14 @@ export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
                 name="license"
                 value={lic.value}
                 checked={
-                  lic.value === 'all'
+                  lic.value === "all"
                     ? !filters.license
                     : filters.license === lic.value
                 }
                 onChange={(e) =>
                   onFilterChange({
                     license:
-                      e.target.value === 'all'
+                      e.target.value === "all"
                         ? undefined
                         : (e.target.value as SkillPackageLicense),
                   })
@@ -136,14 +143,14 @@ export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
                 name="maturity"
                 value={mat.value}
                 checked={
-                  mat.value === 'all'
+                  mat.value === "all"
                     ? !filters.maturity
                     : filters.maturity === mat.value
                 }
                 onChange={(e) =>
                   onFilterChange({
                     maturity:
-                      e.target.value === 'all'
+                      e.target.value === "all"
                         ? undefined
                         : (e.target.value as SkillPackageMaturity),
                   })
@@ -182,10 +189,10 @@ export function FilterPanel({ filters, onFilterChange }: FilterPanelProps) {
         <label className="filter-label">Sort By</label>
         <select
           className="filter-select"
-          value={filters.sortBy || 'popularity'}
+          value={filters.sortBy || "popularity"}
           onChange={(e) =>
             onFilterChange({
-              sortBy: e.target.value as SkillPackageSearchQuery['sortBy'],
+              sortBy: e.target.value as SkillPackageSearchQuery["sortBy"],
             })
           }
         >

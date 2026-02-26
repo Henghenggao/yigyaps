@@ -62,7 +62,7 @@ export interface SkillPackageSearchResult {
 // ─── Skill Package DAL ────────────────────────────────────────────────────────
 
 export class SkillPackageDAL {
-  constructor(private db: NodePgDatabase<typeof schema>) { }
+  constructor(private db: NodePgDatabase<typeof schema>) {}
 
   async create(pkg: SkillPackageInsert): Promise<SkillPackageRow> {
     return dbOperation(
@@ -256,7 +256,7 @@ export class SkillPackageDAL {
 // ─── Skill Installation DAL ───────────────────────────────────────────────────
 
 export class SkillInstallationDAL {
-  constructor(private db: NodePgDatabase<typeof schema>) { }
+  constructor(private db: NodePgDatabase<typeof schema>) {}
 
   async install(
     data: SkillPackageInstallationInsert,
@@ -273,9 +273,7 @@ export class SkillInstallationDAL {
     );
   }
 
-  async getById(
-    id: string,
-  ): Promise<SkillPackageInstallationRow | null> {
+  async getById(id: string): Promise<SkillPackageInstallationRow | null> {
     return dbOperation(
       async () => {
         const rows = await this.db
@@ -289,9 +287,7 @@ export class SkillInstallationDAL {
     );
   }
 
-  async getByAgent(
-    agentId: string,
-  ): Promise<SkillPackageInstallationRow[]> {
+  async getByAgent(agentId: string): Promise<SkillPackageInstallationRow[]> {
     return dbOperation(
       async () =>
         this.db
@@ -337,10 +333,7 @@ export class SkillInstallationDAL {
     );
   }
 
-  async hasInstallation(
-    userId: string,
-    packageId: string,
-  ): Promise<boolean> {
+  async hasInstallation(userId: string, packageId: string): Promise<boolean> {
     return dbOperation(
       async () => {
         const rows = await this.db
@@ -364,7 +357,7 @@ export class SkillInstallationDAL {
 // ─── Skill Review DAL ─────────────────────────────────────────────────────────
 
 export class SkillReviewDAL {
-  constructor(private db: NodePgDatabase<typeof schema>) { }
+  constructor(private db: NodePgDatabase<typeof schema>) {}
 
   async create(
     review: SkillPackageReviewInsert,
@@ -406,8 +399,7 @@ export class SkillReviewDAL {
       async () => {
         const result = await this.db
           .select({
-            avgRating:
-              sql<number>`COALESCE(AVG(${skillPackageReviewsTable.rating}), 0)::numeric(3,2)`,
+            avgRating: sql<number>`COALESCE(AVG(${skillPackageReviewsTable.rating}), 0)::numeric(3,2)`,
             count: sql<number>`count(*)::int`,
           })
           .from(skillPackageReviewsTable)
@@ -429,7 +421,7 @@ export class SkillReviewDAL {
 // ─── Skill Mint DAL ───────────────────────────────────────────────────────────
 
 export class SkillMintDAL {
-  constructor(private db: NodePgDatabase<typeof schema>) { }
+  constructor(private db: NodePgDatabase<typeof schema>) {}
 
   async create(mint: SkillMintInsert): Promise<SkillMintRow> {
     return dbOperation(
@@ -456,7 +448,11 @@ export class SkillMintDAL {
           .limit(1);
         return rows[0] ?? null;
       },
-      { method: "getBySkillPackageId", entity: "skillMint", id: skillPackageId },
+      {
+        method: "getBySkillPackageId",
+        entity: "skillMint",
+        id: skillPackageId,
+      },
     );
   }
 
@@ -550,7 +546,7 @@ export class SkillMintDAL {
 // ─── Royalty Ledger DAL ───────────────────────────────────────────────────────
 
 export class RoyaltyLedgerDAL {
-  constructor(private db: NodePgDatabase<typeof schema>) { }
+  constructor(private db: NodePgDatabase<typeof schema>) {}
 
   async create(entry: RoyaltyLedgerInsert): Promise<RoyaltyLedgerRow> {
     return dbOperation(
@@ -603,7 +599,7 @@ export class RoyaltyLedgerDAL {
 // ─── Skill Rule DAL ───────────────────────────────────────────────────────────
 
 export class SkillRuleDAL {
-  constructor(private db: NodePgDatabase<typeof schema>) { }
+  constructor(private db: NodePgDatabase<typeof schema>) {}
 
   async create(rule: SkillRuleInsert): Promise<SkillRuleRow> {
     return dbOperation(
@@ -630,4 +626,3 @@ export class SkillRuleDAL {
     );
   }
 }
-

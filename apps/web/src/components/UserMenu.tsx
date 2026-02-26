@@ -1,7 +1,7 @@
-import { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { sanitizeUrl } from '../utils/sanitizeUrl';
+import { useState } from "react";
+import { Link } from "react-router-dom";
+import { useAuth } from "../contexts/AuthContext";
+import { sanitizeUrl } from "../utils/sanitizeUrl";
 
 export function UserMenu() {
   const { user, logout } = useAuth();
@@ -14,10 +14,7 @@ export function UserMenu() {
 
   return (
     <div className="user-menu-wrapper">
-      <button
-        className="user-menu-btn"
-        onClick={() => setIsOpen(!isOpen)}
-      >
+      <button className="user-menu-btn" onClick={() => setIsOpen(!isOpen)}>
         {safeAvatarUrl ? (
           <img
             src={safeAvatarUrl}
@@ -30,25 +27,16 @@ export function UserMenu() {
           </div>
         )}
         <span>{user.displayName}</span>
-        <span className="user-tier-badge">
-          {user.tier}
-        </span>
+        <span className="user-tier-badge">{user.tier}</span>
       </button>
 
       {isOpen && (
         <>
-          <div
-            className="user-menu-overlay"
-            onClick={() => setIsOpen(false)}
-          />
+          <div className="user-menu-overlay" onClick={() => setIsOpen(false)} />
           <div className="user-menu-dropdown">
             <div className="user-menu-header">
-              <div className="user-menu-username">
-                {user.displayName}
-              </div>
-              <div className="user-menu-handle">
-                @{user.githubUsername}
-              </div>
+              <div className="user-menu-username">{user.displayName}</div>
+              <div className="user-menu-handle">@{user.githubUsername}</div>
             </div>
 
             <div className="user-menu-body">
@@ -56,7 +44,7 @@ export function UserMenu() {
                 to={`/?author=${user.id}`}
                 className="user-menu-item"
                 onClick={() => setIsOpen(false)}
-                style={{ textDecoration: 'none', display: 'block' }}
+                style={{ textDecoration: "none", display: "block" }}
               >
                 My Packages
               </Link>
@@ -65,7 +53,7 @@ export function UserMenu() {
                 className="user-menu-item"
                 disabled
                 title="Coming soon"
-                style={{ opacity: 0.6, cursor: 'not-allowed' }}
+                style={{ opacity: 0.6, cursor: "not-allowed" }}
               >
                 Settings
               </button>

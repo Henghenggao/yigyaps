@@ -1,86 +1,107 @@
-import { logger } from "../lib/logger.js";
 import { CliError } from "../lib/errors.js";
 import { createRegistryClient } from "../lib/registry.js";
 import { getSession } from "../lib/auth.js";
-import chalk from "chalk";
 import os from "os";
 import path from "path";
 import fs from "fs-extra";
+import { p } from "../lib/ui/prompts.js";
+import { colors, icons } from "../lib/ui/theme.js";
+import { panel, keyValue } from "../lib/ui/components.js";
 
 /**
  * Doctor Command
- * 
- * Diagnostic tool for YigYaps CLI.
  */
 export async function doctorCommand() {
-    try {
-        logger.info(chalk.bold.cyan("\n👨‍⚕️ YigYaps CLI Diagnostics\n"));
+  p.intro(colors.primary.bold("👨‍⚕️ YigYaps CLI Diagnostics"));
 
-        // 1. Check Node.js
-        const nodeVersion = process.version;
-        const major = parseInt(nodeVersion.slice(1).split(".")[0]);
-        if (major >= 18) {
-            logger.success(`Node.js: ${nodeVersion} (Supported)`);
-        } else {
-            logger.error(`Node.js: ${nodeVersion} (Required: >= 18.0.0)`);
-        }
+  try {
+    // 1. System Info Panel
+    const sysInfo = keyValue({
+      OS: `${process.platform} (${os.release()})`,
+      Arch: process.arch,
+      Node: process.version,
+      Shell: process.env.SHELL || "N/A",
+      CWD: process.cwd(),
+    });
+    console.log(panel("System Information", sysInfo));
 
-        // 2. Check Auth Status
-        const session = getSession();
-        if (session.apiKey) {
-            logger.success(`Authentication: API Key is configured`);
-        } else {
-            logger.warn(`Authentication: Not logged in (Use 'yigyaps login')`);
-        }
+    // 2. Health Checks
+    const s = p.spinner();
 
-        // 3. Check Registry Connectivity
-        const ora = (await import("ora")).default;
-        const spinner = ora("Checking Registry connectivity...").start();
-        try {
-            const client = createRegistryClient();
-            await client.getDiscovery();
-            spinner.succeed("Registry: Connected (https://api.yigyaps.com)");
-        } catch {
-            spinner.fail("Registry: Could not connect to API.");
-        }
-
-        // 4. Check MCP Host Configs
-        await checkMcpHosts();
-
-        // 5. System Info
-        logger.info(`\n${chalk.bold("System Info:")}`);
-        console.log(`  OS:      ${process.platform} (${os.release()})`);
-        console.log(`  Arch:    ${process.arch}`);
-        console.log(`  Shell:   ${process.env.SHELL || "N/A"}`);
-        console.log(`  CWD:     ${process.cwd()}`);
-
-        logger.info(chalk.bold.green("\nDiagnosis complete!\n"));
-
-    } catch (error: unknown) {
-        const message = error instanceof Error ? error.message : String(error);
-        throw CliError.system(`Doctor failed: ${message}`);
+    // Node.js Check
+    const nodeVersion = process.version;
+    const major = parseInt(nodeVersion.slice(1).split(".")[0]);
+    if (major >= 18) {
+      p.log.success(`Node.js ${colors.muted(nodeVersion)}: Supported`);
+    } else {
+      p.log.error(`Node.js ${colors.muted(nodeVersion)}: Required >= 18.0.0`);
     }
+
+    // Auth Check
+    const session = getSession();
+    if (session.apiKey) {
+      p.log.success("Authentication: API Key configured");
+    } else {
+      p.log.warn(
+        `Authentication: Not logged in (run ${colors.primary("yigyaps login")})`,
+      );
+    }
+
+    // Registry Check
+    s.start("Checking Registry connectivity...");
+    try {
+      const client = createRegistryClient();
+      await client.getDiscovery();
+      s.stop(
+        `${icons.success} Registry: Connected (${colors.link("api.yigyaps.com")})`,
+      );
+    } catch {
+      s.stop(`${icons.error} Registry: Connection failed`);
+    }
+
+    // 3. MCP Host Checks
+    await checkMcpHosts();
+
+    p.outro(colors.success("Diagnosis complete! Your environment is ready."));
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw CliError.system(`Doctor failed: ${message}`);
+  }
 }
 
 async function checkMcpHosts() {
-    const isWindows = process.platform === "win32";
-    const claudePath = isWindows
-        ? path.join(os.homedir(), "AppData", "Roaming", "Claude", "claude_desktop_config.json")
-        : path.join(os.homedir(), "Library", "Application Support", "Claude", "claude_desktop_config.json");
+  const isWindows = process.platform === "win32";
+  const claudePath = isWindows
+    ? path.join(
+        os.homedir(),
+        "AppData",
+        "Roaming",
+        "Claude",
+        "claude_desktop_config.json",
+      )
+    : path.join(
+        os.homedir(),
+        "Library",
+        "Application Support",
+        "Claude",
+        "claude_desktop_config.json",
+      );
 
-    if (await fs.pathExists(claudePath)) {
-        try {
-            const config = await fs.readJson(claudePath);
-            const isConfigured = config.mcpServers && config.mcpServers.yigyaps;
-            if (isConfigured) {
-                logger.success("Claude Desktop: Configured with YigYaps");
-            } else {
-                logger.warn("Claude Desktop: Found, but not configured with YigYaps (Use 'yigyaps mcp config')");
-            }
-        } catch {
-            logger.error("Claude Desktop: Config file is corrupted");
-        }
-    } else {
-        logger.info("Claude Desktop: Not found (Skipped)");
+  if (await fs.pathExists(claudePath)) {
+    try {
+      const config = await fs.readJson(claudePath);
+      const isConfigured = config.mcpServers && config.mcpServers.yigyaps;
+      if (isConfigured) {
+        p.log.success("Claude Desktop: Properly configured");
+      } else {
+        p.log.warn(
+          `Claude Desktop: Not configured (run ${colors.primary("yigyaps mcp config")})`,
+        );
+      }
+    } catch {
+      p.log.error("Claude Desktop: Config file is corrupted");
     }
+  } else {
+    p.log.step(colors.muted("Claude Desktop: Not found (Skipped)"));
+  }
 }

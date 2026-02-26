@@ -7,7 +7,7 @@
  * License: Apache 2.0
  */
 
-import { signJWT, type JWTPayload } from '../../../src/lib/jwt.js';
+import { signJWT, type JWTPayload } from "../../../src/lib/jwt.js";
 
 // ─── Test JWT Generation ──────────────────────────────────────────────────────
 
@@ -17,14 +17,14 @@ import { signJWT, type JWTPayload } from '../../../src/lib/jwt.js';
  * @returns Signed JWT token
  */
 export function createTestJWT(
-  overrides: Partial<Omit<JWTPayload, 'iat' | 'exp'>> = {},
+  overrides: Partial<Omit<JWTPayload, "iat" | "exp">> = {},
 ): string {
   return signJWT({
-    userId: overrides.userId || 'usr_test_123',
-    userName: overrides.userName || 'Test User',
-    githubUsername: overrides.githubUsername || 'testuser',
-    tier: overrides.tier || 'free',
-    role: overrides.role || 'user',
+    userId: overrides.userId || "usr_test_123",
+    userName: overrides.userName || "Test User",
+    githubUsername: overrides.githubUsername || "testuser",
+    tier: overrides.tier || "free",
+    role: overrides.role || "user",
   });
 }
 
@@ -34,11 +34,11 @@ export function createTestJWT(
  */
 export function createAdminJWT(): string {
   return signJWT({
-    userId: 'usr_admin_001',
-    userName: 'Admin User',
-    githubUsername: 'admin',
-    tier: 'legendary',
-    role: 'admin',
+    userId: "usr_admin_001",
+    userName: "Admin User",
+    githubUsername: "admin",
+    tier: "legendary",
+    role: "admin",
   });
 }
 
@@ -48,11 +48,11 @@ export function createAdminJWT(): string {
  */
 export function createFreeTierJWT(userId?: string): string {
   return signJWT({
-    userId: userId || 'usr_free_001',
-    userName: 'Free User',
-    githubUsername: 'freeuser',
-    tier: 'free',
-    role: 'user',
+    userId: userId || "usr_free_001",
+    userName: "Free User",
+    githubUsername: "freeuser",
+    tier: "free",
+    role: "user",
   });
 }
 
@@ -62,11 +62,11 @@ export function createFreeTierJWT(userId?: string): string {
  */
 export function createProTierJWT(userId?: string): string {
   return signJWT({
-    userId: userId || 'usr_pro_001',
-    userName: 'Pro User',
-    githubUsername: 'prouser',
-    tier: 'pro',
-    role: 'user',
+    userId: userId || "usr_pro_001",
+    userName: "Pro User",
+    githubUsername: "prouser",
+    tier: "pro",
+    role: "user",
   });
 }
 
@@ -76,11 +76,11 @@ export function createProTierJWT(userId?: string): string {
  */
 export function createEpicTierJWT(userId?: string): string {
   return signJWT({
-    userId: userId || 'usr_epic_001',
-    userName: 'Epic User',
-    githubUsername: 'epicuser',
-    tier: 'epic',
-    role: 'user',
+    userId: userId || "usr_epic_001",
+    userName: "Epic User",
+    githubUsername: "epicuser",
+    tier: "epic",
+    role: "user",
   });
 }
 
@@ -90,11 +90,11 @@ export function createEpicTierJWT(userId?: string): string {
  */
 export function createLegendaryTierJWT(userId?: string): string {
   return signJWT({
-    userId: userId || 'usr_legendary_001',
-    userName: 'Legendary User',
-    githubUsername: 'legendaryuser',
-    tier: 'legendary',
-    role: 'user',
+    userId: userId || "usr_legendary_001",
+    userName: "Legendary User",
+    githubUsername: "legendaryuser",
+    tier: "legendary",
+    role: "user",
   });
 }
 
@@ -105,12 +105,12 @@ export function createLegendaryTierJWT(userId?: string): string {
 export function createExpiredJWT(): string {
   return signJWT(
     {
-      userId: 'usr_expired_001',
-      userName: 'Expired User',
-      githubUsername: 'expireduser',
-      tier: 'free',
-      role: 'user',
+      userId: "usr_expired_001",
+      userName: "Expired User",
+      githubUsername: "expireduser",
+      tier: "free",
+      role: "user",
     },
-    '0s', // Expires immediately
+    "0s", // Expires immediately
   );
 }

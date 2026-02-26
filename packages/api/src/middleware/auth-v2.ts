@@ -80,7 +80,7 @@ async function validateApiKey(
     }
 
     // Update last used timestamp (async, don't wait)
-    apiKeyDAL.updateLastUsed(apiKey.id).catch(() => { });
+    apiKeyDAL.updateLastUsed(apiKey.id).catch(() => {});
 
     // Get user info from database
     const userDAL = new UserDAL(request.server.db);
@@ -101,8 +101,6 @@ async function validateApiKey(
     return null;
   }
 }
-
-
 
 // ─── Authentication Middleware ────────────────────────────────────────────────
 
@@ -159,7 +157,10 @@ export async function optionalAuth(
  * @param scopes Optional scopes to check (for API keys)
  */
 export function requireAuth(scopes?: string[]) {
-  return async (request: FastifyRequest, reply: FastifyReply): Promise<void> => {
+  return async (
+    request: FastifyRequest,
+    reply: FastifyReply,
+  ): Promise<void> => {
     let tokenToValidate: string | undefined;
 
     const authHeader = request.headers.authorization;

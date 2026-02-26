@@ -10,11 +10,7 @@
 import { eq, and, lt, sql, isNull } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import * as schema from "../schema/index.js";
-import {
-  usersTable,
-  apiKeysTable,
-  sessionsTable,
-} from "../schema/users.js";
+import { usersTable, apiKeysTable, sessionsTable } from "../schema/users.js";
 import type {
   UserRow,
   UserInsert,
@@ -297,9 +293,7 @@ export class SessionDAL {
   async deleteById(id: string): Promise<void> {
     await dbOperation(
       async () => {
-        await this.db
-          .delete(sessionsTable)
-          .where(eq(sessionsTable.id, id));
+        await this.db.delete(sessionsTable).where(eq(sessionsTable.id, id));
       },
       { method: "deleteById", entity: "session", id },
     );

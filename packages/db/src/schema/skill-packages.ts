@@ -269,4 +269,3 @@ export const skillRulesTable = pgTable(
 
 export type SkillRuleRow = typeof skillRulesTable.$inferSelect;
 export type SkillRuleInsert = typeof skillRulesTable.$inferInsert;
-

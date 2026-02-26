@@ -18,9 +18,7 @@ import { requireAuth } from "../middleware/auth-v2.js";
 
 const mintSchema = z.object({
   skillPackageId: z.string().min(1),
-  rarity: z
-    .enum(["common", "rare", "epic", "legendary"])
-    .default("common"),
+  rarity: z.enum(["common", "rare", "epic", "legendary"]).default("common"),
   maxEditions: z.number().int().min(1).nullable().optional(),
   creatorRoyaltyPercent: z.number().min(0).max(100).default(70),
   /**
@@ -110,11 +108,16 @@ export async function mintsRoutes(fastify: FastifyInstance) {
     return reply.code(201).send(mint);
   });
 
-  fastify.get("/my-earnings", { preHandler: requireAuth() }, async (request, reply) => {
-    const userId = request.user?.userId;
-    if (!userId) return reply.code(401).send({ error: "Unauthorized" });
-    const { totalUsd, count } = await royaltyLedgerDAL.getTotalEarnings(userId);
-    const recent = await royaltyLedgerDAL.getByCreator(userId, 20);
-    return reply.send({ totalUsd, count, recent });
-  });
+  fastify.get(
+    "/my-earnings",
+    { preHandler: requireAuth() },
+    async (request, reply) => {
+      const userId = request.user?.userId;
+      if (!userId) return reply.code(401).send({ error: "Unauthorized" });
+      const { totalUsd, count } =
+        await royaltyLedgerDAL.getTotalEarnings(userId);
+      const recent = await royaltyLedgerDAL.getByCreator(userId, 20);
+      return reply.send({ totalUsd, count, recent });
+    },
+  );
 }

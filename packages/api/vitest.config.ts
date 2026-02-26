@@ -1,29 +1,27 @@
-import { defineConfig } from 'vitest/config';
-import path from 'path';
+import { defineConfig } from "vitest/config";
+import path from "path";
 
 export default defineConfig({
   test: {
     globals: true,
-    environment: 'node',
-    include: ['__tests__/**/*.test.ts'],
+    environment: "node",
+    include: ["__tests__/**/*.test.ts"],
     testTimeout: 15000,
     hookTimeout: 30000,
     env: {
-      NODE_ENV: 'test',
+      NODE_ENV: "test",
     },
-    pool: 'threads',
-    poolMatchGlobs: [
-      ['**/*.test.ts', { threads: { singleThread: true } }],
-    ],
+    pool: "threads",
+    poolMatchGlobs: [["**/*.test.ts", { threads: { singleThread: true } }]],
     coverage: {
-      provider: 'v8',
-      reporter: ['text', 'json', 'html'],
-      include: ['src/**/*.ts'],
+      provider: "v8",
+      reporter: ["text", "json", "html"],
+      include: ["src/**/*.ts"],
       exclude: [
-        'src/**/*.d.ts',
-        'src/**/index.ts',
-        'src/server.ts',
-        'src/types/**',
+        "src/**/*.d.ts",
+        "src/**/index.ts",
+        "src/server.ts",
+        "src/types/**",
       ],
       thresholds: {
         lines: 75,
@@ -34,9 +32,9 @@ export default defineConfig({
   },
   resolve: {
     alias: {
-      '@yigyaps/api': path.resolve(__dirname, './src'),
-      '@yigyaps/db': path.resolve(__dirname, '../db/src'),
-      '@yigyaps/types': path.resolve(__dirname, '../types/src'),
+      "@yigyaps/api": path.resolve(__dirname, "./src"),
+      "@yigyaps/db": path.resolve(__dirname, "../db/src"),
+      "@yigyaps/types": path.resolve(__dirname, "../types/src"),
     },
   },
 });
