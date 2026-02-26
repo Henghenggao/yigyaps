@@ -1,6 +1,7 @@
-// @vitest-environment jsdom
-import { describe, it, expect, afterEach } from 'vitest';
-import { render, screen, cleanup } from '@testing-library/react';
+/** @vitest-environment jsdom */
+import './setup';
+import { describe, it, expect } from 'vitest';
+import { render, screen } from '@testing-library/react';
 import { ErrorBoundary } from '../components/ErrorBoundary';
 
 const ThrowError = () => {
@@ -8,9 +9,6 @@ const ThrowError = () => {
 };
 
 describe('ErrorBoundary', () => {
-    afterEach(() => {
-        cleanup();
-    });
 
     it('should catch errors in children and display fallback UI', () => {
         // Temporarily silence console.error for the expected error

@@ -1,3 +1,5 @@
+/** @vitest-environment jsdom */
+import './setup';
 import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { InstallButton } from '../components/InstallButton';

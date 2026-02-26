@@ -1,4 +1,5 @@
-// @vitest-environment jsdom
+/** @vitest-environment jsdom */
+import './setup';
 import { describe, it, expect } from 'vitest';
 import { render, screen } from '@testing-library/react';
 import { SkillCard } from '../components/SkillCard';

@@ -1,3 +1,5 @@
+/** @vitest-environment jsdom */
+import './setup';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { useSkills } from '../hooks/useSkills';
