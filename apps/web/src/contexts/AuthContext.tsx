@@ -30,7 +30,7 @@ export interface User {
   lastLoginAt: number;
 }
 
-interface AuthContextType {
+export interface AuthContextType {
   user: User | null;
   loading: boolean;
   error: string | null;

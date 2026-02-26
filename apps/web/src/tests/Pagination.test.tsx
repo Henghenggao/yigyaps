@@ -1,4 +1,4 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent } from '@testing-library/react';
 import { Pagination } from '../components/Pagination';
 
@@ -9,28 +9,30 @@ describe('Pagination', () => {
     mockOnPageChange.mockClear();
   });
 
-  it('renders current page and total pages', () => {
+  it('renders current page info', () => {
     render(
       <Pagination
         currentPage={1}
-        totalPages={5}
+        totalItems={50}
+        itemsPerPage={10}
         onPageChange={mockOnPageChange}
       />
     );
 
-    expect(screen.getByText(/Page 1 of 5/i)).toBeInTheDocument();
+    expect(screen.getByText(/Showing 1-10 of 50 results/i)).toBeInTheDocument();
   });
 
   it('disables Previous button on first page', () => {
     render(
       <Pagination
         currentPage={1}
-        totalPages={5}
+        totalItems={50}
+        itemsPerPage={10}
         onPageChange={mockOnPageChange}
       />
     );
 
-    const prevButton = screen.getByText(/Previous/i);
+    const prevButton = screen.getByText(/Prev/i);
     expect(prevButton).toBeDisabled();
   });
 
@@ -38,7 +40,8 @@ describe('Pagination', () => {
     render(
       <Pagination
         currentPage={5}
-        totalPages={5}
+        totalItems={50}
+        itemsPerPage={10}
         onPageChange={mockOnPageChange}
       />
     );
@@ -51,7 +54,8 @@ describe('Pagination', () => {
     render(
       <Pagination
         currentPage={2}
-        totalPages={5}
+        totalItems={50}
+        itemsPerPage={10}
         onPageChange={mockOnPageChange}
       />
     );
@@ -66,12 +70,13 @@ describe('Pagination', () => {
     render(
       <Pagination
         currentPage={3}
-        totalPages={5}
+        totalItems={50}
+        itemsPerPage={10}
         onPageChange={mockOnPageChange}
       />
     );
 
-    const prevButton = screen.getByText(/Previous/i);
+    const prevButton = screen.getByText(/Prev/i);
     fireEvent.click(prevButton);
 
     expect(mockOnPageChange).toHaveBeenCalledWith(2);
@@ -81,23 +86,25 @@ describe('Pagination', () => {
     render(
       <Pagination
         currentPage={1}
-        totalPages={1}
+        totalItems={10}
+        itemsPerPage={10}
         onPageChange={mockOnPageChange}
       />
     );
 
-    const prevButton = screen.getByText(/Previous/i);
+    const prevButton = screen.getByText(/Prev/i);
     const nextButton = screen.getByText(/Next/i);
 
     expect(prevButton).toBeDisabled();
     expect(nextButton).toBeDisabled();
   });
 
-  it('does not render when totalPages is 0', () => {
+  it('does not render when totalItems is 0', () => {
     const { container } = render(
       <Pagination
         currentPage={1}
-        totalPages={0}
+        totalItems={0}
+        itemsPerPage={10}
         onPageChange={mockOnPageChange}
       />
     );
@@ -109,7 +116,8 @@ describe('Pagination', () => {
     render(
       <Pagination
         currentPage={2}
-        totalPages={5}
+        totalItems={50}
+        itemsPerPage={10}
         onPageChange={mockOnPageChange}
       />
     );

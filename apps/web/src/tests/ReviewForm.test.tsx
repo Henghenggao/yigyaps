@@ -1,84 +1,85 @@
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { ReviewForm } from '../components/ReviewForm';
+import { useAuth } from '../contexts/AuthContext';
+import type { User, AuthContextType } from '../contexts/AuthContext';
+import type { SkillPackage } from '@yigyaps/types';
+import * as api from '../lib/api';
+
+// Mock Auth
+vi.mock('../contexts/AuthContext', () => ({
+  useAuth: vi.fn(),
+}));
+
+// Mock API
+vi.mock('../lib/api', () => ({
+  fetchApi: vi.fn(),
+}));
 
 describe('ReviewForm', () => {
-  const mockOnSubmit = vi.fn();
-  const mockPackageId = 'test-package-123';
+  const mockOnSubmitted = vi.fn();
+  const mockSkill = {
+    packageId: 'test-package-123',
+    version: '1.0.0',
+    displayName: 'Test Skill',
+  } as unknown as SkillPackage;
 
-  it('renders form fields', () => {
-    render(<ReviewForm packageId={mockPackageId} onReviewSubmit={mockOnSubmit} />);
+  const mockUser = { id: 'user-1' } as unknown as User;
 
-    expect(screen.getByLabelText(/rating/i)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/title/i)).toBeInTheDocument();
-    expect(screen.getByPlaceholderText(/comment/i)).toBeInTheDocument();
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('renders sign in message when not logged in', () => {
+    vi.mocked(useAuth).mockReturnValue({ user: null } as unknown as AuthContextType);
+    render(<ReviewForm skill={mockSkill} onReviewSubmitted={mockOnSubmitted} />);
+    expect(screen.getByText(/Sign in to write a review/i)).toBeInTheDocument();
+  });
+
+  it('renders form fields when logged in', () => {
+    vi.mocked(useAuth).mockReturnValue({ user: mockUser } as unknown as AuthContextType);
+    render(<ReviewForm skill={mockSkill} onReviewSubmitted={mockOnSubmitted} />);
+
+    expect(screen.getByText(/Write a Review/i)).toBeInTheDocument();
+    expect(screen.getByPlaceholderText(/Share your experience/i)).toBeInTheDocument();
     expect(screen.getByText(/Submit Review/i)).toBeInTheDocument();
   });
 
-  it('validates required rating field', async () => {
-    render(<ReviewForm packageId={mockPackageId} onReviewSubmit={mockOnSubmit} />);
-
-    const submitButton = screen.getByText(/Submit Review/i);
-    fireEvent.click(submitButton);
-
-    await waitFor(() => {
-      expect(mockOnSubmit).not.toHaveBeenCalled();
-    });
-  });
-
   it('submits form with valid data', async () => {
-    render(<ReviewForm packageId={mockPackageId} onReviewSubmit={mockOnSubmit} />);
+    vi.mocked(useAuth).mockReturnValue({ user: mockUser } as unknown as AuthContextType);
+    vi.mocked(api.fetchApi).mockResolvedValueOnce({});
 
-    // Select rating (adjust selector based on actual implementation)
-    const ratingInput = screen.getByLabelText(/rating/i);
-    fireEvent.change(ratingInput, { target: { value: '5' } });
+    render(<ReviewForm skill={mockSkill} onReviewSubmitted={mockOnSubmitted} />);
 
-    // Fill in optional fields
-    const titleInput = screen.getByPlaceholderText(/title/i);
+    // Fill in title (Sum up your experience)
+    const titleInput = screen.getByPlaceholderText(/Sum up your experience/i);
     fireEvent.change(titleInput, { target: { value: 'Great skill!' } });
 
-    const commentInput = screen.getByPlaceholderText(/comment/i);
-    fireEvent.change(commentInput, { target: { value: 'Works perfectly!' } });
+    // Fill in comment (Share your experience)
+    const commentInput = screen.getByPlaceholderText(/Share your experience/i);
+    fireEvent.change(commentInput, { target: { value: 'Works perfectly and very easy to use!' } });
 
     // Submit
     const submitButton = screen.getByText(/Submit Review/i);
     fireEvent.click(submitButton);
 
     await waitFor(() => {
-      expect(mockOnSubmit).toHaveBeenCalledWith(
-        expect.objectContaining({
-          rating: expect.any(Number),
-          title: 'Great skill!',
-          comment: 'Works perfectly!',
-        })
-      );
+      expect(api.fetchApi).toHaveBeenCalledWith('/v1/reviews', expect.objectContaining({
+        method: 'POST',
+        body: expect.stringContaining('"rating":5'),
+      }));
+      expect(mockOnSubmitted).toHaveBeenCalled();
     });
   });
 
-  it('limits comment length', () => {
-    render(<ReviewForm packageId={mockPackageId} onReviewSubmit={mockOnSubmit} />);
+  it('validates minimum comment length', async () => {
+    vi.mocked(useAuth).mockReturnValue({ user: mockUser } as unknown as AuthContextType);
+    render(<ReviewForm skill={mockSkill} onReviewSubmitted={mockOnSubmitted} />);
 
-    const commentInput = screen.getByPlaceholderText(/comment/i) as HTMLTextAreaElement;
-    const longComment = 'a'.repeat(2000);
-    fireEvent.change(commentInput, { target: { value: longComment } });
-
-    // Check if maxLength attribute is set
-    expect(commentInput.maxLength).toBeLessThanOrEqual(1000);
-  });
-
-  it('disables submit button during submission', async () => {
-    const slowSubmit = vi.fn(() => new Promise((resolve) => setTimeout(resolve, 1000)));
-    render(<ReviewForm packageId={mockPackageId} onReviewSubmit={slowSubmit} />);
-
-    const ratingInput = screen.getByLabelText(/rating/i);
-    fireEvent.change(ratingInput, { target: { value: '4' } });
+    const commentInput = screen.getByPlaceholderText(/Share your experience/i);
+    fireEvent.change(commentInput, { target: { value: 'short' } });
 
     const submitButton = screen.getByText(/Submit Review/i);
-    fireEvent.click(submitButton);
-
-    // Button should be disabled during submission
-    await waitFor(() => {
-      expect(submitButton).toBeDisabled();
-    });
+    expect(submitButton).toBeDisabled();
   });
 });

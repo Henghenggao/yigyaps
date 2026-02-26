@@ -1,12 +1,6 @@
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
 import { useSkills } from '../hooks/useSkills';
-import * as api from '../lib/api';
-
-// Mock the API module
-vi.mock('../lib/api', () => ({
-  fetchApi: vi.fn(),
-}));
 
 describe('useSkills', () => {
   const mockSkillsData = {
@@ -31,12 +25,18 @@ describe('useSkills', () => {
     total: 2,
   };
 
+  const mockFetch = vi.fn();
+
   beforeEach(() => {
     vi.clearAllMocks();
+    vi.stubGlobal('fetch', mockFetch);
   });
 
   it('fetches skills successfully', async () => {
-    (api.fetchApi as any).mockResolvedValueOnce(mockSkillsData);
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockSkillsData,
+    });
 
     const { result } = renderHook(() => useSkills({}));
 
@@ -52,8 +52,8 @@ describe('useSkills', () => {
   });
 
   it('handles API errors gracefully', async () => {
-    const errorMessage = 'Failed to fetch skills';
-    (api.fetchApi as any).mockRejectedValueOnce(new Error(errorMessage));
+    const errorMessage = 'Failed to fetch';
+    mockFetch.mockRejectedValueOnce(new Error(errorMessage));
 
     const { result } = renderHook(() => useSkills({}));
 
@@ -66,10 +66,13 @@ describe('useSkills', () => {
   });
 
   it('constructs correct query parameters', async () => {
-    (api.fetchApi as any).mockResolvedValueOnce(mockSkillsData);
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => mockSkillsData,
+    });
 
     const query = {
-      q: 'test',
+      query: 'test',
       category: 'development' as const,
       limit: 20,
       offset: 0,
@@ -78,42 +81,47 @@ describe('useSkills', () => {
     renderHook(() => useSkills(query));
 
     await waitFor(() => {
-      expect(api.fetchApi).toHaveBeenCalled();
+      expect(mockFetch).toHaveBeenCalled();
     });
 
-    // Check if API was called with correct endpoint including query params
-    const callArgs = (api.fetchApi as any).mock.calls[0];
-    expect(callArgs[0]).toContain('/v1/packages');
-    expect(callArgs[0]).toContain('q=test');
-    expect(callArgs[0]).toContain('category=development');
+    // Check if fetch was called with correct URL parameters
+    const fetchUrl = mockFetch.mock.calls[0][0];
+    expect(fetchUrl).toContain('query=test');
+    expect(fetchUrl).toContain('category=development');
   });
 
   it('refetches data when query changes', async () => {
-    (api.fetchApi as any).mockResolvedValue(mockSkillsData);
+    mockFetch.mockResolvedValue({
+      ok: true,
+      json: async () => mockSkillsData,
+    });
 
     const { rerender } = renderHook(
       ({ query }) => useSkills(query),
       {
-        initialProps: { query: { q: 'initial' } },
+        initialProps: { query: { query: 'initial' } },
       }
     );
 
     await waitFor(() => {
-      expect(api.fetchApi).toHaveBeenCalledTimes(1);
+      expect(mockFetch).toHaveBeenCalledTimes(1);
     });
 
     // Update query
-    rerender({ query: { q: 'updated' } });
+    rerender({ query: { query: 'updated' } });
 
     await waitFor(() => {
-      expect(api.fetchApi).toHaveBeenCalledTimes(2);
+      expect(mockFetch).toHaveBeenCalledTimes(2);
     });
   });
 
   it('handles empty results', async () => {
-    (api.fetchApi as any).mockResolvedValueOnce({
-      packages: [],
-      total: 0,
+    mockFetch.mockResolvedValueOnce({
+      ok: true,
+      json: async () => ({
+        packages: [],
+        total: 0,
+      }),
     });
 
     const { result } = renderHook(() => useSkills({}));

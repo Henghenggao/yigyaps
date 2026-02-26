@@ -19,6 +19,7 @@ COPY packages/types/package*.json ./packages/types/
 COPY packages/db/package*.json ./packages/db/
 COPY packages/api/package*.json ./packages/api/
 COPY packages/client/package*.json ./packages/client/
+COPY packages/cli/package*.json ./packages/cli/
 
 # Install dependencies
 RUN npm ci --workspaces
@@ -40,6 +41,7 @@ COPY packages/types/package*.json ./packages/types/
 COPY packages/db/package*.json ./packages/db/
 COPY packages/api/package*.json ./packages/api/
 COPY packages/client/package*.json ./packages/client/
+COPY packages/cli/package*.json ./packages/cli/
 
 # Install production dependencies only
 RUN npm ci --workspaces --omit=dev
