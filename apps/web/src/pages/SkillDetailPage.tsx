@@ -5,7 +5,7 @@ import remarkGfm from 'remark-gfm';
 import { YigYapsSecurityClient } from '@yigyaps/client';
 import { useSkillDetail } from '../hooks/useSkillDetail';
 import { useAuth } from '../contexts/AuthContext';
-import { UserMenu } from '../components/UserMenu';
+import { Header } from '../components/Header';
 import { ReviewList } from '../components/ReviewList';
 import { ReviewForm } from '../components/ReviewForm';
 import { InstallButton } from '../components/InstallButton';
@@ -176,33 +176,6 @@ export function SkillDetailPage() {
         <p>&copy; {new Date().getFullYear()} YigYaps. Apache 2.0 Licensed.</p>
       </footer>
     </div>
-  );
-}
-
-// Shared Header Component (extracted for reuse)
-function Header({ user, login }: { user: unknown; login: () => void }) {
-  return (
-    <header className="header">
-      <Link to="/" className="logo">
-        Yig<span>Yaps</span>
-      </Link>
-      <nav className="nav-links">
-        <Link to="/">Marketplace</Link>
-        <Link to="/publish">Publish Skill</Link>
-        <a href="#">Creators</a>
-        <a href="#">Docs</a>
-      </nav>
-      <div className="header-actions">
-        {user ? (
-          <UserMenu />
-        ) : (
-          <button className="btn btn-outline" onClick={login}>
-            Sign In
-          </button>
-        )}
-        <button className="btn btn-primary">Connect Agent</button>
-      </div>
-    </header>
   );
 }
 

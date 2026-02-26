@@ -11,8 +11,10 @@
  */
 
 import type { FastifyInstance } from "fastify";
+import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { z } from "zod";
 import sanitizeHtml from "sanitize-html";
+import * as schema from "@yigyaps/db";
 import {
   SkillPackageDAL,
   SkillRuleDAL,
@@ -169,9 +171,9 @@ export async function packagesRoutes(fastify: FastifyInstance) {
         : null;
 
       const id = `spkg_${now}_${Math.random().toString(36).slice(2, 8)}`;
-      const pkg = await db.transaction(async (tx) => {
-        const pkgDalTx = new SkillPackageDAL(tx as any);
-        const ruleDalTx = new SkillRuleDAL(tx as any);
+      const pkg = await db.transaction(async (tx: NodePgDatabase<typeof schema>) => {
+        const pkgDalTx = new SkillPackageDAL(tx);
+        const ruleDalTx = new SkillRuleDAL(tx);
 
         const createdPkg = await pkgDalTx.create({
           id,

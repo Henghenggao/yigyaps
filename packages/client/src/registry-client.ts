@@ -11,8 +11,17 @@ import type {
   SkillPackage,
   SkillPackageSearchQuery,
   SkillPackageSearchResult,
+  SkillPackageInstallation,
   McpRegistryDiscovery,
 } from "@yigyaps/types";
+
+interface AuthUser {
+  userId: string;
+  userName: string;
+  email?: string;
+  avatar?: string;
+  gitHubId?: string;
+}
 
 export interface RegistryClientOptions {
   baseUrl?: string;
@@ -96,12 +105,12 @@ export class YigYapsRegistryClient {
     return res.json() as Promise<{ id: string; status: string }>;
   }
 
-  async getInstallations(): Promise<{ installations: any[] }> {
+  async getInstallations(): Promise<{ installations: SkillPackageInstallation[] }> {
     const res = await fetch(`${this.baseUrl}/v1/installations/me`, {
       headers: this.headers,
     });
     if (!res.ok) throw new Error(`YigYaps getInstallations failed: ${res.status}`);
-    return res.json() as Promise<{ installations: any[] }>;
+    return res.json() as Promise<{ installations: SkillPackageInstallation[] }>;
   }
 
   async uninstall(id: string): Promise<void> {
@@ -122,14 +131,14 @@ export class YigYapsRegistryClient {
       headers: this.headers,
     });
     if (!res.ok) throw new Error(`YigYaps getRules failed: ${res.status}`);
-    return res.json() as Promise<{ rules: any[] }>;
+    return res.json() as Promise<{ rules: { path: string; content: string }[] }>;
   }
 
-  async getMe(): Promise<Record<string, any>> {
+  async getMe(): Promise<AuthUser> {
     const res = await fetch(`${this.baseUrl}/v1/auth/me`, {
       headers: this.headers,
     });
     if (!res.ok) throw new Error(`YigYaps getMe failed: ${res.status}`);
-    return res.json() as Promise<Record<string, any>>;
+    return res.json() as Promise<AuthUser>;
   }
 }

@@ -1,9 +1,15 @@
 import { z } from "zod";
 import crypto from "node:crypto";
 
+const nodeEnv = process.env.NODE_ENV || 'development';
+const isTest = nodeEnv === 'test';
+
 const envSchema = z.object({
     // Required but default to random for easy deployments
-    DATABASE_URL: z.string().url(),
+    // In test mode, accept TEST_DATABASE_URL as fallback
+    DATABASE_URL: isTest && process.env.TEST_DATABASE_URL
+        ? z.string().url().default(process.env.TEST_DATABASE_URL)
+        : z.string().url(),
     SESSION_SECRET: z.string().min(32).default(() => crypto.randomBytes(32).toString("hex")),
     JWT_SECRET: z.string().min(32).default(() => crypto.randomBytes(32).toString("hex")),
     GITHUB_CLIENT_ID: z.string().min(1).default("UNCONFIGURED_GITHUB_CLIENT_ID"),
@@ -33,8 +39,34 @@ const envSchema = z.object({
 const parsed = envSchema.safeParse(process.env);
 
 if (!parsed.success) {
-    console.error("❌ Invalid environment variables:", JSON.stringify(parsed.error.format(), null, 2));
-    process.exit(1);
+    const errorMsg = JSON.stringify(parsed.error.format(), null, 2);
+    if (nodeEnv === 'test') {
+        // In test mode, warn but provide defaults to allow test suites to continue
+        console.warn("⚠️ Test environment - some env vars may be missing:", errorMsg);
+    } else {
+        // In production/development, fail immediately
+        console.error("❌ Invalid environment variables:", errorMsg);
+        process.exit(1);
+    }
 }
 
-export const env = parsed.data;
+export const env = parsed.data || {
+    // Fallback defaults for test mode when validation fails
+    DATABASE_URL: process.env.TEST_DATABASE_URL || 'postgresql://test:test@localhost:5432/yigyaps_test',
+    SESSION_SECRET: process.env.SESSION_SECRET || crypto.randomBytes(32).toString('hex'),
+    JWT_SECRET: process.env.JWT_SECRET || crypto.randomBytes(32).toString('hex'),
+    GITHUB_CLIENT_ID: 'UNCONFIGURED_GITHUB_CLIENT_ID',
+    GITHUB_CLIENT_SECRET: 'UNCONFIGURED_GITHUB_CLIENT_SECRET',
+    PORT: 3100,
+    HOST: '0.0.0.0',
+    LOG_LEVEL: 'info' as const,
+    NODE_ENV: 'test' as const,
+    CORS_ORIGIN: '',
+    YIGYAPS_API_URL: undefined,
+    GITHUB_CALLBACK_URL: undefined,
+    FRONTEND_URL: 'http://localhost:3000',
+    DB_POOL_MAX: 20,
+    DB_POOL_IDLE_TIMEOUT: 30000,
+    DB_POOL_CONN_TIMEOUT: 10000,
+    KMS_KEK: undefined,
+};

@@ -8,6 +8,9 @@ export default defineConfig({
     include: ['__tests__/**/*.test.ts'],
     testTimeout: 15000,
     hookTimeout: 30000,
+    env: {
+      NODE_ENV: 'test',
+    },
     pool: 'threads',
     poolMatchGlobs: [
       ['**/*.test.ts', { threads: { singleThread: true } }],
