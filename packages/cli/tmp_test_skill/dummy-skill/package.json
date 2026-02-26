@@ -1,0 +1,12 @@
+{
+  "packageId": "dummy-skill",
+  "version": "0.1.0",
+  "displayName": "dummy-skill",
+  "description": "A new YigYaps skill package",
+  "authorName": "Your Name",
+  "license": "open-source",
+  "category": "other",
+  "maturity": "experimental",
+  "tags": [],
+  "mcpTransport": "stdio"
+}

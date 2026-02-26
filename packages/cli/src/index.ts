@@ -156,12 +156,10 @@ program.on("command:*", () => {
     handleGlobalError(CliError.user("Unknown command. Type 'yigyaps --help' for available commands."));
 });
 
-async function main() {
+export async function run() {
     try {
         await program.parseAsync(process.argv);
     } catch (error) {
         await handleGlobalError(error);
     }
 }
-
-main();
