@@ -8,6 +8,7 @@
  */
 
 import jwt from "jsonwebtoken";
+import { env } from "./env.js";
 
 // ─── JWT Payload ──────────────────────────────────────────────────────────────
 
@@ -33,7 +34,7 @@ export function signJWT(
   payload: Omit<JWTPayload, "iat" | "exp">,
   expiresIn: string | number = "7d",
 ): string {
-  const secret = process.env.JWT_SECRET;
+  const secret = env.JWT_SECRET;
   if (!secret) {
     throw new Error("JWT_SECRET environment variable is not configured");
   }
@@ -52,7 +53,7 @@ export function signJWT(
  * @throws Error if token is invalid or expired
  */
 export function verifyJWT(token: string): JWTPayload {
-  const secret = process.env.JWT_SECRET;
+  const secret = env.JWT_SECRET;
   if (!secret) {
     throw new Error("JWT_SECRET environment variable is not configured");
   }

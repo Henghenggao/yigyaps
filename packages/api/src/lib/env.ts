@@ -1,12 +1,13 @@
 import { z } from "zod";
+import crypto from "node:crypto";
 
 const envSchema = z.object({
-    // Required
+    // Required but default to random for easy deployments
     DATABASE_URL: z.string().url(),
-    SESSION_SECRET: z.string().min(32),
-    JWT_SECRET: z.string().min(32),
-    GITHUB_CLIENT_ID: z.string().min(1),
-    GITHUB_CLIENT_SECRET: z.string().min(1),
+    SESSION_SECRET: z.string().min(32).default(() => crypto.randomBytes(32).toString("hex")),
+    JWT_SECRET: z.string().min(32).default(() => crypto.randomBytes(32).toString("hex")),
+    GITHUB_CLIENT_ID: z.string().min(1).default("UNCONFIGURED_GITHUB_CLIENT_ID"),
+    GITHUB_CLIENT_SECRET: z.string().min(1).default("UNCONFIGURED_GITHUB_CLIENT_SECRET"),
 
     // Optional with defaults
     PORT: z.coerce.number().default(3100),

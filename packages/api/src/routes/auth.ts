@@ -11,17 +11,22 @@ import { UserDAL, SessionDAL } from "@yigyaps/db";
 import { signJWT } from "../lib/jwt.js";
 import { requireAuth } from "../middleware/auth-v2.js";
 import { customAlphabet } from "nanoid";
+import { env } from "../lib/env.js";
 
 const nanoid = customAlphabet("0123456789abcdefghijklmnopqrstuvwxyz", 8);
 
 // ─── GitHub OAuth Configuration ───────────────────────────────────────────────
 
-const GITHUB_CLIENT_ID = process.env.GITHUB_CLIENT_ID;
-const GITHUB_CLIENT_SECRET = process.env.GITHUB_CLIENT_SECRET;
+const GITHUB_CLIENT_ID = env.GITHUB_CLIENT_ID;
+const GITHUB_CLIENT_SECRET = env.GITHUB_CLIENT_SECRET;
+const isGithubConfigured =
+  GITHUB_CLIENT_ID !== "UNCONFIGURED_GITHUB_CLIENT_ID" &&
+  GITHUB_CLIENT_SECRET !== "UNCONFIGURED_GITHUB_CLIENT_SECRET";
+
 const GITHUB_CALLBACK_URL =
-  process.env.GITHUB_CALLBACK_URL ??
+  env.GITHUB_CALLBACK_URL ??
   "http://localhost:3100/v1/auth/github/callback";
-const FRONTEND_URL = process.env.FRONTEND_URL ?? "http://localhost:3000";
+const FRONTEND_URL = env.FRONTEND_URL;
 
 // ─── GitHub API Types ─────────────────────────────────────────────────────────
 
@@ -40,7 +45,7 @@ interface GitHubUser {
 export const authRoutes: FastifyPluginAsync = async (fastify) => {
   // GET /v1/auth/github - Redirect to GitHub OAuth
   fastify.get("/github", async (request, reply) => {
-    if (!GITHUB_CLIENT_ID) {
+    if (!isGithubConfigured) {
       return reply.status(500).send({
         error: "Server misconfiguration",
         message: "GitHub OAuth is not configured",
@@ -100,7 +105,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     // Clear state cookie
     reply.clearCookie("oauth_state");
 
-    if (!GITHUB_CLIENT_ID || !GITHUB_CLIENT_SECRET) {
+    if (!isGithubConfigured) {
       return reply.status(500).send({
         error: "Server misconfiguration",
         message: "GitHub OAuth is not configured",
