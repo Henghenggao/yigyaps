@@ -14,7 +14,15 @@ export default tseslint.config(
         languageOptions: {
             ecmaVersion: 2020,
             parserOptions: {
-                projectService: true,
+                projectService: {
+                    allowDefaultProject: [
+                        "*.js",
+                        "scripts/*.js",
+                        "packages/*/__tests__/*/*/*.ts",
+                        "packages/*/__tests__/*/*.ts",
+                        "packages/*/__tests__/*.ts"
+                    ]
+                },
                 tsconfigRootDir: import.meta.dirname,
             },
             globals: {

@@ -1,9 +1,17 @@
 {
   "files": [],
   "references": [
-    { "path": "./packages/types" },
-    { "path": "./packages/db" },
-    { "path": "./packages/api" },
-    { "path": "./packages/client" }
+    {
+      "path": "./packages/types"
+    },
+    {
+      "path": "./packages/db"
+    },
+    {
+      "path": "./packages/api"
+    },
+    {
+      "path": "./packages/client"
+    }
   ]
 }
