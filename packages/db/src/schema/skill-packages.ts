@@ -247,3 +247,26 @@ export const royaltyLedgerTable = pgTable(
 
 export type RoyaltyLedgerRow = typeof royaltyLedgerTable.$inferSelect;
 export type RoyaltyLedgerInsert = typeof royaltyLedgerTable.$inferInsert;
+
+// ─── Skill Rules (Execution Logic) ───────────────────────────────────────────
+
+export const skillRulesTable = pgTable(
+  "yy_skill_rules",
+  {
+    id: text("id").primaryKey(),
+    packageId: text("package_id")
+      .notNull()
+      .references(() => skillPackagesTable.id, { onDelete: "cascade" }),
+    path: text("path").notNull(),
+    content: text("content").notNull(),
+    createdAt: bigint("created_at", { mode: "number" }).notNull(),
+  },
+  (table) => [
+    index("idx_yy_skill_rules_package").on(table.packageId),
+    uniqueIndex("idx_unique_rule_path").on(table.packageId, table.path),
+  ],
+);
+
+export type SkillRuleRow = typeof skillRulesTable.$inferSelect;
+export type SkillRuleInsert = typeof skillRulesTable.$inferInsert;
+

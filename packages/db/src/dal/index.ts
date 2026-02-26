@@ -4,6 +4,7 @@ export {
   SkillReviewDAL,
   SkillMintDAL,
   RoyaltyLedgerDAL,
+  SkillRuleDAL,
 } from "./skill-package-dal.js";
 export type {
   SkillPackageSearchParams,

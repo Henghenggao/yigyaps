@@ -78,6 +78,8 @@ export interface SkillPackageFolderStructure {
 }
 
 export interface SkillPackage {
+  /** Internal database ID */
+  id: string;
   /** Unique package identifier (e.g., "skill-github") */
   packageId: string;
   /** Semver for package version (e.g., "1.2.0") */

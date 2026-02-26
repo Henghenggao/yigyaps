@@ -1,32 +1,29 @@
 #!/usr/bin/env node
 
 /**
- * YigYaps CLI — Creator Tools
- * 
- * License: Apache 2.0
+ * YigYaps CLI — Shim & Error Boundary
  */
 
-import { Command } from "commander";
-import chalk from "chalk";
-import { initCommand } from "../src/commands/init.js";
-import { validateCommand } from "../src/commands/validate.js";
+import { run } from "../dist/index.js";
+import { CliError } from "../dist/lib/errors.js";
+import { logger } from "../dist/lib/logger.js";
 
-const program = new Command();
+async function main() {
+    try {
+        await run();
+    } catch (err) {
+        if (err instanceof CliError) {
+            if (err.message) {
+                logger.error(err.message);
+            }
+            process.exit(err.exitCode);
+        }
 
-program
-    .name("yigyaps")
-    .description("CLI tools for YigYaps skill creators")
-    .version("0.1.0");
+        // Unexpected errors
+        console.error("\n💥 Unexpected error occurred:");
+        console.error(err);
+        process.exit(2);
+    }
+}
 
-program
-    .command("init")
-    .description("Scaffold a new YigYaps skill package")
-    .argument("[name]", "Name of the skill")
-    .action(initCommand);
-
-program
-    .command("validate")
-    .description("Validate the current skill package structure")
-    .action(validateCommand);
-
-program.parse();
+main();

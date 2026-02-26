@@ -16,7 +16,7 @@
   "scripts": {
     "build": "tsc -b",
     "clean": "tsc -b --clean",
-    "test": "npm run test -w @yigyaps/db && npm run test -w @yigyaps/api && npm run test -w web",
+    "test": "npm run test -w @yigyaps/db && npm run test -w @yigyaps/api && npm run test -w @yigyaps/cli && npm run test -w web",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",

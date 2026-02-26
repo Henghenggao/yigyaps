@@ -36,6 +36,8 @@ export interface PublishPackageParams {
   qualityScore?: number;
   /** Evidence trace IDs (from Yigstudio session-end hook) */
   evidenceTraceIds?: string[];
+  /** Skill rules files */
+  rules?: { path: string; content: string }[];
 }
 
 export class YigYapsPublisherClient {
@@ -69,6 +71,7 @@ export class YigYapsPublisherClient {
         mcpCommand: params.mcpCommand,
         mcpUrl: params.mcpUrl,
         repositoryUrl: params.repositoryUrl,
+        rules: params.rules ?? [],
       }),
     });
     if (!res.ok) {

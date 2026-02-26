@@ -15,6 +15,7 @@ import { z } from "zod";
 import sanitizeHtml from "sanitize-html";
 import {
   SkillPackageDAL,
+  SkillRuleDAL,
 } from "@yigyaps/db";
 import { requireAuth } from "../middleware/auth-v2.js";
 
@@ -84,6 +85,10 @@ const createPackageSchema = z.object({
   icon: z.string().max(500).optional(),
   repositoryUrl: z.string().url().optional(),
   homepageUrl: z.string().url().optional(),
+  rules: z.array(z.object({
+    path: z.string().min(1),
+    content: z.string().min(1),
+  })).optional(),
 });
 
 const updatePackageSchema = createPackageSchema
@@ -164,35 +169,54 @@ export async function packagesRoutes(fastify: FastifyInstance) {
         : null;
 
       const id = `spkg_${now}_${Math.random().toString(36).slice(2, 8)}`;
-      const pkg = await packageDAL.create({
-        id,
-        packageId: body.packageId,
-        version: body.version,
-        displayName: body.displayName,
-        description: body.description,
-        readme: sanitizedReadme,
-        author: userId,
-        authorName: body.authorName,
-        authorUrl: body.authorUrl ?? null,
-        license: body.license,
-        priceUsd: String(body.priceUsd),
-        requiresApiKey: body.requiresApiKey,
-        apiKeyInstructions: body.apiKeyInstructions ?? null,
-        category: body.category,
-        maturity: body.maturity,
-        tags: body.tags,
-        minRuntimeVersion: body.minRuntimeVersion,
-        requiredTier: body.requiredTier,
-        mcpTransport: body.mcpTransport,
-        mcpCommand: body.mcpCommand ?? null,
-        mcpUrl: body.mcpUrl ?? null,
-        icon: body.icon ?? null,
-        repositoryUrl: body.repositoryUrl ?? null,
-        homepageUrl: body.homepageUrl ?? null,
-        origin: "manual",
-        createdAt: now,
-        updatedAt: now,
-        releasedAt: now,
+      const pkg = await db.transaction(async (tx) => {
+        const pkgDalTx = new SkillPackageDAL(tx as any);
+        const ruleDalTx = new SkillRuleDAL(tx as any);
+
+        const createdPkg = await pkgDalTx.create({
+          id,
+          packageId: body.packageId,
+          version: body.version,
+          displayName: body.displayName,
+          description: body.description,
+          readme: sanitizedReadme,
+          author: userId,
+          authorName: body.authorName,
+          authorUrl: body.authorUrl ?? null,
+          license: body.license,
+          priceUsd: String(body.priceUsd),
+          requiresApiKey: body.requiresApiKey,
+          apiKeyInstructions: body.apiKeyInstructions ?? null,
+          category: body.category,
+          maturity: body.maturity,
+          tags: body.tags,
+          minRuntimeVersion: body.minRuntimeVersion,
+          requiredTier: body.requiredTier,
+          mcpTransport: body.mcpTransport,
+          mcpCommand: body.mcpCommand ?? null,
+          mcpUrl: body.mcpUrl ?? null,
+          icon: body.icon ?? null,
+          repositoryUrl: body.repositoryUrl ?? null,
+          homepageUrl: body.homepageUrl ?? null,
+          origin: "manual",
+          createdAt: now,
+          updatedAt: now,
+          releasedAt: now,
+        });
+
+        if (body.rules && body.rules.length > 0) {
+          for (const rule of body.rules) {
+            await ruleDalTx.create({
+              id: `rule_${now}_${Math.random().toString(36).slice(2, 8)}`,
+              packageId: createdPkg.id,
+              path: rule.path,
+              content: rule.content,
+              createdAt: now,
+            });
+          }
+        }
+
+        return createdPkg;
       });
 
       return reply.code(201).send(pkg);
@@ -214,12 +238,33 @@ export async function packagesRoutes(fastify: FastifyInstance) {
     },
   );
 
+  fastify.get<{ Params: { id: string } }>(
+    "/:id/rules",
+    async (request, reply) => {
+      const ruleDAL = new SkillRuleDAL(fastify.db);
+      const rules = await ruleDAL.getByPackage(request.params.id);
+      return reply.send({ rules });
+    },
+  );
+
   fastify.get<{ Params: { packageId: string } }>(
     "/by-pkg/:packageId",
     async (request, reply) => {
       const pkg = await packageDAL.getByPackageId(request.params.packageId);
       if (!pkg) return reply.code(404).send({ error: "Package not found" });
       return reply.send(pkg);
+    },
+  );
+
+  fastify.get<{ Params: { packageId: string } }>(
+    "/by-pkg/:packageId/rules",
+    async (request, reply) => {
+      const pkg = await packageDAL.getByPackageId(request.params.packageId);
+      if (!pkg) return reply.code(404).send({ error: "Package not found" });
+
+      const ruleDAL = new SkillRuleDAL(fastify.db);
+      const rules = await ruleDAL.getByPackage(pkg.id);
+      return reply.send({ rules });
     },
   );
 

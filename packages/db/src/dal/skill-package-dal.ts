@@ -16,6 +16,7 @@ import {
   skillPackageReviewsTable,
   skillMintsTable,
   royaltyLedgerTable,
+  skillRulesTable,
 } from "../schema/skill-packages.js";
 import type {
   SkillPackageRow,
@@ -28,6 +29,8 @@ import type {
   SkillMintInsert,
   RoyaltyLedgerRow,
   RoyaltyLedgerInsert,
+  SkillRuleRow,
+  SkillRuleInsert,
 } from "../schema/skill-packages.js";
 import { dbOperation } from "./error-utils.js";
 import type {
@@ -596,3 +599,35 @@ export class RoyaltyLedgerDAL {
     );
   }
 }
+
+// ─── Skill Rule DAL ───────────────────────────────────────────────────────────
+
+export class SkillRuleDAL {
+  constructor(private db: NodePgDatabase<typeof schema>) { }
+
+  async create(rule: SkillRuleInsert): Promise<SkillRuleRow> {
+    return dbOperation(
+      async () => {
+        const results = await this.db
+          .insert(skillRulesTable)
+          .values(rule)
+          .returning();
+        return results[0];
+      },
+      { method: "create", entity: "skillRule", id: rule.id },
+    );
+  }
+
+  async getByPackage(packageId: string): Promise<SkillRuleRow[]> {
+    return dbOperation(
+      async () =>
+        this.db
+          .select()
+          .from(skillRulesTable)
+          .where(eq(skillRulesTable.packageId, packageId))
+          .orderBy(skillRulesTable.path),
+      { method: "getByPackage", entity: "skillRule", id: packageId },
+    );
+  }
+}
+

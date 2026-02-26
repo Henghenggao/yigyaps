@@ -4,6 +4,7 @@
  * POST   /v1/installations          — Install a package to an agent
  * DELETE /v1/installations/:id      — Uninstall
  * GET    /v1/installations/agent/:agentId — List active installs for an agent
+ * GET    /v1/installations/me       — List all installs for current user
  *
  * Note: Tier checking is handled via JWT claims (userTier field).
  * YigYaps does not call platform APIs for tier validation.
@@ -170,4 +171,12 @@ export async function installationsRoutes(fastify: FastifyInstance) {
       return reply.send({ installations });
     },
   );
+
+  fastify.get("/me", { preHandler: requireAuth() }, async (request, reply) => {
+    const userId = request.user?.userId;
+    if (!userId) return reply.code(401).send({ error: "Unauthorized" });
+
+    const installations = await installDAL.getByUser(userId);
+    return reply.send({ installations });
+  });
 }

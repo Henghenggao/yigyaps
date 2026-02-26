@@ -1,5 +1,6 @@
 export default [
   'apps/web',
   'packages/api',
-  'packages/db'
+  'packages/db',
+  'packages/cli'
 ];

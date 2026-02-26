@@ -95,4 +95,41 @@ export class YigYapsRegistryClient {
     }
     return res.json() as Promise<{ id: string; status: string }>;
   }
+
+  async getInstallations(): Promise<{ installations: any[] }> {
+    const res = await fetch(`${this.baseUrl}/v1/installations/me`, {
+      headers: this.headers,
+    });
+    if (!res.ok) throw new Error(`YigYaps getInstallations failed: ${res.status}`);
+    return res.json() as Promise<{ installations: any[] }>;
+  }
+
+  async uninstall(id: string): Promise<void> {
+    const res = await fetch(`${this.baseUrl}/v1/installations/${id}`, {
+      method: "DELETE",
+      headers: this.headers,
+    });
+    if (!res.ok) throw new Error(`YigYaps uninstall failed: ${res.status}`);
+  }
+
+  async getRules(packageIdOrId: string): Promise<{ rules: { path: string; content: string }[] }> {
+    const isUuid = packageIdOrId.includes("-") || packageIdOrId.startsWith("spkg_");
+    const endpoint = isUuid
+      ? `/v1/packages/${packageIdOrId}/rules`
+      : `/v1/packages/by-pkg/${encodeURIComponent(packageIdOrId)}/rules`;
+
+    const res = await fetch(`${this.baseUrl}${endpoint}`, {
+      headers: this.headers,
+    });
+    if (!res.ok) throw new Error(`YigYaps getRules failed: ${res.status}`);
+    return res.json() as Promise<{ rules: any[] }>;
+  }
+
+  async getMe(): Promise<Record<string, any>> {
+    const res = await fetch(`${this.baseUrl}/v1/auth/me`, {
+      headers: this.headers,
+    });
+    if (!res.ok) throw new Error(`YigYaps getMe failed: ${res.status}`);
+    return res.json() as Promise<Record<string, any>>;
+  }
 }

@@ -1,7 +1,8 @@
 import fs from "fs-extra";
 import path from "path";
 import inquirer from "inquirer";
-import chalk from "chalk";
+import { logger } from "../lib/logger.js";
+import { CliError } from "../lib/errors.js";
 
 export async function initCommand(name?: string) {
     let skillName = name;
@@ -21,8 +22,7 @@ export async function initCommand(name?: string) {
     const root = path.resolve(process.cwd(), skillName as string);
 
     if (await fs.pathExists(root)) {
-        console.error(chalk.red(`Error: Directory ${skillName} already exists.`));
-        process.exit(1);
+        throw CliError.user(`Directory ${skillName} already exists.`);
     }
 
     // Create structure
@@ -52,6 +52,7 @@ export async function initCommand(name?: string) {
         "# Skill Rules\n\nDefine your skill logic here."
     );
 
-    console.log(chalk.green(`\n✅ Skill package ${skillName} initialized successfully!`));
+    logger.success(`Skill package ${skillName} initialized successfully!`);
     console.log(`\nNext steps:\n  cd ${skillName}\n  yigyaps validate\n`);
 }
+
