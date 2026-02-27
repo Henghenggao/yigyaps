@@ -8,14 +8,17 @@ FROM node:20-alpine AS builder
 
 WORKDIR /app
 
-# Copy workspace root manifests (needed by npm workspaces)
+# Copy ALL workspace manifests (npm ci needs them all to resolve the lockfile)
 COPY package*.json ./
 COPY packages/types/package*.json ./packages/types/
+COPY packages/db/package*.json ./packages/db/
+COPY packages/api/package*.json ./packages/api/
 COPY packages/client/package*.json ./packages/client/
+COPY packages/cli/package*.json ./packages/cli/
 COPY apps/web/package*.json ./apps/web/
 
-# Install all dependencies (workspace-aware)
-RUN npm ci --workspaces --ignore-scripts
+# Install all dependencies (workspace-aware, uses lockfile)
+RUN npm ci --ignore-scripts
 
 # Copy source
 COPY packages/types/ ./packages/types/
