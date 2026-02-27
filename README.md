@@ -1,87 +1,121 @@
-# YigYaps
+# <img src="./logo.png" width="32" height="32" /> YigYaps: The Open Skill Registry
 
-**The open marketplace for YAP skills** — MCP-compatible, community-governed, Apache 2.0.
+[![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
+[![Stage](https://img.shields.io/badge/Stage-Alpha-orange.svg)](https://yigyaps.com)
+[![Protocol](https://img.shields.io/badge/Protocol-MCP-green.svg)](https://modelcontextprotocol.io)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-YigYaps is an independent registry for YAP (Yet Another Plugin) skills used by MCP clients
-including Claude Code, Cursor, Windsurf, and other AI platforms.
+**Empowering Humans in the Agent Economy.** YigYaps is an independent, community-governed registry for YAP (Yet Another Plugin) skills, fully compatible with the [Model Context Protocol (MCP)](https://modelcontextprotocol.io).
 
-## 🌟 Vision: Human-to-Agent Skill Assetization
+---
 
-YigYaps extends beyond mere software utilities. Our vision is to **digitize and assetize human wisdom, experience, and identity (voice, likeness, personality)** into modular, licensed "skills" that can be authorized to AI Agents.
+## 🌟 The Vision: Human-to-Agent Assetization
 
-- **Wisdom & Experience**: Experts can package their unique insights and problem-solving methodologies as queryable MCP tools.
-- **Identity Assets**: Individuals can license their digital twins—including verified voices and likenesses—for use by personal or corporate agents in a controlled, royalty-generating environment.
-- **Economic Empowerment**: By turning human capability into on-chain/on-registry digital assets, YigYaps creates a sustainable economy where AI agents generate revenue for the humans they represent or learn from.
+YigYaps is built on the belief that **Human Expertise is the most valuable asset in the AI era**. We are moving beyond "Prompt Engineering" to **"Skill Infrastructure"**.
+
+- **Wisdom Digitization**: Transform unique professional methodologies into modular, queryable MCP tools.
+- **Identity Licensing**: Securely license digital twins—including verified voice and likeness—for authorized agent use.
+- **Economic Sovereignty**: A sustainable economy where agents pay per-call royalties back to the humans they learn from.
+
+---
+
+## 🛠️ Security & Engineering Excellence
+
+YigYaps is engineered for **Security-First IP Protection**. We solve the "Knowledge Theft" problem through rigorous engineering:
+
+### 🛡️ Expert IP Defense (Envelope Encryption)
+*   **Data at Rest**: All sensitive expertise is protected via **AES-256-GCM Envelope Encryption**.
+*   **KMS Integration**: Master keys (KEK) are managed separately from the database, ensuring that even a database breach won't expose creator knowledge.
+*   **Ephemeral Decryption**: Rules are only decrypted in memory during active tool execution and are immediately zeroed out.
+
+### 💻 Developer Experience (Premium CLI)
+The `yigyaps` CLI provides a world-class workflow for skill creators:
+*   **Interactive Onboarding**: Guided setup using modern, beautiful terminal prompts.
+*   **Validation Suite**: Built-in logic to verify MCP compliance before publishing.
+*   **Doctor Mode**: Self-diagnostic tool to ensure your environment is configured correctly.
+
+---
 
 ## 💻 Tech Stack
 
-YigYaps is built with a modern, scalable TypeScript stack:
+- **Framework**: [Fastify](https://www.fastify.io/) (API) + [React](https://react.dev/) / [Vite](https://vitejs.dev/) (Web)
+- **Database**: [PostgreSQL](https://www.postgresql.org/) + [Drizzle ORM](https://orm.drizzle.team/)
+- **Communication**: [Model Context Protocol](https://modelcontextprotocol.io)
+- **Security**: AES-256-GCM, GitHub OAuth, JWT, Tiered Rate Limiting.
+- **Ops**: Docker Multi-stage builds, Railway CI/CD.
 
-- **Monorepo**: npm workspaces
-- **API Server**: Fastify (Node.js) for high-performance REST APIs
-- **Database**: PostgreSQL with Drizzle ORM
-- **Frontend**: React (Vite) with Tailwind CSS
-- **Testing**: Vitest for unit and integration tests
-- **Containerization**: Docker multi-stage builds
+---
 
-## 🛠️ Local Development & Deployment
+## 🚀 Quick Start (Local Deployment)
 
-### Prerequisites
+### 1. Requirements
+- Node.js 20+ & npm 10+
+- PostgreSQL 14+
+- GitHub OAuth App [(Setup Guide)](#github-oauth-setup)
 
-- Node.js 20+
-- npm 10+
-- PostgreSQL 14+ (or use a cloud provider)
-- Git
-
-### Quick Start
-
+### 2. Setup
 ```bash
-# 1. Clone the repository
-git clone https://github.com/yourusername/yigyaps.git
+# Clone and install
+git clone https://github.com/Henghenggao/yigyaps.git
 cd yigyaps
-
-# 2. Install dependencies
 npm install
 
-# 3. Set up environment variables
-# Copy .env.example to .env and configure your DATABASE_URL
+# Environment
 cp .env.example .env
-
-# 4. Run database migrations
-npm run db:migrate --workspace=packages/db
-
-# 5. Build all packages
-npm run build
-
-# 6. Start the development servers
-# Start the API server (Available at http://localhost:3000)
-npm run dev:api
-
-# In a new terminal, start the web frontend (Available at http://localhost:5173)
-npm run dev --workspace=apps/web
+# Edit .env with your DATABASE_URL and GitHub Credentials
 ```
 
-### Packages Architecture
+### 3. Initialize & Run
+```bash
+# Run database migrations
+npm run db:migrate
 
-| Package                              | Description                                    |
-| ------------------------------------ | ---------------------------------------------- |
-| [`@yigyaps/types`](packages/types)   | Shared TypeScript interfaces and Zod schemas   |
-| [`@yigyaps/db`](packages/db)         | Drizzle ORM schema and database access layer   |
-| [`@yigyaps/api`](packages/api)       | Fastify REST API server                        |
-| [`@yigyaps/client`](packages/client) | TypeScript/JS SDK for consumers and publishers |
-| [`@yigyaps/web`](apps/web)           | React frontend marketplace interface           |
+# Build core packages
+npm run build
 
-## 🤝 Why Independent?
+# Start API (http://localhost:3100)
+npm run dev:api
 
-YigYaps is intentionally separated from its primary clients to prevent conflicts of interest:
+# Start Web Frontend (http://localhost:5173)
+npm run dev --workspace=web
+```
 
-- Platform developers publish skills to YigYaps the same way any third-party creator does — via HTTP API
-- No single organization has database-level access or ranking privileges
-- Governance is community-driven
+<details id="github-oauth-setup">
+<summary>🔑 GitHub OAuth Setup Details</summary>
 
-This mirrors how Docker Hub, npmjs.com, and PyPI operate independently of their primary clients.
+1. Create a "New OAuth App" in [GitHub Developer Settings](https://github.com/settings/developers).
+2. **Homepage URL**: `http://localhost:5173`
+3. **Authorization callback URL**: `http://localhost:3100/v1/auth/github/callback`
+4. Copy **Client ID** and **Client Secret** to your `.env`.
+</details>
+
+---
+
+## 🏗️ Monorepo Architecture
+
+| Module | NPM Scope | Description |
+| :--- | :--- | :--- |
+| **[Types](./packages/types)** | `@yigyaps/types` | Shared Zod schemas & interfaces |
+| **[Database](./packages/db)** | `@yigyaps/db` | Drizzle Schema & Data Access Layer |
+| **[API](./packages/api)** | `@yigyaps/api` | Fastify secure backend |
+| **[CLI](./packages/cli)** | `@yigyaps/cli` | Developer toolkit & publisher |
+| **[Web](./apps/web)** | `web` | Multi-step publication wizard & marketplace |
+
+---
+
+## 🤝 The Independence Pledge
+
+YigYaps is an **Independent Registry**. Unlike platform-tied stores, we prioritize:
+- **Neutrality**: No preferential ranking for specific model providers.
+- **Portability**: Skills published here work across Claude, Cursor, Windsurf, and any future MCP client.
+- **Community Governance**: Rejection and removal decisions are public and auditable.
+
+---
 
 ## 📄 License & Contributing
 
-- **License**: Apache 2.0 — see [LICENSE](LICENSE)
-- **Contributing**: See [CONTRIBUTING.md](CONTRIBUTING.md)
+- **License**: [Apache 2.0](LICENSE)
+- **Contribution Guide**: [CONTRIBUTING.md](CONTRIBUTING.md)
+
+---
+<p align="center">Built with ❤️ for the future of Human-AI Collaboration.</p>

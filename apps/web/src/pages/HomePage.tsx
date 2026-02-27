@@ -119,7 +119,7 @@ export function HomePage() {
       {/* Main Content */}
       <main className="main-content">
         {/* Hero Section */}
-        <section className="hero">
+        <section className="hero fade-in-up">
           <h1>Assetize Your Wisdom.</h1>
           <p>
             The open marketplace for high-value AI skills. Package your
@@ -134,7 +134,7 @@ export function HomePage() {
 
         {/* Skills Section with Filters */}
         <section className="skills-section">
-          <div className="section-header">
+          <div className="section-header fade-in">
             <div className="section-title">
               {query ? `Search Results for "${query}"` : "Top Minted Skills"}
             </div>

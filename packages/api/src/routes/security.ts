@@ -8,6 +8,7 @@
  */
 
 import { FastifyPluginAsync } from "fastify";
+import Anthropic from "@anthropic-ai/sdk";
 import { KMS } from "../lib/kms.js";
 import { CKKSPoC } from "../lib/ckks.js";
 import { SecureBuffer } from "../middleware/memory-zeroizer.js";
@@ -22,9 +23,21 @@ import crypto from "crypto";
 import { randomUUID } from "crypto";
 import { z } from "zod";
 import { requireAuth } from "../middleware/auth-v2.js";
+import { env } from "../lib/env.js";
 
 const encryptBodySchema = z.object({
   plaintextRules: z.string().max(100_000),
+});
+
+const invokeBodySchema = z.object({
+  user_query: z.string().min(1).max(10_000).optional(),
+  /**
+   * Expert's own Anthropic API key for lab-preview mode.
+   * When provided, inference uses this key directly — the YigYaps platform key
+   * is NOT used. The data agreement is then between the expert and Anthropic.
+   * This key is never stored; it is used only for this single request.
+   */
+  lab_api_key: z.string().optional(),
 });
 
 const paramsSchema = z.object({
@@ -35,6 +48,7 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
   /**
    * Encrypt and store knowledge on the edge/client simulator
    * This represents the end of the "Extraction Pipeline" where data goes to the Vault.
+   * Uses UPSERT semantics: any existing knowledge for this package is replaced.
    */
   fastify.post(
     "/knowledge/:packageId",
@@ -95,7 +109,12 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
         registeredAt: Date.now(),
       });
 
-      // 5. Save to database — use internalId (spkg_...) to satisfy FK constraint
+      // 5. UPSERT: delete existing knowledge for this package, then insert the new version.
+      //    This ensures "Evolve" always replaces the current version, not accumulates versions.
+      await fastify.db
+        .delete(encryptedKnowledgeTable)
+        .where(eq(encryptedKnowledgeTable.skillPackageId, internalId));
+
       await fastify.db.insert(encryptedKnowledgeTable).values({
         id: randomUUID(),
         skillPackageId: internalId,
@@ -105,9 +124,6 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
         createdAt: Date.now(),
       });
 
-      // Zeroize the local DEK memory (though JS GC handles it eventually, simulated here)
-      // dek.fill(0);
-
       return reply.send({
         success: true,
         message: "Knowledge encrypted and saved.",
@@ -116,8 +132,62 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
   );
 
   /**
-   * Simulate Invocation in the Memory-Only Sandbox
-   * Decrypts in SecureBuffer, processes, then zeroizes immediately.
+   * Retrieve and decrypt knowledge for the package author only.
+   * This endpoint exists to support the Evolution Lab — authors can load
+   * their current rules into the editor to refine and re-upload them.
+   * Security model: rules are only visible to the author who created them.
+   */
+  fastify.get(
+    "/knowledge/:packageId",
+    { preHandler: requireAuth() },
+    async (request, reply) => {
+      const paramsParsed = paramsSchema.safeParse(request.params);
+      if (!paramsParsed.success) {
+        return reply.code(400).send({ error: "Bad Request" });
+      }
+      const { packageId } = paramsParsed.data;
+
+      const pkgDAL = new SkillPackageDAL(fastify.db);
+      const pkg = await pkgDAL.getByPackageId(packageId);
+      if (!pkg) {
+        return reply.code(404).send({ error: "Package not found" });
+      }
+
+      const userId = request.user?.userId;
+      if (pkg.author !== userId) {
+        return reply
+          .code(403)
+          .send({ error: "Only the package author can access their knowledge" });
+      }
+
+      const knowledgeRecords = await fastify.db
+        .select()
+        .from(encryptedKnowledgeTable)
+        .where(eq(encryptedKnowledgeTable.skillPackageId, pkg.id))
+        .limit(1);
+
+      if (!knowledgeRecords.length) {
+        return reply
+          .code(404)
+          .send({ error: "No knowledge uploaded for this skill yet." });
+      }
+
+      const record = knowledgeRecords[0];
+      const dek = await KMS.decryptDek(record.encryptedDek);
+      const plaintextRules = KMS.decryptKnowledge(
+        record.contentCiphertext as Buffer,
+        dek,
+      );
+
+      return reply.send({ plaintextRules });
+    },
+  );
+
+  /**
+   * Invoke the skill in the Memory-Only Sandbox.
+   * Decrypts rules in SecureBuffer, passes them as the LLM system prompt,
+   * processes the user_query, then zeroizes the DEK immediately.
+   * The plaintext rules never leave the secure context.
    */
   fastify.post(
     "/invoke/:packageId",
@@ -132,6 +202,12 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
         });
       }
       const { packageId } = paramsParsed.data;
+
+      const bodyParsed = invokeBodySchema.safeParse(request.body);
+      const userQuery =
+        bodyParsed.data?.user_query ??
+        "Evaluate this skill and describe what it does.";
+      const labApiKey = bodyParsed.data?.lab_api_key;
 
       // Resolve slug to internal ID
       const pkgDAL = new SkillPackageDAL(fastify.db);
@@ -156,27 +232,56 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
       const encryptedDek = record.encryptedDek;
       const ciphertext = record.contentCiphertext;
 
-      // Secure Pipeline
+      let inferenceMs = 0;
+
+      // Determine which API key to use and set the invocation mode accordingly.
+      // Priority: expert's own key (lab_api_key) > platform key (ANTHROPIC_API_KEY) > mock
+      const activeApiKey = labApiKey || env.ANTHROPIC_API_KEY;
+      const invokeMode: "lab-preview-expert-key" | "lab-preview-platform-key" | "mock" =
+        labApiKey
+          ? "lab-preview-expert-key"
+          : env.ANTHROPIC_API_KEY
+            ? "lab-preview-platform-key"
+            : "mock";
+
+      // Secure Pipeline: decrypt rules inside the secure context, call LLM, return only the response.
       const conclusion = await SecureBuffer.withSecureContext(
         async () => {
-          // Fetch DEK securely from KMS
           return await KMS.decryptDek(encryptedDek);
         },
         async (dekBuffer) => {
           // We are now inside the Software Enclave / Sandbox
-          // 1. Decrypt knowledge explicitly only in this scope
+          // 1. Decrypt knowledge — only exists within this scope
           const plaintextRules = KMS.decryptKnowledge(
             ciphertext as Buffer,
             dekBuffer,
           );
 
-          // 2. Mock RAG/Rule Engine processing
-          // Instead of sending the full plaintextRules to an LLM, we resolve the score locally.
-          const mockScore = Math.floor(Math.random() * 10) + 1;
-          const generatedConclusion = `Evaluation Score: ${mockScore}/10. Match successful.`;
+          // 2. If no API key is available, fall back to mock
+          if (!activeApiKey) {
+            const mockScore = Math.floor(Math.random() * 10) + 1;
+            return `[Mock — no API key configured] Score: ${mockScore}/10.`;
+          }
+
+          // 3. Call Claude with rules as system prompt, user_query as the message.
+          //    ⚠️ LAB-PREVIEW: plaintextRules are transmitted to api.anthropic.com.
+          //    Production agent invocations require a TEE-isolated proxy (Phase 3).
+          const client = new Anthropic({ apiKey: activeApiKey });
+          const start = Date.now();
+          const message = await client.messages.create({
+            model: "claude-haiku-4-5-20251001",
+            max_tokens: 1024,
+            system: plaintextRules,
+            messages: [{ role: "user", content: userQuery }],
+          });
+          inferenceMs = Date.now() - start;
+
+          const firstBlock = message.content[0];
+          return firstBlock.type === "text"
+            ? firstBlock.text
+            : "Skill processed the request.";
 
           // At the end of this scope, dekBuffer will be wiped by SecureBuffer
-          return generatedConclusion;
         },
       );
 
@@ -187,17 +292,26 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
         .digest("hex");
       await fastify.db.insert(invocationLogsTable).values({
         id: randomUUID(),
-        skillPackageId: pkg.id, // Use internal ID (FK-safe)
+        skillPackageId: pkg.id,
         apiClientId: request.user?.userId ?? "anonymous",
+        inferenceMs: inferenceMs || null,
         conclusionHash,
         createdAt: Date.now(),
       });
 
-      // Firewall policy: We ONLY return the conclusion, never the original rules.
+      // Build the privacy notice based on actual invocation mode
+      const privacyNotice =
+        invokeMode === "lab-preview-expert-key"
+          ? "LAB PREVIEW — Your skill rules were transmitted to api.anthropic.com using your own API key. Data handling is governed by your agreement with Anthropic, not YigYaps."
+          : invokeMode === "lab-preview-platform-key"
+            ? "LAB PREVIEW — Your skill rules were transmitted to api.anthropic.com using the YigYaps platform key. This mode is for testing only. Production agent invocations require a TEE-isolated environment."
+            : "MOCK MODE — No LLM was called. Rules stayed on this server.";
+
       return reply.send({
         success: true,
         conclusion,
-        disclaimer: "Output is sanitized. Original rules were not leaked.",
+        mode: invokeMode,
+        privacy_notice: privacyNotice,
       });
     },
   );

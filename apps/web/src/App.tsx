@@ -29,6 +29,11 @@ const TermsPage = lazy(() =>
 const PrivacyPage = lazy(() =>
   import("./pages/PrivacyPage").then((m) => ({ default: m.PrivacyPage })),
 );
+const EvolutionLabPage = lazy(() =>
+  import("./pages/EvolutionLabPage").then((m) => ({
+    default: m.EvolutionLabPage,
+  })),
+);
 
 function App() {
   return (
@@ -47,6 +52,10 @@ function App() {
             />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/admin" element={<AdminPage />} />
+            <Route
+              path="/lab/:packageId"
+              element={<EvolutionLabPage />}
+            />
           </Route>
 
           <Route path="/skill/:packageId" element={<SkillDetailPage />} />

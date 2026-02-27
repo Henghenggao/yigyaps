@@ -21,14 +21,10 @@ export function SkillDetailPage() {
       <div className="app-container">
         <Header user={user} login={login} />
         <main className="main-content">
-          <div
-            style={{
-              textAlign: "center",
-              padding: "3rem",
-              color: "var(--color-text-muted)",
-            }}
-          >
-            Loading skill details...
+          <div className="skeleton-detail-placeholder">
+            <div className="skeleton skeleton-icon" />
+            <div className="skeleton skeleton-title" />
+            <div className="skeleton skeleton-text" />
           </div>
         </main>
       </div>
@@ -40,17 +36,10 @@ export function SkillDetailPage() {
       <div className="app-container">
         <Header user={user} login={login} />
         <main className="main-content">
-          <div
-            style={{
-              textAlign: "center",
-              padding: "3rem",
-              color: "var(--color-accent)",
-            }}
-          >
-            {error || "Skill not found"}
-          </div>
-          <div style={{ textAlign: "center", marginTop: "1rem" }}>
-            <Link to="/" className="btn btn-outline">
+          <div className="error-container fade-in">
+            <div className="error-icon">⚠️</div>
+            <h2>{error || "Skill not found"}</h2>
+            <Link to="/" className="btn btn-outline" style={{ marginTop: "1rem" }}>
               Back to Marketplace
             </Link>
           </div>
@@ -75,7 +64,7 @@ export function SkillDetailPage() {
 
       <main className="main-content">
         {/* Skill Hero Section */}
-        <section className="skill-detail-hero">
+        <section className="skill-detail-hero fade-in-up">
           <div className="skill-header">
             <div className="skill-header-left">
               <div className="skill-icon-large">
@@ -84,20 +73,20 @@ export function SkillDetailPage() {
               <div className="skill-title-section">
                 <h1 className="skill-title">{displayName}</h1>
                 <div className="skill-meta">
-                  <span>
+                  <span className="skill-author">
                     @{String(detailData.authorUsername || detailData.authorName || skillDetail.authorName || "anonymous")}
                   </span>
                   {skillDetail.rating > 0 && (
                     <>
-                      <span className="meta-separator">|</span>
-                      <span>
-                        ⭐ {skillDetail.rating.toFixed(1)} (
-                        {skillDetail.reviewCount})
+                      <span className="meta-separator">/</span>
+                      <span className="skill-rating-meta">
+                        ⭐ {skillDetail.rating.toFixed(1)}
+                        <span className="review-count">({skillDetail.reviewCount} reviews)</span>
                       </span>
                     </>
                   )}
-                  <span className="meta-separator">|</span>
-                  <span>{skillDetail.installCount} installs</span>
+                  <span className="meta-separator">/</span>
+                  <span className="skill-installs-meta">{skillDetail.installCount.toLocaleString()} installs</span>
                 </div>
               </div>
             </div>
@@ -110,11 +99,11 @@ export function SkillDetailPage() {
           {(skillDetail.category || skillDetail.tags) && (
             <div className="skill-tags">
               {skillDetail.category && (
-                <span className="skill-tag">{skillDetail.category}</span>
+                <span className="skill-tag category">{skillDetail.category}</span>
               )}
               {skillDetail.tags?.map((tag) => (
                 <span key={tag} className="skill-tag">
-                  {tag}
+                  #{tag}
                 </span>
               ))}
             </div>
@@ -122,8 +111,8 @@ export function SkillDetailPage() {
         </section>
 
         {/* README Section */}
-        <section className="readme-section">
-          <h2 className="section-heading">About</h2>
+        <section className="readme-section fade-in" style={{ animationDelay: "0.2s" }}>
+          <h2 className="section-heading">Description</h2>
           {skillDetail.readme || detailData.longDescription ? (
             <div className="markdown-content">
               <ReactMarkdown remarkPlugins={[remarkGfm]}>
@@ -138,67 +127,34 @@ export function SkillDetailPage() {
         </section>
 
         {/* EVR Simulation Sandbox */}
-        <section
-          className="sandbox-section"
-          style={{
-            marginTop: "3rem",
-            padding: "2rem",
-            background: "var(--color-card)",
-            borderRadius: "12px",
-            border: "1px solid var(--color-border)",
-          }}
-        >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              marginBottom: "1.5rem",
-            }}
-          >
-            <h2 className="section-heading" style={{ margin: 0 }}>
-              Simulation Sandbox
-            </h2>
-            <span
-              style={{
-                fontSize: "0.85rem",
-                background: "rgba(0,255,100,0.1)",
-                color: "#2ecc71",
-                padding: "0.2rem 0.6rem",
-                borderRadius: "4px",
-                border: "1px solid rgba(0,255,100,0.2)",
-              }}
-            >
-              Encrypted Virtual Room Active
-            </span>
+        <section className="sandbox-section fade-in" style={{ animationDelay: "0.3s" }}>
+          <div className="sandbox-header">
+            <div className="sandbox-title-container">
+              <h2 className="section-heading">Simulation Sandbox</h2>
+              <span className="sandbox-badge">
+                <span className="status-dot"></span>
+                Encrypted Virtual Room Active
+              </span>
+            </div>
+            <p className="sandbox-desc">
+              Test what an external AI sees when invoking this secure skill. The
+              raw rules are decrypted only in volatile memory (RAM) and
+              immediately wiped.
+            </p>
           </div>
-          <p
-            style={{
-              color: "var(--color-text-muted)",
-              marginBottom: "1.5rem",
-              lineHeight: "1.6",
-            }}
-          >
-            Test what an external AI sees when invoking this secure skill. The
-            raw rules are decrypted only in volatile memory (RAM) and
-            immediately wiped. The firewall ensures{" "}
-            <strong>only the sanitized conclusion</strong> is exported.
-          </p>
 
           <SimulationSandbox packageId={packageId!} />
         </section>
 
-        {/* Mint Status (if limited edition) */}
+        {/* Mint Status */}
         {hasLimitedEdition && (
-          <section className="mint-status-section">
+          <section className="mint-status-section fade-in" style={{ animationDelay: "0.4s" }}>
             <div className="mint-status-header">
-              <h2 className="section-heading">
-                {String(detailData.editionType)?.toUpperCase()}:{" "}
-                {Number(detailData.mintedCount) || 0} /{" "}
-                {Number(detailData.maxEditions)} minted
-              </h2>
+              <h3 className="section-heading">
+                {String(detailData.editionType)?.toUpperCase()}: {Number(detailData.mintedCount) || 0} / {Number(detailData.maxEditions)} Claimed
+              </h3>
               <span className="mint-percentage">
-                {mintProgress.toFixed(1)}% claimed
+                {mintProgress.toFixed(1)}%
               </span>
             </div>
             <div className="mint-progress-bar">
@@ -211,14 +167,10 @@ export function SkillDetailPage() {
         )}
 
         {/* Reviews Section */}
-        <section className="reviews-section">
-          <h2 className="section-heading">Reviews ({reviews.length})</h2>
-
-          {/* Review List */}
+        <section className="reviews-section fade-in" style={{ animationDelay: "0.5s" }}>
+          <h2 className="section-heading">Community Reviews ({reviews.length})</h2>
           <ReviewList reviews={reviews} />
-
-          {/* Review Form (authenticated users only) */}
-          <div style={{ marginTop: "3rem" }}>
+          <div className="review-form-container">
             <ReviewForm
               skill={skillDetail}
               onReviewSubmitted={refreshReviews}
@@ -227,17 +179,12 @@ export function SkillDetailPage() {
         </section>
       </main>
 
-      {/* Footer */}
-      <footer
-        style={{
-          borderTop: "1px solid var(--color-border)",
-          padding: "2rem",
-          textAlign: "center",
-          color: "var(--color-text-muted)",
-          fontSize: "0.85rem",
-        }}
-      >
-        <p>&copy; {new Date().getFullYear()} YigYaps. Apache 2.0 Licensed.</p>
+      <footer className="footer">
+        <p>&copy; {new Date().getFullYear()} YigYaps. Built for the Agentic Future.</p>
+        <div className="footer-links">
+          <Link to="/terms">Terms</Link>
+          <Link to="/privacy">Privacy</Link>
+        </div>
       </footer>
     </div>
   );
@@ -280,80 +227,41 @@ function SimulationSandbox({ packageId }: { packageId: string }) {
   };
 
   return (
-    <div
-      style={{
-        padding: "1.5rem",
-        background: "rgba(0,0,0,0.2)",
-        borderRadius: "8px",
-      }}
-    >
-      <div style={{ marginBottom: "1.5rem" }}>
+    <div className="sandbox-content">
+      <div className="sandbox-actions">
         <button
           onClick={handleSimulate}
           disabled={loading}
-          className="btn btn-primary"
-          style={{ width: "100%", padding: "1rem", fontSize: "1rem" }}
+          className={`btn btn-primary btn-large ${loading ? 'btn-loading' : ''}`}
         >
-          {loading
-            ? "Booting EVR Sandbox and Matching Rules..."
-            : "Simulate External Agent Call"}
+          {loading ? (
+            <>
+              <span className="spinner"></span>
+              Initializing EVR Sandbox...
+            </>
+          ) : (
+            "Simulate Secure Agent Call"
+          )}
         </button>
       </div>
 
       {error && (
-        <div
-          style={{
-            color: "#e74c3c",
-            padding: "1rem",
-            background: "rgba(255,0,0,0.1)",
-            borderRadius: "6px",
-          }}
-        >
+        <div className="form-error fade-in">
           ❌ {error}
         </div>
       )}
 
       {result && (
-        <div style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>
-          <div
-            style={{
-              padding: "1rem",
-              background: "#1e1e24",
-              borderLeft: "4px solid #3498db",
-              borderRadius: "4px",
-            }}
-          >
-            <div
-              style={{
-                fontSize: "0.85rem",
-                color: "var(--color-text-muted)",
-                marginBottom: "0.5rem",
-              }}
-            >
-              Agent Received:
-            </div>
-            <div style={{ fontFamily: "monospace", color: "#ecf0f1" }}>
+        <div className="sandbox-results fade-in">
+          <div className="sandbox-result-box conclusion">
+            <div className="result-label">Agent Output (Sanitized):</div>
+            <div className="result-value">
               {result.conclusion}
             </div>
           </div>
-          <div
-            style={{
-              padding: "1rem",
-              background: "#1e1e24",
-              borderLeft: "4px solid #2ecc71",
-              borderRadius: "4px",
-            }}
-          >
-            <div
-              style={{
-                fontSize: "0.85rem",
-                color: "var(--color-text-muted)",
-                marginBottom: "0.5rem",
-              }}
-            >
-              System Disclaimer:
-            </div>
-            <div style={{ fontSize: "0.9rem", color: "#2ecc71" }}>
+          <div className="sandbox-result-box disclaimer">
+            <div className="result-label">Security Protocol:</div>
+            <div className="result-value">
               🛡️ {result.disclaimer}
             </div>
           </div>

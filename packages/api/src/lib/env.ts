@@ -48,6 +48,9 @@ const envSchema = z.object({
 
   // KMS - Key Encryption Key (64 hex chars = 32 bytes)
   KMS_KEK: z.string().length(64).optional(),
+
+  // LLM - Anthropic API key for Evolution Lab real inference
+  ANTHROPIC_API_KEY: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -89,4 +92,5 @@ export const env = parsed.data || {
   DB_POOL_IDLE_TIMEOUT: 30000,
   DB_POOL_CONN_TIMEOUT: 10000,
   KMS_KEK: undefined,
+  ANTHROPIC_API_KEY: undefined,
 };

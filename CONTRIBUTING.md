@@ -38,7 +38,7 @@ npm test
 | `packages/db`     | `@yigyaps/db`     | Drizzle ORM schema and DALs     |
 | `packages/api`    | `@yigyaps/api`    | Fastify REST API server         |
 | `packages/client` | `@yigyaps/client` | TypeScript/JS SDK for consumers |
-| `apps/web`        | —                 | yigyaps.com portal (Next.js)    |
+| `apps/web`        | —                 | yigyaps.com portal (React/Vite) |
 
 ## Submitting Changes
 

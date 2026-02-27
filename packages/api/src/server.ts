@@ -18,6 +18,7 @@
  * License: Apache 2.0
  */
 
+import "dotenv/config";
 import Fastify from "fastify";
 import { z } from "zod";
 import cors from "@fastify/cors";
@@ -72,7 +73,7 @@ async function buildServer() {
     },
   });
   await fastify.register(cors, {
-    origin: (env.CORS_ORIGIN || "").split(",").filter(Boolean),
+    origin: env.NODE_ENV === "development" ? true : (env.CORS_ORIGIN || "").split(",").filter(Boolean),
     credentials: true,
   });
   await fastify.register(rateLimit, {
