@@ -53,4 +53,6 @@ COPY --from=builder /app/apps/web/dist /usr/share/nginx/html
 ENV PORT=8080
 EXPOSE $PORT
 
-CMD ["/bin/sh", "-c", "envsubst '$PORT' < /etc/nginx/conf.d/default.conf > /tmp/nginx.conf && nginx -c /tmp/nginx.conf -g 'daemon off;'"]
+# envsubst replaces $PORT in the server block snippet, then copies it back to conf.d/
+# so that nginx's main config (which includes conf.d/*.conf) picks it up correctly.
+CMD ["/bin/sh", "-c", "envsubst '$PORT' < /etc/nginx/conf.d/default.conf > /tmp/default.conf && cp /tmp/default.conf /etc/nginx/conf.d/default.conf && exec nginx -g 'daemon off;'"]
