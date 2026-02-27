@@ -179,10 +179,21 @@ export async function installationsRoutes(fastify: FastifyInstance) {
     "/:id",
     { preHandler: requireAuth() },
     async (request, reply) => {
+      const userId = request.user?.userId;
+      if (!userId) return reply.code(401).send({ error: "Unauthorized" });
+
       const installation = await installDAL.getById(request.params.id);
       if (!installation) {
         return reply.code(404).send({ error: "Installation not found" });
       }
+
+      // Ownership check: only the installing user can uninstall
+      if (installation.userId !== userId) {
+        return reply
+          .code(403)
+          .send({ error: "Not authorized to uninstall this installation" });
+      }
+
       await installDAL.updateStatus(request.params.id, "uninstalled");
       return reply.code(204).send();
     },
@@ -190,8 +201,18 @@ export async function installationsRoutes(fastify: FastifyInstance) {
 
   fastify.get<{ Params: { agentId: string } }>(
     "/agent/:agentId",
+    { preHandler: requireAuth() },
     async (request, reply) => {
-      const installations = await installDAL.getByAgent(request.params.agentId);
+      const userId = request.user?.userId;
+      if (!userId) return reply.code(401).send({ error: "Unauthorized" });
+
+      // Only return installations belonging to the authenticated user
+      const allInstallations = await installDAL.getByAgent(
+        request.params.agentId,
+      );
+      const installations = allInstallations.filter(
+        (inst) => inst.userId === userId,
+      );
       return reply.send({ installations });
     },
   );

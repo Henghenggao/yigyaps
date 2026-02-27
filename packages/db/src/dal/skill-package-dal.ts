@@ -115,6 +115,9 @@ export class SkillPackageDAL {
 
         const conditions = [];
 
+        // Always filter to active packages only (archived/banned excluded from search)
+        conditions.push(eq(skillPackagesTable.status, "active"));
+
         if (params.query) {
           conditions.push(
             or(
@@ -146,6 +149,12 @@ export class SkillPackageDAL {
         if (params.maxPriceUsd !== undefined) {
           conditions.push(
             sql`CAST(${skillPackagesTable.priceUsd} AS NUMERIC) <= ${params.maxPriceUsd}`,
+          );
+        }
+
+        if (params.tags && params.tags.length > 0) {
+          conditions.push(
+            sql`${skillPackagesTable.tags} && ${params.tags}::text[]`
           );
         }
 

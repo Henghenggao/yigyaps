@@ -16,6 +16,7 @@ import {
   invocationLogsTable,
   ipRegistrationsTable,
 } from "@yigyaps/db";
+import { SkillPackageDAL } from "@yigyaps/db";
 import { eq } from "drizzle-orm";
 import crypto from "crypto";
 import { randomUUID } from "crypto";
@@ -53,6 +54,22 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
       const { packageId } = paramsParsed.data;
       const { plaintextRules } = bodyParsed.data;
 
+      // Resolve slug to internal package ID to satisfy FK constraint
+      const pkgDAL = new SkillPackageDAL(fastify.db);
+      const pkg = await pkgDAL.getByPackageId(packageId);
+      if (!pkg) {
+        return reply.code(404).send({ error: "Package not found" });
+      }
+      const internalId = pkg.id;
+
+      // Only the package author can upload knowledge for their skill
+      const userId = request.user?.userId;
+      if (pkg.author !== userId) {
+        return reply
+          .code(403)
+          .send({ error: "Only the package author can upload knowledge" });
+      }
+
       // 1. Generate DEK
       const dek = KMS.generateDek();
 
@@ -72,16 +89,16 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
       const mockTxHash = `0x${crypto.randomBytes(32).toString("hex")}`;
       await fastify.db.insert(ipRegistrationsTable).values({
         id: randomUUID(),
-        skillPackageId: packageId,
+        skillPackageId: internalId,
         contentHash,
         blockchainTx: mockTxHash,
         registeredAt: Date.now(),
       });
 
-      // 5. Save to database
+      // 5. Save to database — use internalId (spkg_...) to satisfy FK constraint
       await fastify.db.insert(encryptedKnowledgeTable).values({
         id: randomUUID(),
-        skillPackageId: packageId,
+        skillPackageId: internalId,
         encryptedDek,
         contentCiphertext,
         contentHash,
@@ -116,10 +133,17 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
       }
       const { packageId } = paramsParsed.data;
 
+      // Resolve slug to internal ID
+      const pkgDAL = new SkillPackageDAL(fastify.db);
+      const pkg = await pkgDAL.getByPackageId(packageId);
+      if (!pkg) {
+        return reply.code(404).send({ error: "Package not found" });
+      }
+
       const knowledgeRecords = await fastify.db
         .select()
         .from(encryptedKnowledgeTable)
-        .where(eq(encryptedKnowledgeTable.skillPackageId, packageId))
+        .where(eq(encryptedKnowledgeTable.skillPackageId, pkg.id))
         .limit(1);
 
       if (!knowledgeRecords.length) {
@@ -163,8 +187,8 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
         .digest("hex");
       await fastify.db.insert(invocationLogsTable).values({
         id: randomUUID(),
-        skillPackageId: packageId,
-        apiClientId: "mock-agent-client-id", // Assume grabbed from Bearer token
+        skillPackageId: pkg.id, // Use internal ID (FK-safe)
+        apiClientId: request.user?.userId ?? "anonymous",
         conclusionHash,
         createdAt: Date.now(),
       });

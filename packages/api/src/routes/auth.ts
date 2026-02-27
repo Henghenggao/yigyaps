@@ -8,7 +8,7 @@
 
 import type { FastifyPluginAsync } from "fastify";
 import { UserDAL, SessionDAL } from "@yigyaps/db";
-import { signJWT } from "../lib/jwt.js";
+import { signJWT, verifyJWT } from "../lib/jwt.js";
 import { requireAuth } from "../middleware/auth-v2.js";
 import { customAlphabet } from "nanoid";
 import { env } from "../lib/env.js";
@@ -284,5 +284,21 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       createdAt: user.createdAt,
       lastLoginAt: user.lastLoginAt,
     });
+  });
+
+  // GET /v1/auth/refresh - Refresh JWT if expiring within 48h
+  fastify.get("/refresh", { preHandler: requireAuth() }, async (request, reply) => {
+    if (!request.user) return reply.status(401).send({ error: "Unauthorized", message: "Not authenticated" });
+    const jwt = request.cookies?.yigyaps_jwt;
+    const THRESHOLD = 48 * 60 * 60 * 1000;
+    let refresh = true;
+    if (jwt) { try { const d = verifyJWT(jwt); if (((d.exp ?? 0) * 1000 - Date.now()) > THRESHOLD) refresh = false; } catch { refresh = true; } }
+    if (!refresh) return reply.send({ refreshed: false });
+    const userDAL = new UserDAL(fastify.db);
+    const user = await userDAL.getById(request.user.userId);
+    if (!user) return reply.status(404).send({ error: "Not found", message: "User not found" });
+    const newJwt = signJWT({ userId: user.id, userName: user.displayName, githubUsername: user.githubUsername, tier: user.tier as "free" | "pro" | "epic" | "legendary", role: user.role as "user" | "admin" });
+    reply.setCookie("yigyaps_jwt", newJwt, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", maxAge: 7 * 24 * 60 * 60, path: "/" });
+    return reply.send({ refreshed: true, user: { id: user.id, githubUsername: user.githubUsername, displayName: user.displayName, email: user.email, avatarUrl: user.avatarUrl, tier: user.tier, role: user.role } });
   });
 };

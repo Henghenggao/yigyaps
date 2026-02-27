@@ -1,0 +1,23 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# YigYaps Web — Railway Service Configuration
+#
+# In Railway dashboard, add a second service to the project:
+#   1. "Add Service" → "GitHub Repo" → same repository
+#   2. Root Directory: leave EMPTY (repo root — Dockerfile needs access to packages/)
+#   3. Dockerfile Path: apps/web/Dockerfile
+#   4. Service Name: yigyaps-web
+#
+# Build environment variables to set in Railway dashboard → Variables:
+#   VITE_API_URL = https://api.yigyaps.com   (public URL of the API Railway service)
+# ─────────────────────────────────────────────────────────────────────────────
+
+[build]
+builder = "DOCKERFILE"
+dockerfilePath = "apps/web/Dockerfile"
+watchPatterns = ["apps/web/**", "packages/client/**", "packages/types/**"]
+
+[deploy]
+healthcheckPath = "/health"
+healthcheckTimeout = 120
+restartPolicyType = "ON_FAILURE"
+restartPolicyMaxRetries = 3

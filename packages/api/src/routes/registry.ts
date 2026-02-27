@@ -16,7 +16,10 @@ import { sql } from "drizzle-orm";
 import type { FastifyInstance } from "fastify";
 
 export async function registryRoutes(fastify: FastifyInstance) {
-  fastify.get("/health", async (request, reply) => {
+  fastify.get(
+    "/health",
+    { config: { rateLimit: { max: 120, timeWindow: "1 minute" } } },
+    async (request, reply) => {
     // 1. Check if database configuration exists
     const hasDbConfig = !!process.env.DATABASE_URL;
 
@@ -39,15 +42,24 @@ export async function registryRoutes(fastify: FastifyInstance) {
       }
     }
 
+    const memMB = (bytes: number) => `${Math.round(bytes / 1024 / 1024)}MB`;
+    const mem = process.memoryUsage();
+
     const response = {
       status: dbStatus === "connected" ? "healthy" : "degraded",
       service: "yigyaps-api",
       version: "0.1.0",
       timestamp: new Date().toISOString(),
+      uptime: Math.round(process.uptime()),
       database: {
         status: dbStatus,
         configured: hasDbConfig,
         error: dbError,
+      },
+      memory: {
+        heapUsed: memMB(mem.heapUsed),
+        heapTotal: memMB(mem.heapTotal),
+        rss: memMB(mem.rss),
       },
       environment: process.env.NODE_ENV || "development",
     };
@@ -58,7 +70,8 @@ export async function registryRoutes(fastify: FastifyInstance) {
     const statusCode = dbStatus === "connected" || allowDegraded ? 200 : 503;
 
     return reply.status(statusCode).send(response);
-  });
+    },
+  );
 }
 
 export async function wellKnownRoutes(fastify: FastifyInstance) {

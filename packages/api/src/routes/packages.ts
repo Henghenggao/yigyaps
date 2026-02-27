@@ -15,7 +15,7 @@ import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import { z } from "zod";
 import sanitizeHtml from "sanitize-html";
 import * as schema from "@yigyaps/db";
-import { SkillPackageDAL, SkillRuleDAL } from "@yigyaps/db";
+import { SkillPackageDAL, SkillRuleDAL, UserDAL } from "@yigyaps/db";
 import { requireAuth } from "../middleware/auth-v2.js";
 
 // Sanitize HTML configuration - allow safe formatting tags only
@@ -109,6 +109,7 @@ const createPackageSchema = z.object({
 });
 
 const updatePackageSchema = createPackageSchema.partial().extend({
+  status: z.enum(["active","archived","banned"]).optional(),
   priceUsd: z
     .number()
     .min(0)
@@ -139,6 +140,13 @@ const searchSchema = z.object({
     .optional(),
   license: z.enum(["open-source", "free", "premium", "enterprise"]).optional(),
   maturity: z.enum(["experimental", "beta", "stable", "deprecated"]).optional(),
+  tags: z
+    .union([z.string(), z.array(z.string())])
+    .optional()
+    .transform((v) =>
+      v === undefined ? undefined : Array.isArray(v) ? v : [v],
+    ),
+  author: z.string().optional(),
   minRating: z.coerce.number().min(0).max(5).optional(),
   maxPriceUsd: z.coerce.number().min(0).optional(),
   sortBy: z
@@ -148,9 +156,25 @@ const searchSchema = z.object({
   offset: z.coerce.number().int().min(0).default(0),
 });
 
+/** Attach creator info (username + avatar) to a package response */
+async function withCreatorInfo(
+  pkg: Awaited<ReturnType<SkillPackageDAL["getById"]>>,
+  userDAL: UserDAL,
+) {
+  if (!pkg) return pkg;
+  const creator = await userDAL.getById(pkg.author);
+  return {
+    ...pkg,
+    authorUsername: creator?.githubUsername ?? null,
+    authorAvatar: creator?.avatarUrl ?? null,
+    authorDisplayName: creator?.displayName ?? null,
+  };
+}
+
 export async function packagesRoutes(fastify: FastifyInstance) {
   const db = fastify.db;
   const packageDAL = new SkillPackageDAL(db);
+  const userDAL = new UserDAL(db);
 
   fastify.post("/", { preHandler: requireAuth() }, async (request, reply) => {
     // Author is automatically set from authenticated user
@@ -240,17 +264,33 @@ export async function packagesRoutes(fastify: FastifyInstance) {
     return reply.code(201).send(pkg);
   });
 
-  fastify.get("/", async (request, reply) => {
+  // Public search endpoint gets a higher rate limit (browsing use case)
+  fastify.get(
+    "/",
+    { config: { rateLimit: { max: 60, timeWindow: "1 minute" } } },
+    async (request, reply) => {
     const params = searchSchema.parse(request.query);
+
+    // If author filter is provided, fetch by author first then apply other filters
+    if (params.author) {
+      const authorPackages = await packageDAL.getByAuthor(params.author);
+      return reply.send({ packages: authorPackages, total: authorPackages.length });
+    }
+
     const result = await packageDAL.search(params);
     return reply.send(result);
-  });
+    },
+  );
 
-  fastify.get<{ Params: { id: string } }>("/:id", async (request, reply) => {
+  fastify.get<{ Params: { id: string } }>(
+    "/:id",
+    { config: { rateLimit: { max: 60, timeWindow: "1 minute" } } },
+    async (request, reply) => {
     const pkg = await packageDAL.getById(request.params.id);
     if (!pkg) return reply.code(404).send({ error: "Package not found" });
-    return reply.send(pkg);
-  });
+    return reply.send(await withCreatorInfo(pkg, userDAL));
+    },
+  );
 
   fastify.get<{ Params: { id: string } }>(
     "/:id/rules",
@@ -266,7 +306,7 @@ export async function packagesRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       const pkg = await packageDAL.getByPackageId(request.params.packageId);
       if (!pkg) return reply.code(404).send({ error: "Package not found" });
-      return reply.send(pkg);
+      return reply.send(await withCreatorInfo(pkg, userDAL));
     },
   );
 
@@ -309,14 +349,34 @@ export async function packagesRoutes(fastify: FastifyInstance) {
         });
       }
 
-      // Sanitize README if present in update
+      // Enforce status change permissions: non-admin users can only archive, not ban
       const updateData = { ...parsed.data };
+      if (updateData.status && updateData.status !== "active") {
+        if (updateData.status === "banned" && request.user?.role !== "admin") {
+          return reply.code(403).send({ error: "Forbidden", message: "Only admins can ban packages" });
+        }
+      }
+      // Sanitize README if present in update
       if (updateData.readme !== undefined && updateData.readme !== null) {
         updateData.readme = sanitizeHtml(updateData.readme, sanitizeOptions);
       }
 
       const updated = await packageDAL.update(request.params.id, updateData);
       return reply.send(updated);
+    },
+  );
+
+  fastify.delete(
+    "/:id",
+    { preHandler: requireAuth() },
+    async (request, reply) => {
+      const userId = request.user?.userId;
+      if (!userId) return reply.code(401).send({ error: "Unauthorized" });
+      const pkg = await packageDAL.getById((request.params as {id:string}).id);
+      if (!pkg) return reply.code(404).send({ error: "Package not found" });
+      if (pkg.author !== userId) return reply.code(403).send({ error: "Not authorized to archive this package" });
+      const updated = await packageDAL.update((request.params as {id:string}).id, { status: "archived" });
+      return reply.send({ ...updated, message: "Package archived successfully" });
     },
   );
 

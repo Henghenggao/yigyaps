@@ -69,7 +69,7 @@ export async function publishCommand(options: PublishOptions) {
         displayName: payload.manifest.name,
         description: payload.manifest.description,
         authorName: payload.manifest.author,
-        category: payload.manifest.yigyaps?.category || "general",
+        category: payload.manifest.yigyaps?.category || "other",
         tags: payload.manifest.yigyaps?.tags || [],
         readme: payload.readme,
         rules: payload.rules.map((r) => ({ path: r.path, content: r.content })),

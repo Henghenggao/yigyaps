@@ -37,7 +37,10 @@ value = "https://api.yigyaps.com"
 
 [[deploy.environmentVariables]]
 name = "CORS_ORIGIN"
-value = "*"
+# IMPORTANT: Override in Railway dashboard with actual domain(s).
+# Format: https://yigyaps.com,https://www.yigyaps.com
+# Using "*" breaks the CSRF origin check and blocks all browser POST requests.
+value = "https://yigyaps.com"
 
 # NOTE: DATABASE_URL is automatically injected by Railway when you link the PostgreSQL service
 # NOTE: ADMIN_SECRET should be set in Railway dashboard as a secret variable

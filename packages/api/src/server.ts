@@ -36,7 +36,9 @@ import { mintsRoutes } from "./routes/mints.js";
 import { registryRoutes, wellKnownRoutes } from "./routes/registry.js";
 import { authRoutes } from "./routes/auth.js";
 import { usersRoutes } from "./routes/users.js";
+import { apiKeysRoutes } from "./routes/api-keys.js";
 import { securityRoutes } from "./routes/security.js";
+import { adminRoutes } from "./routes/admin.js";
 import { env } from "./lib/env.js";
 
 const { Pool } = pg;
@@ -74,8 +76,12 @@ async function buildServer() {
     credentials: true,
   });
   await fastify.register(rateLimit, {
-    max: 20, // Strict MVP Limit for scraping protection
+    // Default rate limit for authenticated write operations (POST/PATCH/DELETE).
+    // Public GET routes and auth routes override this per-route via config.rateLimit.
+    max: 30,
     timeWindow: "1 minute",
+    keyGenerator: (request) => request.user?.userId ?? request.ip,
+    // Allow higher limits on public GET routes (set per-route with config: { rateLimit: { max, timeWindow } })
   });
   await fastify.register(cookie, {
     secret: env.SESSION_SECRET,
@@ -202,6 +208,8 @@ async function buildServer() {
   await fastify.register(reviewsRoutes, { prefix: "/v1/reviews" });
   await fastify.register(mintsRoutes, { prefix: "/v1/mints" });
   await fastify.register(securityRoutes, { prefix: "/v1/security" });
+  await fastify.register(apiKeysRoutes, { prefix: "/v1/auth" });
+  await fastify.register(adminRoutes, { prefix: "/v1/admin" });
 
   // ── Error Handling ─────────────────────────────────────────────────────────
   fastify.setErrorHandler(function (err, request, reply) {
@@ -217,6 +225,7 @@ async function buildServer() {
         error: "Bad Request",
         message: "Validation failed",
         details: err.issues,
+        requestId: request.id,
       });
     }
 
@@ -254,6 +263,7 @@ async function buildServer() {
           error: "Conflict",
           message,
           constraint: constraintName,
+          requestId: request.id,
         });
       }
 
@@ -262,6 +272,7 @@ async function buildServer() {
       return reply.status(500).send({
         error: "Internal Server Error",
         message: "A database error occurred",
+        requestId: request.id,
       });
     }
 
@@ -270,6 +281,7 @@ async function buildServer() {
       return reply.status(error.statusCode).send({
         error: error.name || "Error",
         message: error.message,
+        requestId: request.id,
       });
     }
 
@@ -281,6 +293,7 @@ async function buildServer() {
     return reply.status(500).send({
       error: "Internal Server Error",
       message: "An unexpected error occurred",
+      requestId: request.id,
     });
   });
 
@@ -306,6 +319,24 @@ async function main() {
     server.log.error(err);
     process.exit(1);
   }
+
+  // ── Graceful Shutdown (E6) ────────────────────────────────────────────────
+  const shutdown = async (signal: string) => {
+    server.log.info(`Received ${signal}, starting graceful shutdown...`);
+    try {
+      // Stop accepting new requests; wait up to 30s for in-flight requests
+      await server.close();
+      server.log.info("Server closed successfully");
+      process.exit(0);
+    } catch (err) {
+      server.log.error({ err }, "Error during graceful shutdown");
+      process.exit(1);
+    }
+  };
+
+  process.on("SIGTERM", () => shutdown("SIGTERM"));
+  process.on("SIGINT", () => shutdown("SIGINT"));
+  process.on("SIGUSR2", () => shutdown("SIGUSR2")); // nodemon restart
 }
 
 main();

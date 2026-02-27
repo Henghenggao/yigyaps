@@ -89,7 +89,8 @@ export const skillPackagesTable = pgTable(
     icon: text("icon"),
     repositoryUrl: text("repository_url"),
     homepageUrl: text("homepage_url"),
-    kekId: text("kek_id"), // KMS Managed Key ID for Envelope Encryption
+    kekId: text("kek_id"),
+    status: text("status").notNull().default("active"),
     createdAt: bigint("created_at", { mode: "number" }).notNull(),
     updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
     releasedAt: bigint("released_at", { mode: "number" }).notNull(),

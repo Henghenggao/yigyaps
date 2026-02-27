@@ -85,7 +85,7 @@ export function SkillDetailPage() {
                 <h1 className="skill-title">{displayName}</h1>
                 <div className="skill-meta">
                   <span>
-                    @{String(detailData.creatorUsername) || "anonymous"}
+                    @{String(detailData.authorUsername || detailData.authorName || skillDetail.authorName || "anonymous")}
                   </span>
                   {skillDetail.rating > 0 && (
                     <>

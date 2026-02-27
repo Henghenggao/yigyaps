@@ -41,7 +41,7 @@ export function UserMenu() {
 
             <div className="user-menu-body">
               <Link
-                to={`/?author=${user.id}`}
+                to="/my-packages"
                 className="user-menu-item"
                 onClick={() => setIsOpen(false)}
                 style={{ textDecoration: "none", display: "block" }}
@@ -49,14 +49,14 @@ export function UserMenu() {
                 My Packages
               </Link>
 
-              <button
+              <Link
+                to="/settings"
                 className="user-menu-item"
-                disabled
-                title="Coming soon"
-                style={{ opacity: 0.6, cursor: "not-allowed" }}
+                onClick={() => setIsOpen(false)}
+                style={{ textDecoration: "none", display: "block" }}
               >
                 Settings
-              </button>
+              </Link>
 
               <div className="user-menu-divider" />
 

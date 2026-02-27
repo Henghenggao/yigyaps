@@ -8,10 +8,9 @@
 
 import { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
-import { YigYapsRegistryClient } from "@yigyaps/client";
 import type { SkillPackage } from "@yigyaps/types";
 import { getTierName, canAccessTier } from "../utils/tierHelpers";
-import { API_URL } from "../lib/api";
+import { fetchApi } from "../lib/api";
 
 interface InstallButtonProps {
   skill: SkillPackage;
@@ -56,16 +55,15 @@ export function InstallButton({ skill, onInstallSuccess }: InstallButtonProps) {
     setStatus("installing");
 
     try {
-      const client = new YigYapsRegistryClient({
-        baseUrl: API_URL,
-      });
-
-      // Call install API
-      await client.install({
-        packageId: skill.packageId,
-        yigbotId: user.id, // Use userId as agentId for web installs
-        userTier: user.tier,
-        configuration: {},
+      // Use fetchApi to ensure httpOnly cookies are sent with the request
+      await fetchApi("/v1/installations", {
+        method: "POST",
+        body: JSON.stringify({
+          packageId: skill.packageId,
+          yigbotId: user.id, // Use userId as agentId for web installs
+          userTier: user.tier,
+          configuration: {},
+        }),
       });
 
       // Success

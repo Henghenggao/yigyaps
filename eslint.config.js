@@ -19,6 +19,7 @@ export default tseslint.config(
             "*.js",
             "*.ts",
             "scripts/*.js",
+            "scripts/*.ts",
             "packages/*/vitest.config.ts",
             "packages/*/drizzle.config.ts",
             "packages/cli/bin/*.js",

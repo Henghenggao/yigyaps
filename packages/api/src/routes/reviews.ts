@@ -57,7 +57,10 @@ export async function reviewsRoutes(fastify: FastifyInstance) {
         const installDalTx = new SkillInstallationDAL(tx);
         const reviewDalTx = new SkillReviewDAL(tx);
 
-        const pkg = await pkgDalTx.getByPackageId(body.packageId);
+        // Accept either internal ID (spkg_...) or slug (author/pkg-name)
+        const pkg = body.packageId.startsWith("spkg_")
+          ? await pkgDalTx.getById(body.packageId)
+          : await pkgDalTx.getByPackageId(body.packageId);
         if (!pkg) return { status: 404, error: "Package not found" };
 
         const hasInstalled = await installDalTx.hasInstallation(
