@@ -156,8 +156,8 @@ export function TermsPage() {
             <h2 style={headingStyle}>11. Contact</h2>
             <p style={paraStyle}>
               For questions about these Terms, please open an issue at{" "}
-              <a href="https://github.com/yigyaps/yigyaps/issues" target="_blank" rel="noopener noreferrer" style={{ color: "var(--color-primary)" }}>
-                github.com/yigyaps/yigyaps
+              <a href="https://github.com/Henghenggao/yigyaps/issues" target="_blank" rel="noopener noreferrer" style={{ color: "var(--color-primary)" }}>
+                github.com/Henghenggao/yigyaps
               </a>
               .
             </p>

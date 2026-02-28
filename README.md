@@ -46,47 +46,84 @@ The `yigyaps` CLI provides a world-class workflow for skill creators:
 
 ---
 
-## 🚀 Quick Start (Local Deployment)
+## 🚀 Local Development
 
-### 1. Requirements
-- Node.js 20+ & npm 10+
-- PostgreSQL 14+
-- GitHub OAuth App [(Setup Guide)](#github-oauth-setup)
+### Prerequisites
 
-### 2. Setup
+| Requirement | Version | Notes |
+|---|---|---|
+| Node.js | 20+ | Use `nvm use` — `.nvmrc` is included |
+| npm | 10+ | Bundled with Node 20 |
+| PostgreSQL | 14+ | Local install **or** Docker Compose |
+| Docker Desktop | Latest | **Required** to run the test suite |
+| GitHub OAuth App | — | [See setup guide](#github-oauth-setup) |
+
+### Option A — Local PostgreSQL
+
 ```bash
-# Clone and install
+# 1. Clone and install
 git clone https://github.com/Henghenggao/yigyaps.git
 cd yigyaps
+nvm use          # switches to Node 20 via .nvmrc
 npm install
 
-# Environment
+# 2. Create a local database
+createdb yigyaps_dev
+
+# 3. Configure environment
 cp .env.example .env
-# Edit .env with your DATABASE_URL and GitHub Credentials
-```
+# Edit .env: set DATABASE_URL, GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET
 
-### 3. Initialize & Run
-```bash
-# Run database migrations
+# 4. Run migrations and build
 npm run db:migrate
-
-# Build core packages
 npm run build
 
-# Start API (http://localhost:3100)
-npm run dev:api
+# 5. Start servers
+npm run dev:api                  # API  → http://localhost:3100
+npm run dev --workspace=web      # Web  → http://localhost:5173
+```
 
-# Start Web Frontend (http://localhost:5173)
-npm run dev --workspace=web
+### Option B — Docker Compose
+
+```bash
+git clone https://github.com/Henghenggao/yigyaps.git
+cd yigyaps
+cp .env.example .env
+# Edit .env: set GITHUB_CLIENT_ID, GITHUB_CLIENT_SECRET
+
+docker compose up -d
+# Web: http://localhost:5173 | API: http://localhost:3100 | Swagger: http://localhost:3100/docs
+```
+
+### Running Tests
+
+> **Requires Docker Desktop to be running.** Tests use [Testcontainers](https://testcontainers.com/) to start a temporary PostgreSQL instance automatically.
+
+```bash
+npm test                              # all 128 tests
+npm test --workspace=packages/api     # API tests (78)
+npm test --workspace=packages/db      # DB tests  (19) — runs serially
+npm test --workspace=apps/web         # Web tests (31)
+npm run test:coverage                 # with coverage report
+```
+
+### Useful Scripts
+
+```bash
+npm run build          # build all packages
+npm run lint           # ESLint across the monorepo
+npm run db:migrate     # apply pending migrations
+npm run db:generate    # generate new migration from schema changes
+npm run db:studio      # open Drizzle Studio (visual DB browser)
 ```
 
 <details id="github-oauth-setup">
-<summary>🔑 GitHub OAuth Setup Details</summary>
+<summary>🔑 GitHub OAuth Setup</summary>
 
-1. Create a "New OAuth App" in [GitHub Developer Settings](https://github.com/settings/developers).
+1. Go to [GitHub Developer Settings](https://github.com/settings/developers) → **New OAuth App**.
 2. **Homepage URL**: `http://localhost:5173`
 3. **Authorization callback URL**: `http://localhost:3100/v1/auth/github/callback`
-4. Copy **Client ID** and **Client Secret** to your `.env`.
+4. Copy **Client ID** and generate a **Client Secret**, then paste both into your `.env`.
 </details>
 
 ---
@@ -115,7 +152,9 @@ YigYaps is an **Independent Registry**. Unlike platform-tied stores, we prioriti
 ## 📄 License & Contributing
 
 - **License**: [Apache 2.0](LICENSE)
-- **Contribution Guide**: [CONTRIBUTING.md](CONTRIBUTING.md)
+- **Contributing**: [CONTRIBUTING.md](CONTRIBUTING.md)
+- **Code of Conduct**: [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)
+- **Architecture**: [ARCHITECTURE.md](ARCHITECTURE.md)
 
 ---
 <p align="center">Built with ❤️ for the future of Human-AI Collaboration.</p>

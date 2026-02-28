@@ -80,7 +80,9 @@ async function validateApiKey(
     }
 
     // Update last used timestamp (async, don't wait)
-    apiKeyDAL.updateLastUsed(apiKey.id).catch(() => {});
+    apiKeyDAL.updateLastUsed(apiKey.id).catch((err: unknown) => {
+      request.log.debug({ err }, "Failed to update API key last-used timestamp");
+    });
 
     // Get user info from database
     const userDAL = new UserDAL(request.server.db);

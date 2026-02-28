@@ -118,8 +118,8 @@ export function PrivacyPage() {
             <h2 style={headingStyle}>10. Contact</h2>
             <p style={paraStyle}>
               For privacy inquiries, open an issue at{" "}
-              <a href="https://github.com/yigyaps/yigyaps/issues" target="_blank" rel="noopener noreferrer" style={{ color: "var(--color-primary)" }}>
-                github.com/yigyaps/yigyaps
+              <a href="https://github.com/Henghenggao/yigyaps/issues" target="_blank" rel="noopener noreferrer" style={{ color: "var(--color-primary)" }}>
+                github.com/Henghenggao/yigyaps
               </a>
               .
             </p>

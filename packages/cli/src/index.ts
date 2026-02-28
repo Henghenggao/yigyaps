@@ -205,7 +205,9 @@ export async function run() {
   try {
     // Silently check for updates (only if not JSON output)
     if (!process.argv.includes("--json")) {
-      checkForUpdates(pkg).catch(() => {});
+      checkForUpdates(pkg).catch(() => {
+        // Update check is non-critical; silently ignore network errors
+      });
     }
 
     // If no arguments are provided, enter interactive mode
