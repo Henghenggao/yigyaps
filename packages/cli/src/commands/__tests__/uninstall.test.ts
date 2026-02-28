@@ -20,7 +20,7 @@ vi.mock("@clack/prompts", () => ({
     start: vi.fn(),
     stop: vi.fn(),
   })),
-  confirm: (...args: any[]) => mockConfirm(...args),
+  confirm: (...args: unknown[]) => mockConfirm(...args),
 }));
 
 describe("uninstallCommand", () => {

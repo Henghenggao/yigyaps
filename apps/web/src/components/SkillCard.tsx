@@ -12,46 +12,135 @@ export function SkillCard({ skill, onClick }: SkillCardProps) {
   return (
     <Link
       to={`/skill/${skill.packageId}`}
-      className="skill-card fade-in"
+      className="card skill-card animate-fade-in"
       onClick={onClick}
     >
-      <div className="card-header">
-        <div className="card-icon">
+      <div className="card-top">
+        <div className="skill-icon-box">
           {skill.icon || displayName.charAt(0).toUpperCase()}
         </div>
-        <div className="status-indicator">
-          <span className="status-dot"></span>
-          {skill.maturity === "stable" ? "Verified" : skill.maturity}
+        <div className="maturity-badge">
+          {skill.maturity}
         </div>
       </div>
-      <h3 className="card-title">{displayName}</h3>
-      {skill.category && (
-        <span className="skill-category-tag">{skill.category}</span>
-      )}
-      <p className="card-desc">
-        {skill.description || "No description provided."}
-      </p>
-      <div className="card-footer">
-        <div className="mint-quota">
-          <span>{skill.installCount.toLocaleString()}</span> INSTALLS
+
+      <div className="card-body">
+        <h3 className="skill-title">{displayName}</h3>
+        {skill.category && (
+          <span className="category-pill">{skill.category}</span>
+        )}
+        <p className="skill-description">
+          {skill.description || "No description provided."}
+        </p>
+      </div>
+
+      <div className="card-bottom">
+        <div className="skill-stats">
+          <span className="stat-item">
+            <strong>{skill.installCount.toLocaleString()}</strong> installs
+          </span>
           {skill.rating > 0 && (
-            <span className="card-rating">
-              <svg
-                width="14"
-                height="14"
-                viewBox="0 0 24 24"
-                fill="currentColor"
-                color="var(--color-warning)"
-                style={{ marginRight: "2px", verticalAlign: "middle" }}
-              >
-                <path d="M12 17.27L18.18 21l-1.64-7.03L22 9.24l-7.19-.61L12 2 9.19 8.63 2 9.24l5.46 4.73L5.82 21z" />
-              </svg>
-              {skill.rating.toFixed(1)}
+            <span className="stat-item rating">
+              ★ {skill.rating.toFixed(1)}
             </span>
           )}
         </div>
-        <div className="btn btn-outline btn-sm">View Details</div>
+        <div className="skill-price">
+          {skill.license === 'open-source' ? 'Free' : `$${skill.priceUsd ?? 0}`}
+        </div>
       </div>
+
+      <style>{`
+        .skill-card {
+          display: flex;
+          flex-direction: column;
+          height: 100%;
+          padding: 1.75rem;
+          text-decoration: none;
+          color: inherit;
+        }
+        .card-top {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: 1.5rem;
+        }
+        .skill-icon-box {
+          width: 52px;
+          height: 52px;
+          background: var(--color-accent-bg);
+          border-radius: var(--radius-lg);
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          font-size: 1.35rem;
+          font-weight: 700;
+          color: var(--color-primary);
+        }
+        .maturity-badge {
+          font-size: 0.65rem;
+          text-transform: uppercase;
+          background: var(--color-bg);
+          color: var(--color-text-sub);
+          padding: 0.3rem 0.6rem;
+          border-radius: 6px;
+          font-weight: 700;
+          border: 1px solid var(--color-border);
+        }
+        .skill-title {
+          font-size: 1.5rem;
+          margin-bottom: 0.6rem;
+          line-height: 1.1;
+          letter-spacing: -0.01em;
+        }
+        .category-pill {
+          display: inline-block;
+          font-size: 0.75rem;
+          background: var(--color-accent-bg);
+          padding: 0.25rem 0.75rem;
+          border-radius: 100px;
+          margin-bottom: 1.25rem;
+          color: var(--color-primary);
+          font-weight: 600;
+        }
+        .skill-description {
+          font-size: 1rem;
+          color: var(--color-text-sub);
+          display: -webkit-box;
+          -webkit-line-clamp: 3;
+          -webkit-box-orient: vertical;
+          overflow: hidden;
+          margin-bottom: 2rem;
+          line-height: 1.5;
+        }
+        .card-bottom {
+          margin-top: auto;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          padding-top: 1.25rem;
+          border-top: 1px solid var(--color-border);
+        }
+        .skill-stats {
+          font-size: 0.85rem;
+          color: var(--color-text-sub);
+          display: flex;
+          gap: 1.25rem;
+        }
+        .stat-item strong {
+          color: var(--color-text-main);
+          font-weight: 600;
+        }
+        .rating {
+          color: #F59E0B;
+          font-weight: 700;
+        }
+        .skill-price {
+          font-weight: 700;
+          color: var(--color-primary);
+          font-size: 1.1rem;
+        }
+      `}</style>
     </Link>
   );
 }

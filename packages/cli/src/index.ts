@@ -31,6 +31,8 @@ import { runCommand } from "./commands/run.js";
 import { doctorCommand } from "./commands/doctor.js";
 import { interactiveCommand } from "./commands/interactive.js";
 import { onboardingCommand } from "./commands/onboarding.js";
+import { exportCommand } from "./commands/export.js";
+import { mcpBridgeCommand } from "./commands/mcp-bridge.js";
 import { getConfig } from "./lib/config.js";
 import { checkForUpdates } from "./lib/update-check.js";
 import fs from "fs-extra";
@@ -156,6 +158,25 @@ program
   .command("doctor")
   .description("Diagnostic tool for YigYaps CLI")
   .action(doctorCommand);
+
+program
+  .command("export")
+  .description("Export a skill as a SKILL.md file (for SkillsMP and ecosystem)")
+  .argument("<packageId>", "Package ID (e.g. expert/investment-eval)")
+  .option("--format <format>", "Export format", "skill-md")
+  .option("-o, --output <file>", "Output file path")
+  .option("--json", "Output results in JSON format")
+  .action(exportCommand);
+
+program
+  .command("mcp-bridge")
+  .description(
+    "Start an MCP stdio bridge for a remote marketplace skill (use with Claude Desktop)",
+  )
+  .argument("<skillId>", "Package ID (e.g. expert/investment-eval)")
+  .option("--api-key <key>", "YigYaps API key (defaults to stored key)")
+  .option("--api-url <url>", "YigYaps API URL (defaults to https://api.yigyaps.com)")
+  .action(mcpBridgeCommand);
 
 // ─── Ecosystem Commands ───────────────────────────────────────────────────────
 

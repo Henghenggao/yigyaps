@@ -60,13 +60,54 @@ export function TermsPage() {
               you own or have rights to publish all content you submit.
             </p>
             <p style={paraStyle}>
-              Installating a Skill grants a non-transferable license to use the Skill in AI agent contexts as specified
+              Installing a Skill grants a non-transferable license to use the Skill in AI agent contexts as specified
               by the Creator. Reverse engineering, extraction, or redistribution of Skill rules is strictly prohibited.
             </p>
           </div>
 
+          <div
+            style={{
+              ...sectionStyle,
+              padding: "1.25rem 1.5rem",
+              background: "rgba(231,76,60,0.04)",
+              border: "1px solid rgba(231,76,60,0.18)",
+              borderRadius: "8px",
+            }}
+          >
+            <h2 style={headingStyle}>5. Prohibited AI Training Use</h2>
+            <p style={paraStyle}>
+              <strong>5.1 Prohibition.</strong>{" "}
+              You ("Licensee") shall NOT use any knowledge, rules, case studies, decision frameworks,
+              evaluation criteria, or derivative data obtained through YigYaps API calls for:
+            </p>
+            <ul style={{ ...paraStyle, paddingLeft: "1.5rem" } as React.CSSProperties}>
+              <li>
+                Training, fine-tuning, distilling, or reinforcement learning of any machine learning model;
+              </li>
+              <li>Constructing synthetic datasets derived from Skill outputs;</li>
+              <li>Building competitive products that replicate Skill functionality.</li>
+            </ul>
+            <p style={paraStyle}>
+              <strong>5.2 Violation Consequences.</strong> Breach of Section 5.1 triggers:
+            </p>
+            <ul style={{ ...paraStyle, paddingLeft: "1.5rem" } as React.CSSProperties}>
+              <li>Immediate termination of all API access without refund;</li>
+              <li>Liquidated damages equal to 10× the total API fees paid to date;</li>
+              <li>Platform's right to seek injunctive relief.</li>
+            </ul>
+            <p style={paraStyle}>
+              <strong>5.3 Detection &amp; Audit.</strong>{" "}
+              YigYaps reserves the right to periodically test Licensee systems for output patterns matching
+              YigYaps Skill fingerprints. Licensee agrees to cooperate with reasonable audit requests within
+              14 days of written notice.
+            </p>
+            <p style={{ ...paraStyle, fontSize: "0.8rem", marginBottom: 0 }}>
+              By creating an API key you confirm you have read, understood, and agree to Section 5.
+            </p>
+          </div>
+
           <div style={sectionStyle}>
-            <h2 style={headingStyle}>5. Prohibited Content</h2>
+            <h2 style={headingStyle}>6. Prohibited Content</h2>
             <p style={paraStyle}>You may not publish Skills that:</p>
             <ul style={{ ...paraStyle, paddingLeft: "1.5rem" } as React.CSSProperties}>
               <li>Contain malware, exploits, or harmful instructions</li>
@@ -78,7 +119,7 @@ export function TermsPage() {
           </div>
 
           <div style={sectionStyle}>
-            <h2 style={headingStyle}>6. Revenue Sharing</h2>
+            <h2 style={headingStyle}>7. Revenue Sharing</h2>
             <p style={paraStyle}>
               For paid Skills, Creators receive 70% of net revenue. YigYaps retains 30% as a platform fee to cover
               infrastructure, security, and operational costs. Payouts are processed via Stripe when available.
@@ -86,7 +127,7 @@ export function TermsPage() {
           </div>
 
           <div style={sectionStyle}>
-            <h2 style={headingStyle}>7. Alpha Disclaimer</h2>
+            <h2 style={headingStyle}>8. Alpha Disclaimer</h2>
             <p style={paraStyle}>
               YigYaps is currently in Alpha. The Platform may be unavailable, reset, or significantly modified without
               notice. Data may be lost during this period. Do not rely on the Platform for production-critical workloads
@@ -95,7 +136,7 @@ export function TermsPage() {
           </div>
 
           <div style={sectionStyle}>
-            <h2 style={headingStyle}>8. Limitation of Liability</h2>
+            <h2 style={headingStyle}>9. Limitation of Liability</h2>
             <p style={paraStyle}>
               TO THE MAXIMUM EXTENT PERMITTED BY LAW, YIGYAPS SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL,
               CONSEQUENTIAL, OR PUNITIVE DAMAGES. OUR TOTAL LIABILITY SHALL NOT EXCEED THE GREATER OF $100 OR THE AMOUNT
@@ -104,7 +145,7 @@ export function TermsPage() {
           </div>
 
           <div style={sectionStyle}>
-            <h2 style={headingStyle}>9. Changes to Terms</h2>
+            <h2 style={headingStyle}>10. Changes to Terms</h2>
             <p style={paraStyle}>
               We may update these Terms at any time. Continued use of the Platform after changes constitutes acceptance.
               Material changes will be communicated via email or Platform notification.
@@ -112,7 +153,7 @@ export function TermsPage() {
           </div>
 
           <div style={sectionStyle}>
-            <h2 style={headingStyle}>10. Contact</h2>
+            <h2 style={headingStyle}>11. Contact</h2>
             <p style={paraStyle}>
               For questions about these Terms, please open an issue at{" "}
               <a href="https://github.com/yigyaps/yigyaps/issues" target="_blank" rel="noopener noreferrer" style={{ color: "var(--color-primary)" }}>

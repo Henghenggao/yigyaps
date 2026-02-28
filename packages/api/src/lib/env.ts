@@ -51,6 +51,17 @@ const envSchema = z.object({
 
   // LLM - Anthropic API key for Evolution Lab real inference
   ANTHROPIC_API_KEY: z.string().optional(),
+
+  // IP Timestamp — optional GitHub evidence commit (方案A)
+  // Format: "owner/repo"
+  GITHUB_EVIDENCE_REPO: z.string().optional(),
+  // GitHub PAT with contents:write on the evidence repo
+  GITHUB_EVIDENCE_TOKEN: z.string().optional(),
+
+  // Stripe — required for payment features; safe to omit in dev/test
+  STRIPE_SECRET_KEY: z.string().optional(),
+  STRIPE_WEBHOOK_SECRET: z.string().optional(),
+  STRIPE_CONNECT_CLIENT_ID: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);
@@ -93,4 +104,9 @@ export const env = parsed.data || {
   DB_POOL_CONN_TIMEOUT: 10000,
   KMS_KEK: undefined,
   ANTHROPIC_API_KEY: undefined,
+  GITHUB_EVIDENCE_REPO: undefined,
+  GITHUB_EVIDENCE_TOKEN: undefined,
+  STRIPE_SECRET_KEY: undefined,
+  STRIPE_WEBHOOK_SECRET: undefined,
+  STRIPE_CONNECT_CLIENT_ID: undefined,
 };

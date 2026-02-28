@@ -59,9 +59,8 @@ export async function listCommand(options: ListOptions) {
                 version: "installed",
                 authorName: inst.agentId,
                 description: `Installed on agent: ${inst.agentId}`,
-                maturity: inst.status === "active" ? "stable" : "experimental",
-                tags: [inst.status],
-              } as any),
+                category: inst.status,
+              }),
             )
             .join("\n\n") +
           "\n",

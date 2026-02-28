@@ -41,7 +41,7 @@ export async function infoCommand(id: string, options: InfoOptions) {
       }
 
       // Render rich UI card
-      console.log(skillCard(pkg as any));
+      console.log(skillCard(pkg));
 
       p.outro(
         `${colors.muted("To install this skill, run:")} ${colors.success(`yigyaps install ${pkg.packageId}`)}`,

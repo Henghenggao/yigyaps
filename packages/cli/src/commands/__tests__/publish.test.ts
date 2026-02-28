@@ -3,6 +3,8 @@ import { publishCommand } from "../publish.js";
 import * as auth from "../../lib/auth.js";
 import * as packager from "../../lib/packager.js";
 import * as registry from "../../lib/registry.js";
+import type { YigYapsPublisherClient } from "@yigyaps/client";
+import type { PackagePayload } from "../../lib/packager.js";
 
 vi.mock("../../lib/auth.js");
 vi.mock("../../lib/packager.js");
@@ -46,7 +48,7 @@ describe("publishCommand", () => {
       },
       rules: [{ path: "rule1.md", content: "content" }],
     };
-    vi.mocked(packager.packPackage).mockResolvedValue(mockPayload as any);
+    vi.mocked(packager.packPackage).mockResolvedValue(mockPayload as unknown as PackagePayload);
 
     const mockClient = {
       publishPackage: vi
@@ -54,7 +56,7 @@ describe("publishCommand", () => {
         .mockResolvedValue({ id: "p1", packageId: "test-skill" }),
     };
     vi.mocked(registry.createPublisherClient).mockReturnValue(
-      mockClient as any,
+      mockClient as unknown as YigYapsPublisherClient,
     );
 
     await publishCommand({});
@@ -79,10 +81,10 @@ describe("publishCommand", () => {
       },
       rules: [],
     };
-    vi.mocked(packager.packPackage).mockResolvedValue(mockPayload as any);
+    vi.mocked(packager.packPackage).mockResolvedValue(mockPayload as unknown as PackagePayload);
     const mockClient = { publishPackage: vi.fn() };
     vi.mocked(registry.createPublisherClient).mockReturnValue(
-      mockClient as any,
+      mockClient as unknown as YigYapsPublisherClient,
     );
 
     await publishCommand({ dryRun: true });

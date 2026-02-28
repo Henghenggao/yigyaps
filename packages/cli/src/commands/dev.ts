@@ -60,9 +60,10 @@ export async function devCommand() {
       logger.info("\nStopping sandbox...");
       process.exit(0);
     });
-  } catch (error: any) {
+  } catch (error: unknown) {
     if (error instanceof CliError) throw error;
-    throw CliError.system(`Sandbox failed to start: ${error.message}`);
+    const message = error instanceof Error ? error.message : String(error);
+    throw CliError.system(`Sandbox failed to start: ${message}`);
   }
 }
 

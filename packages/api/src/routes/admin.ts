@@ -4,14 +4,15 @@
  * All routes require admin role. First admin must be set via SQL:
  *   UPDATE yy_users SET role = 'admin' WHERE github_username = 'your-username';
  *
- * GET  /v1/admin/stats                — Platform statistics
- * GET  /v1/admin/packages             — List all packages (including archived/banned)
- * PATCH /v1/admin/packages/:id/status — Change package status
- * GET  /v1/admin/users               — List all users
- * PATCH /v1/admin/users/:id/role     — Change user role
- * PATCH /v1/admin/users/:id/status   — Suspend/activate user
- * GET  /v1/admin/reports             — List content reports
- * PATCH /v1/admin/reports/:id        — Resolve or dismiss a report
+ * GET  /v1/admin/stats                    — Platform statistics
+ * GET  /v1/admin/packages                 — List all packages (including archived/banned)
+ * PATCH /v1/admin/packages/:id/status     — Change package status
+ * GET  /v1/admin/users                   — List all users
+ * PATCH /v1/admin/users/:id/role         — Change user role
+ * PATCH /v1/admin/users/:id/status       — Suspend/activate user
+ * GET  /v1/admin/reports                 — List content reports
+ * PATCH /v1/admin/reports/:id            — Resolve or dismiss a report
+ * GET  /v1/admin/audit-verify/:skillId   — Verify hash-chain integrity of invocation logs
  *
  * License: Apache 2.0
  */
@@ -20,13 +21,13 @@ import type { FastifyInstance } from "fastify";
 import { z } from "zod";
 import { SkillPackageDAL, UserDAL } from "@yigyaps/db";
 import { requireAuth } from "../middleware/auth-v2.js";
-import { eq, desc, sql } from "drizzle-orm";
+import { eq, desc, sql, asc } from "drizzle-orm";
+import crypto from "crypto";
 import {
   skillPackagesTable,
-  skillPackageInstallationsTable,
-  skillPackageReviewsTable,
   usersTable,
   reportsTable,
+  invocationLogsTable,
 } from "@yigyaps/db";
 
 const packageStatusSchema = z.object({
@@ -36,11 +37,6 @@ const packageStatusSchema = z.object({
 
 const userRoleSchema = z.object({
   role: z.enum(["user", "admin"]),
-});
-
-const userStatusSchema = z.object({
-  suspended: z.boolean(),
-  reason: z.string().max(500).optional(),
 });
 
 const reportActionSchema = z.object({
@@ -273,6 +269,89 @@ export async function adminRoutes(fastify: FastifyInstance) {
         .where(eq(reportsTable.id, request.params.id));
 
       return reply.send({ success: true, status: newStatus });
+    },
+  );
+
+  // ── Audit Log Chain Verification ──────────────────────────────────────────
+  /**
+   * GET /v1/admin/audit-verify/:skillId
+   *
+   * Traverses the hash-chain of a skill's invocation logs in chronological order.
+   * Each entry's event_hash is recomputed from (skillPackageId + apiClientId +
+   * conclusionHash + prevHash) and compared to the stored value.
+   * A mismatch means a record was tampered with or deleted out of order.
+   */
+  fastify.get<{ Params: { skillId: string } }>(
+    "/audit-verify/:skillId",
+    { preHandler: adminAuth },
+    async (request, reply) => {
+      const { skillId } = request.params;
+
+      const logs = await fastify.db
+        .select()
+        .from(invocationLogsTable)
+        .where(eq(invocationLogsTable.skillPackageId, skillId))
+        .orderBy(asc(invocationLogsTable.createdAt));
+
+      if (logs.length === 0) {
+        return reply.send({
+          valid: true,
+          entries: 0,
+          message: "No invocation logs found for this skill.",
+        });
+      }
+
+      // Logs written before migration 0007 have null event_hash — skip them
+      const chainLogs = logs.filter((l) => l.eventHash !== null);
+      if (chainLogs.length === 0) {
+        return reply.send({
+          valid: true,
+          entries: logs.length,
+          chained_entries: 0,
+          message: "No hash-chained entries yet (all pre-migration). Chain starts from next invocation.",
+        });
+      }
+
+      let expectedPrevHash = "GENESIS";
+
+      for (let i = 0; i < chainLogs.length; i++) {
+        const log = chainLogs[i];
+
+        // Recompute event_hash from source fields
+        const recomputed = crypto
+          .createHash("sha256")
+          .update(`${log.skillPackageId}${log.apiClientId}${log.conclusionHash}${log.prevHash ?? "GENESIS"}`)
+          .digest("hex");
+
+        if (log.eventHash !== recomputed) {
+          return reply.send({
+            valid: false,
+            broken_at: log.id,
+            broken_at_index: i,
+            entries_checked: i + 1,
+            reason: "event_hash mismatch — entry may have been tampered with",
+          });
+        }
+
+        if (log.prevHash !== expectedPrevHash) {
+          return reply.send({
+            valid: false,
+            broken_at: log.id,
+            broken_at_index: i,
+            entries_checked: i + 1,
+            reason: "prev_hash discontinuity — one or more entries may have been deleted",
+          });
+        }
+
+        expectedPrevHash = log.eventHash!;
+      }
+
+      return reply.send({
+        valid: true,
+        entries: logs.length,
+        chained_entries: chainLogs.length,
+        message: "Hash chain verified — no tampering detected.",
+      });
     },
   );
 }

@@ -1,3 +1,4 @@
+import type { SkillPackageCategory } from "@yigyaps/types";
 import { CliError } from "../lib/errors.js";
 import { createRegistryClient } from "../lib/registry.js";
 import { p } from "../lib/ui/prompts.js";
@@ -33,7 +34,7 @@ export async function searchCommand(
     try {
       const result = await client.search({
         query,
-        category: options.category as any,
+        category: options.category as SkillPackageCategory | undefined,
         limit: options.limit ? parseInt(options.limit) : 10,
       });
 
@@ -54,7 +55,7 @@ export async function searchCommand(
       // Render rich list items
       console.log(
         "\n" +
-          result.packages.map((pkg) => skillListItem(pkg as any)).join("\n\n") +
+          result.packages.map((pkg) => skillListItem(pkg)).join("\n\n") +
           "\n",
       );
 

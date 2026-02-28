@@ -21,18 +21,29 @@ interface PackageSummary {
   updatedAt: number;
 }
 
+interface Earnings {
+  allTimeUsd: number;
+  last30dUsd: number;
+  creatorSharePercent: number;
+}
+
 export function MyPackagesPage() {
   const { user, login } = useAuth();
   const { addToast } = useToast();
   const [packages, setPackages] = useState<PackageSummary[]>([]);
   const [loading, setLoading] = useState(true);
   const [archiving, setArchiving] = useState<string | null>(null);
+  const [earnings, setEarnings] = useState<Earnings | null>(null);
 
   useEffect(() => {
     fetchApi<{ packages: PackageSummary[] }>("/v1/packages/my-packages")
       .then((data) => setPackages(data.packages ?? []))
       .catch(() => addToast({ message: "Failed to load your packages", type: "error" }))
       .finally(() => setLoading(false));
+
+    fetchApi<Earnings>("/v1/stripe/earnings")
+      .then((data) => setEarnings(data))
+      .catch(() => {}); // Earnings are optional — silently skip if Stripe not configured
   }, [addToast]);
 
   const handleArchive = async (pkg: PackageSummary) => {
@@ -83,6 +94,20 @@ export function MyPackagesPage() {
               { label: "Published Skills", value: packages.length, icon: "📦" },
               { label: "Total Installs", value: totalInstalls.toLocaleString(), icon: "📥" },
               { label: "Avg Rating", value: avgRating.toFixed(1), icon: "⭐" },
+              ...(earnings
+                ? [
+                    {
+                      label: "Earnings (30d)",
+                      value: `$${earnings.last30dUsd.toFixed(2)}`,
+                      icon: "💰",
+                    },
+                    {
+                      label: "Earnings (all time)",
+                      value: `$${earnings.allTimeUsd.toFixed(2)}`,
+                      icon: "💎",
+                    },
+                  ]
+                : []),
             ].map((stat) => (
               <div key={stat.label} className="stat-card">
                 <div className="stat-icon">{stat.icon}</div>

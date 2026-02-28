@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { searchCommand } from "../search.js";
 import * as registry from "../../lib/registry.js";
+import type { YigYapsRegistryClient } from "@yigyaps/client";
 
 vi.mock("../../lib/registry.js");
 vi.mock("../../lib/logger.js");
@@ -31,7 +32,7 @@ describe("searchCommand", () => {
       offset: 0,
     };
     const mockClient = { search: vi.fn().mockResolvedValue(mockResult) };
-    vi.mocked(registry.createRegistryClient).mockReturnValue(mockClient as any);
+    vi.mocked(registry.createRegistryClient).mockReturnValue(mockClient as unknown as YigYapsRegistryClient);
 
     await searchCommand("test", {});
 
@@ -43,7 +44,7 @@ describe("searchCommand", () => {
   it("should handle empty results", async () => {
     const mockResult = { packages: [], total: 0, limit: 10, offset: 0 };
     const mockClient = { search: vi.fn().mockResolvedValue(mockResult) };
-    vi.mocked(registry.createRegistryClient).mockReturnValue(mockClient as any);
+    vi.mocked(registry.createRegistryClient).mockReturnValue(mockClient as unknown as YigYapsRegistryClient);
 
     await searchCommand("nonexistent", {});
 

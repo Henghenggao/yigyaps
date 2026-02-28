@@ -1,5 +1,6 @@
 import fs from "fs-extra";
 import path from "path";
+import type { z } from "zod";
 import { CliError } from "./errors.js";
 import { manifestSchema } from "../commands/validate.js";
 
@@ -12,8 +13,10 @@ export interface RuleFile {
   content: string;
 }
 
+export type SkillManifest = z.infer<typeof manifestSchema>;
+
 export interface PackagePayload {
-  manifest: Record<string, any>;
+  manifest: SkillManifest;
   rules: RuleFile[];
   readme?: string;
 }

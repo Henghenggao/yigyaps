@@ -159,14 +159,83 @@ export function ReviewForm({ skill, onReviewSubmitted }: ReviewFormProps) {
         <div className="form-success">Review submitted successfully!</div>
       )}
 
-      {/* Submit Button */}
       <button
         type="submit"
-        className="btn btn-primary"
+        className="btn-primary"
         disabled={submitting || comment.trim().length < 10}
+        style={{ marginTop: '1rem' }}
       >
         {submitting ? "Submitting..." : "Submit Review"}
       </button>
+
+      <style>{`
+        .review-form {
+          display: flex;
+          flex-direction: column;
+          gap: 1.5rem;
+        }
+        .form-group {
+          display: flex;
+          flex-direction: column;
+          gap: 0.5rem;
+        }
+        .form-label {
+          font-weight: 600;
+          font-size: 0.9rem;
+          color: var(--color-text-main);
+        }
+        .form-input, .form-textarea {
+          padding: 0.8rem 1rem;
+          border-radius: var(--radius-md);
+          border: 1px solid var(--color-border);
+          background: var(--color-surface);
+          font-family: var(--font-sans);
+          font-size: 1rem;
+          outline: none;
+          transition: var(--transition);
+        }
+        .form-input:focus, .form-textarea:focus {
+          border-color: var(--color-primary);
+        }
+        .star-selector {
+          display: flex;
+          align-items: center;
+          gap: 0.5rem;
+        }
+        .star-btn {
+          background: none;
+          border: none;
+          font-size: 1.5rem;
+          color: #E2E8F0;
+          cursor: pointer;
+          transition: color 0.1s;
+        }
+        .star-btn.active {
+          color: #FACC15;
+        }
+        .char-count {
+          font-size: 0.75rem;
+          color: var(--color-text-sub);
+          text-align: right;
+        }
+        .form-success {
+          color: #059669;
+          font-weight: 600;
+          font-size: 0.9rem;
+        }
+        .form-error {
+          color: #DC2626;
+          font-weight: 600;
+          font-size: 0.9rem;
+        }
+        .review-form-placeholder {
+          background: var(--color-bg);
+          padding: 2rem;
+          border-radius: var(--radius-lg);
+          text-align: center;
+          border: 1px dashed var(--color-border);
+        }
+      `}</style>
     </form>
   );
 }

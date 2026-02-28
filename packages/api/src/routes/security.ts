@@ -10,15 +10,20 @@
 import { FastifyPluginAsync } from "fastify";
 import Anthropic from "@anthropic-ai/sdk";
 import { KMS } from "../lib/kms.js";
+import { RuleEngine } from "../lib/rule-engine.js";
 import { CKKSPoC } from "../lib/ckks.js";
+import { registerIpTimestamp } from "../lib/ip-timestamp.js";
 import { SecureBuffer } from "../middleware/memory-zeroizer.js";
+import { checkQuota, recordInvocation } from "../middleware/metering.js";
 import {
   encryptedKnowledgeTable,
   invocationLogsTable,
   ipRegistrationsTable,
+  shamirSharesTable,
 } from "@yigyaps/db";
 import { SkillPackageDAL } from "@yigyaps/db";
-import { eq } from "drizzle-orm";
+import { ShamirManager } from "../lib/shamir.js";
+import { eq, desc, and, sql } from "drizzle-orm";
 import crypto from "crypto";
 import { randomUUID } from "crypto";
 import { z } from "zod";
@@ -32,12 +37,20 @@ const encryptBodySchema = z.object({
 const invokeBodySchema = z.object({
   user_query: z.string().min(1).max(10_000).optional(),
   /**
-   * Expert's own Anthropic API key for lab-preview mode.
+   * Expert's own Anthropic API key for Lab Preview mode (Mode C).
+   * ONLY valid when the caller is the package author.
    * When provided, inference uses this key directly — the YigYaps platform key
    * is NOT used. The data agreement is then between the expert and Anthropic.
    * This key is never stored; it is used only for this single request.
+   * Non-authors supplying this field receive a 403.
    */
   lab_api_key: z.string().optional(),
+  /**
+   * Expert's Shamir share (share_index 2) for DEK reconstruction.
+   * Required when the skill uses Shamir key splitting.
+   * Combined with the platform's share (index 1) to reconstruct the DEK.
+   */
+  expert_share: z.string().optional(),
 });
 
 const paramsSchema = z.object({
@@ -99,21 +112,34 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
         .update(plaintextRules)
         .digest("hex");
 
-      // 4b. Mock Blockchain Transaction (Polygon RPC Simulated)
-      const mockTxHash = `0x${crypto.randomBytes(32).toString("hex")}`;
+      // 4b. IP Timestamp Proof (Sprint 7B #11)
+      //     Primary: GitHub evidence commit → "github:<sha>" (publicly verifiable)
+      //     Fallback: HMAC-SHA256 → "sha256:<hex>" (platform-verifiable)
+      const blockchainTx = await registerIpTimestamp(
+        packageId,
+        contentHash,
+        userId ?? "unknown",
+      );
       await fastify.db.insert(ipRegistrationsTable).values({
         id: randomUUID(),
         skillPackageId: internalId,
         contentHash,
-        blockchainTx: mockTxHash,
+        blockchainTx,
         registeredAt: Date.now(),
       });
 
-      // 5. UPSERT: delete existing knowledge for this package, then insert the new version.
-      //    This ensures "Evolve" always replaces the current version, not accumulates versions.
+      // 5. Soft-archive the current active version, then insert the new one.
+      //    Old versions are preserved (isActive=false) for legal evidence and version history.
+      //    This replaces the previous DELETE+INSERT pattern.
       await fastify.db
-        .delete(encryptedKnowledgeTable)
-        .where(eq(encryptedKnowledgeTable.skillPackageId, internalId));
+        .update(encryptedKnowledgeTable)
+        .set({ isActive: false })
+        .where(
+          and(
+            eq(encryptedKnowledgeTable.skillPackageId, internalId),
+            eq(encryptedKnowledgeTable.isActive, true),
+          ),
+        );
 
       await fastify.db.insert(encryptedKnowledgeTable).values({
         id: randomUUID(),
@@ -121,12 +147,48 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
         encryptedDek,
         contentCiphertext,
         contentHash,
+        isActive: true,
         createdAt: Date.now(),
       });
 
+      // 6. Shamir (2,3) secret sharing — split the plaintext DEK into 3 shares.
+      //    Share 1 (platform) + Share 3 (backup) are stored in DB.
+      //    Share 2 (expert) is returned to the caller and NEVER stored.
+      //    Reconstructing the DEK requires any 2 shares.
+      const dekHex = dek.toString("hex");
+      const { shares } = ShamirManager.split(dekHex);
+      const now = Date.now();
+
+      // Delete old shares for this package before inserting new ones
+      await fastify.db
+        .delete(shamirSharesTable)
+        .where(eq(shamirSharesTable.skillPackageId, internalId));
+
+      await fastify.db.insert(shamirSharesTable).values([
+        {
+          id: randomUUID(),
+          skillPackageId: internalId,
+          shareIndex: 1,
+          shareData: shares[0],
+          custodian: "platform",
+          createdAt: now,
+        },
+        {
+          id: randomUUID(),
+          skillPackageId: internalId,
+          shareIndex: 3,
+          shareData: shares[2],
+          custodian: "backup",
+          createdAt: now,
+        },
+      ]);
+
       return reply.send({
         success: true,
-        message: "Knowledge encrypted and saved.",
+        message: "Knowledge encrypted and saved with Shamir key splitting.",
+        expert_share: shares[1],
+        shamir_notice:
+          "IMPORTANT: Save your expert share securely. It is required to invoke this skill and is NOT stored on the platform. Losing it means only platform cold-backup recovery is possible.",
       });
     },
   );
@@ -163,7 +225,12 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
       const knowledgeRecords = await fastify.db
         .select()
         .from(encryptedKnowledgeTable)
-        .where(eq(encryptedKnowledgeTable.skillPackageId, pkg.id))
+        .where(
+          and(
+            eq(encryptedKnowledgeTable.skillPackageId, pkg.id),
+            eq(encryptedKnowledgeTable.isActive, true),
+          ),
+        )
         .limit(1);
 
       if (!knowledgeRecords.length) {
@@ -184,10 +251,20 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
   );
 
   /**
-   * Invoke the skill in the Memory-Only Sandbox.
-   * Decrypts rules in SecureBuffer, passes them as the LLM system prompt,
-   * processes the user_query, then zeroizes the DEK immediately.
-   * The plaintext rules never leave the secure context.
+   * Invoke the skill using a three-mode security model:
+   *
+   *   Mode A (local):     Default for all callers. Rules are evaluated entirely
+   *                       in-process by RuleEngine. No plaintext ever leaves the server.
+   *
+   *   Mode B (hybrid):    Local RuleEngine produces a structured skeleton; an external
+   *                       LLM is asked only to polish the natural language.
+   *                       Only the skeleton (scores + conclusion tokens) is transmitted.
+   *
+   *   Mode C (lab-preview): Author-only testing mode. Sends plaintext rules to an
+   *                         external LLM. Requires lab_api_key and author identity.
+   *                         Shown with explicit data-exposure warning in the UI.
+   *
+   * Anti-scraping: 20 calls / 10 min per (user × skill) enforced before decryption.
    */
   fastify.post(
     "/invoke/:packageId",
@@ -216,10 +293,59 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
         return reply.code(404).send({ error: "Package not found" });
       }
 
+      const callerId = request.user?.userId ?? "anonymous";
+
+      // ── Anti-Scraping Guard ───────────────────────────────────────────────
+      // Limit: 20 invocations per 10 minutes per (user × skill).
+      // Uses sql`` template for bigint timestamp comparison (same pattern as admin stats).
+      const windowStart = Date.now() - 10 * 60 * 1000;
+      const recentCallsResult = await fastify.db
+        .select({ id: invocationLogsTable.id })
+        .from(invocationLogsTable)
+        .where(
+          sql`${invocationLogsTable.skillPackageId} = ${pkg.id}
+              AND ${invocationLogsTable.apiClientId} = ${callerId}
+              AND ${invocationLogsTable.createdAt} > ${windowStart}`,
+        )
+        .limit(21);
+
+      if (recentCallsResult.length > 20) {
+        return reply.code(429).send({
+          error: "Too Many Requests",
+          message: "Unusual access pattern detected. Please try again later.",
+          retry_after: 600,
+        });
+      }
+
+      // ── Quota check (metering) ────────────────────────────────────────────
+      const callerTier = request.user?.tier ?? "free";
+      const quota = await checkQuota(fastify.db, callerId, callerTier);
+      if (!quota.allowed) {
+        return reply.code(402).send({
+          error: "Payment Required",
+          message: quota.reason ?? "Subscription quota exhausted.",
+        });
+      }
+
+      // ── Mode C gate: lab_api_key requires author identity ────────────────
+      if (labApiKey && pkg.author !== callerId) {
+        return reply.code(403).send({
+          error: "Forbidden",
+          message:
+            "Lab preview mode (lab_api_key) is only available to the package author.",
+        });
+      }
+
       const knowledgeRecords = await fastify.db
         .select()
         .from(encryptedKnowledgeTable)
-        .where(eq(encryptedKnowledgeTable.skillPackageId, pkg.id))
+        .where(
+          and(
+            eq(encryptedKnowledgeTable.skillPackageId, pkg.id),
+            eq(encryptedKnowledgeTable.isActive, true),
+          ),
+        )
+        .orderBy(desc(encryptedKnowledgeTable.createdAt))
         .limit(1);
 
       if (!knowledgeRecords.length) {
@@ -231,87 +357,241 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
       const record = knowledgeRecords[0];
       const encryptedDek = record.encryptedDek;
       const ciphertext = record.contentCiphertext;
+      const expertShare = bodyParsed.data?.expert_share;
 
       let inferenceMs = 0;
 
-      // Determine which API key to use and set the invocation mode accordingly.
-      // Priority: expert's own key (lab_api_key) > platform key (ANTHROPIC_API_KEY) > mock
-      const activeApiKey = labApiKey || env.ANTHROPIC_API_KEY;
-      const invokeMode: "lab-preview-expert-key" | "lab-preview-platform-key" | "mock" =
-        labApiKey
-          ? "lab-preview-expert-key"
-          : env.ANTHROPIC_API_KEY
-            ? "lab-preview-platform-key"
-            : "mock";
+      type InvokeMode =
+        | "local"
+        | "hybrid"
+        | "lab-preview-expert-key"
+        | "lab-preview-platform-key"
+        | "mock";
 
-      // Secure Pipeline: decrypt rules inside the secure context, call LLM, return only the response.
-      const conclusion = await SecureBuffer.withSecureContext(
-        async () => {
-          return await KMS.decryptDek(encryptedDek);
-        },
+      // ── DEK Recovery: Shamir or KEK ────────────────────────────────────────
+      // If Shamir shares exist for this package, require expert_share to
+      // reconstruct the DEK. Otherwise fall back to KEK-based decryption.
+      const shamirShares = await fastify.db
+        .select()
+        .from(shamirSharesTable)
+        .where(eq(shamirSharesTable.skillPackageId, pkg.id));
+
+      const platformShare = shamirShares.find((s) => s.shareIndex === 1);
+
+      const dekProvider = async (): Promise<Buffer> => {
+        if (platformShare && expertShare) {
+          // Shamir reconstruction: platform share + expert share → DEK
+          const dekHex = ShamirManager.reconstruct([
+            platformShare.shareData,
+            expertShare,
+          ]);
+          return Buffer.from(dekHex, "hex");
+        }
+        if (platformShare && !expertShare) {
+          // Shamir is enabled but expert didn't provide their share
+          throw new Error("SHAMIR_SHARE_REQUIRED");
+        }
+        // Fallback: KEK-based decryption (pre-Shamir packages)
+        return KMS.decryptDek(encryptedDek);
+      };
+
+      // ── Secure Pipeline ───────────────────────────────────────────────────
+      let conclusion: { text: string; mode: InvokeMode };
+      try {
+        conclusion = await SecureBuffer.withSecureContext(
+          dekProvider,
         async (dekBuffer) => {
-          // We are now inside the Software Enclave / Sandbox
-          // 1. Decrypt knowledge — only exists within this scope
+          // Decrypt knowledge — plaintext only exists within this scope
           const plaintextRules = KMS.decryptKnowledge(
             ciphertext as Buffer,
             dekBuffer,
           );
 
-          // 2. If no API key is available, fall back to mock
-          if (!activeApiKey) {
-            const mockScore = Math.floor(Math.random() * 10) + 1;
-            return `[Mock — no API key configured] Score: ${mockScore}/10.`;
+          // ── Mode C: Lab Preview (author-only, explicit consent) ───────────
+          if (labApiKey) {
+            // Author has provided their own API key — data agreement is between
+            // the author and Anthropic, not YigYaps. Plaintext rules are sent.
+            const client = new Anthropic({ apiKey: labApiKey });
+            const start = Date.now();
+            const message = await client.messages.create({
+              model: "claude-haiku-4-5-20251001",
+              max_tokens: 1024,
+              system: plaintextRules,
+              messages: [{ role: "user", content: userQuery }],
+            });
+            inferenceMs = Date.now() - start;
+            const firstBlock = message.content[0];
+            return {
+              text:
+                firstBlock.type === "text"
+                  ? firstBlock.text
+                  : "Skill processed the request.",
+              mode: "lab-preview-expert-key" as InvokeMode,
+            };
           }
 
-          // 3. Call Claude with rules as system prompt, user_query as the message.
-          //    ⚠️ LAB-PREVIEW: plaintextRules are transmitted to api.anthropic.com.
-          //    Production agent invocations require a TEE-isolated proxy (Phase 3).
-          const client = new Anthropic({ apiKey: activeApiKey });
-          const start = Date.now();
-          const message = await client.messages.create({
-            model: "claude-haiku-4-5-20251001",
-            max_tokens: 1024,
-            system: plaintextRules,
-            messages: [{ role: "user", content: userQuery }],
-          });
-          inferenceMs = Date.now() - start;
+          // ── Mode A / B: Parse rules and evaluate locally ──────────────────
+          const rules = RuleEngine.tryParseRules(plaintextRules);
 
-          const firstBlock = message.content[0];
-          return firstBlock.type === "text"
-            ? firstBlock.text
-            : "Skill processed the request.";
+          if (!rules) {
+            // Free-form rules (plain text / markdown) — cannot evaluate locally.
+            // Return a safe stub. No rule content is exposed.
+            return {
+              text: RuleEngine.mockResponseForFreeformRules(userQuery),
+              mode: "local" as InvokeMode,
+            };
+          }
 
-          // At the end of this scope, dekBuffer will be wiped by SecureBuffer
+          // Mode A: Local evaluation — 100% in-process, zero external calls
+          const evaluation = RuleEngine.evaluate(rules, userQuery);
+
+          // Mode B upgrade: if platform API key is configured, polish via LLM.
+          // Only the safe skeleton (scores + conclusion tokens) is transmitted.
+          if (env.ANTHROPIC_API_KEY) {
+            const safePrompt = RuleEngine.toSafePrompt(evaluation, userQuery);
+            const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
+            const start = Date.now();
+            const message = await client.messages.create({
+              model: "claude-haiku-4-5-20251001",
+              max_tokens: 512,
+              system:
+                "You are a professional report writer. Rephrase the following structured evaluation into a concise natural language response. Do not add information beyond what is provided.",
+              messages: [{ role: "user", content: safePrompt }],
+            });
+            inferenceMs = Date.now() - start;
+            const firstBlock = message.content[0];
+            return {
+              text:
+                firstBlock.type === "text"
+                  ? firstBlock.text
+                  : `Overall: ${evaluation.verdict} (score ${evaluation.overall_score}/10)`,
+              mode: "hybrid" as InvokeMode,
+            };
+          }
+
+          // Mode A pure: no external API configured
+          const scoreLines = evaluation.results
+            .map((r) => `• ${r.dimension}: ${r.score}/10 — ${r.conclusion_key}`)
+            .join("\n");
+          return {
+            text: `Skill Evaluation\nOverall: ${evaluation.overall_score}/10 (${evaluation.verdict})\n\n${scoreLines}`,
+            mode: "local" as InvokeMode,
+          };
+
+          // dekBuffer is zeroized by SecureBuffer.withSecureContext after this scope
         },
       );
+      } catch (err: unknown) {
+        if (err instanceof Error && err.message === "SHAMIR_SHARE_REQUIRED") {
+          return reply.code(400).send({
+            error: "Shamir Share Required",
+            message:
+              "This skill uses Shamir key splitting. Provide your expert_share in the request body to invoke it.",
+          });
+        }
+        throw err;
+      }
 
-      // Log the invocation (Auditing)
+      // ── Audit log with hash-chain ─────────────────────────────────────────
       const conclusionHash = crypto
         .createHash("sha256")
-        .update(conclusion)
+        .update(conclusion.text)
         .digest("hex");
+
+      // Get previous event_hash for chain continuity
+      const lastLog = await fastify.db
+        .select({ eventHash: invocationLogsTable.eventHash })
+        .from(invocationLogsTable)
+        .where(eq(invocationLogsTable.skillPackageId, pkg.id))
+        .orderBy(desc(invocationLogsTable.createdAt))
+        .limit(1);
+
+      const prevHash = lastLog[0]?.eventHash ?? "GENESIS";
+      const eventHash = crypto
+        .createHash("sha256")
+        .update(`${pkg.id}${callerId}${conclusionHash}${prevHash}`)
+        .digest("hex");
+
       await fastify.db.insert(invocationLogsTable).values({
         id: randomUUID(),
         skillPackageId: pkg.id,
-        apiClientId: request.user?.userId ?? "anonymous",
+        apiClientId: callerId,
         inferenceMs: inferenceMs || null,
         conclusionHash,
+        prevHash,
+        eventHash,
         createdAt: Date.now(),
       });
 
-      // Build the privacy notice based on actual invocation mode
+      // ── Record usage (async, don't block response) ───────────────────────
+      recordInvocation(fastify.db, callerId, pkg.id, quota).catch((err) => {
+        request.log.warn({ err }, "Failed to record invocation usage");
+      });
+
       const privacyNotice =
-        invokeMode === "lab-preview-expert-key"
+        conclusion.mode === "lab-preview-expert-key"
           ? "LAB PREVIEW — Your skill rules were transmitted to api.anthropic.com using your own API key. Data handling is governed by your agreement with Anthropic, not YigYaps."
-          : invokeMode === "lab-preview-platform-key"
-            ? "LAB PREVIEW — Your skill rules were transmitted to api.anthropic.com using the YigYaps platform key. This mode is for testing only. Production agent invocations require a TEE-isolated environment."
-            : "MOCK MODE — No LLM was called. Rules stayed on this server.";
+          : conclusion.mode === "hybrid"
+            ? "HYBRID MODE — Local rule engine evaluated your skill. Only a structured skeleton (scores and conclusion tokens) was sent to an external LLM for language polishing. No rule content was transmitted."
+            : "LOCAL MODE — Rules were evaluated entirely in-process. No data was transmitted to any external service.";
 
       return reply.send({
         success: true,
-        conclusion,
-        mode: invokeMode,
+        conclusion: conclusion.text,
+        mode: conclusion.mode,
         privacy_notice: privacyNotice,
+      });
+    },
+  );
+
+  /**
+   * Crypto-Shredding: Expert revokes knowledge by deleting all Shamir shares.
+   * Once shares are deleted, the DEK can never be reconstructed and the
+   * encrypted knowledge becomes permanently unreadable.
+   *
+   * Also deletes the encrypted knowledge records for completeness.
+   * Author-only endpoint.
+   */
+  fastify.delete(
+    "/knowledge/:packageId/revoke",
+    { preHandler: requireAuth() },
+    async (request, reply) => {
+      const paramsParsed = paramsSchema.safeParse(request.params);
+      if (!paramsParsed.success) {
+        return reply.code(400).send({ error: "Bad Request" });
+      }
+      const { packageId } = paramsParsed.data;
+
+      const pkgDAL = new SkillPackageDAL(fastify.db);
+      const pkg = await pkgDAL.getByPackageId(packageId);
+      if (!pkg) {
+        return reply.code(404).send({ error: "Package not found" });
+      }
+
+      const userId = request.user?.userId;
+      if (pkg.author !== userId) {
+        return reply
+          .code(403)
+          .send({ error: "Only the package author can revoke knowledge" });
+      }
+
+      // Delete all Shamir shares → DEK can never be reconstructed
+      const deletedShares = await fastify.db
+        .delete(shamirSharesTable)
+        .where(eq(shamirSharesTable.skillPackageId, pkg.id))
+        .returning({ id: shamirSharesTable.id });
+
+      // Delete encrypted knowledge records
+      const deletedKnowledge = await fastify.db
+        .delete(encryptedKnowledgeTable)
+        .where(eq(encryptedKnowledgeTable.skillPackageId, pkg.id))
+        .returning({ id: encryptedKnowledgeTable.id });
+
+      return reply.send({
+        success: true,
+        message: "Crypto-shredding complete. Knowledge permanently revoked.",
+        deleted_shares: deletedShares.length,
+        deleted_knowledge_versions: deletedKnowledge.length,
       });
     },
   );
@@ -320,7 +600,7 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
    * CKKS Homomorphic Encryption PoC
    * Demonstrates computation on encrypted room data.
    */
-  fastify.get("/ckks-poc", async (request, reply) => {
+  fastify.get("/ckks-poc", async (_request, reply) => {
     const userScore = 85;
     const threshold = 15;
 

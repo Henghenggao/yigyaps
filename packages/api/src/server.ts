@@ -40,6 +40,8 @@ import { usersRoutes } from "./routes/users.js";
 import { apiKeysRoutes } from "./routes/api-keys.js";
 import { securityRoutes } from "./routes/security.js";
 import { adminRoutes } from "./routes/admin.js";
+import { exportRoutes } from "./routes/export.js";
+import { stripeRoutes } from "./routes/stripe.js";
 import { env } from "./lib/env.js";
 
 const { Pool } = pg;
@@ -211,6 +213,8 @@ async function buildServer() {
   await fastify.register(securityRoutes, { prefix: "/v1/security" });
   await fastify.register(apiKeysRoutes, { prefix: "/v1/auth" });
   await fastify.register(adminRoutes, { prefix: "/v1/admin" });
+  await fastify.register(exportRoutes, { prefix: "/v1/packages" });
+  await fastify.register(stripeRoutes, { prefix: "/v1" });
 
   // ── Error Handling ─────────────────────────────────────────────────────────
   fastify.setErrorHandler(function (err, request, reply) {

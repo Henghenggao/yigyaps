@@ -51,8 +51,12 @@ export async function runCommand(id: string, _options: RunOptions) {
           version: pkg.version,
           description: pkg.description,
           author: pkg.authorName,
-          category: pkg.category,
-        } as any,
+          license: "MIT",
+          yigyaps: {
+            category: pkg.category,
+            tags: pkg.tags ?? [],
+          },
+        },
         rules: rules,
       });
 

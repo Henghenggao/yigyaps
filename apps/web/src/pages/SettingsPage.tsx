@@ -19,7 +19,14 @@ interface ApiKey {
 export function SettingsPage() {
   const { user, login } = useAuth();
   const { addToast } = useToast();
-  const [tab, setTab] = useState<"api-keys" | "profile">("api-keys");
+  const [tab, setTab] = useState<"api-keys" | "profile" | "payout">("api-keys");
+  const [payoutStatus, setPayoutStatus] = useState<{
+    connected: boolean;
+    stripeAccountId: string | null;
+    details_submitted: boolean | null;
+    payouts_enabled: boolean | null;
+  } | null>(null);
+  const [payoutLoading, setPayoutLoading] = useState(false);
   const [apiKeys, setApiKeys] = useState<ApiKey[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
@@ -28,6 +35,15 @@ export function SettingsPage() {
   const [generatedKey, setGeneratedKey] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
   const [revoking, setRevoking] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (tab !== "payout") return;
+    setPayoutLoading(true);
+    fetchApi<typeof payoutStatus>("/v1/stripe/connect/status")
+      .then((data) => setPayoutStatus(data))
+      .catch(() => addToast({ message: "Failed to load payout status", type: "error" }))
+      .finally(() => setPayoutLoading(false));
+  }, [tab]);
 
   useEffect(() => {
     if (tab !== "api-keys") return;
@@ -105,7 +121,7 @@ export function SettingsPage() {
             marginBottom: "2rem",
           }}
         >
-          {(["api-keys", "profile"] as const).map((t) => (
+          {(["api-keys", "payout", "profile"] as const).map((t) => (
             <button
               key={t}
               onClick={() => setTab(t)}
@@ -120,7 +136,7 @@ export function SettingsPage() {
                 fontSize: "0.95rem",
               }}
             >
-              {t === "api-keys" ? "API Keys" : "Profile"}
+              {t === "api-keys" ? "API Keys" : t === "payout" ? "Payout" : "Profile"}
             </button>
           ))}
         </div>
@@ -323,6 +339,106 @@ export function SettingsPage() {
                 ))}
               </div>
             )}
+          </div>
+        )}
+
+        {tab === "payout" && (
+          <div>
+            <h2 style={{ margin: "0 0 0.5rem", fontSize: "1.1rem" }}>Payout Settings</h2>
+            <p style={{ fontSize: "0.85rem", color: "var(--color-text-muted)", marginBottom: "1.5rem" }}>
+              Connect your Stripe account to receive your 70% creator royalties.
+              Stripe handles all payouts — funds arrive T+2 business days.
+            </p>
+
+            {payoutLoading ? (
+              <div style={{ color: "var(--color-text-muted)" }}>Loading…</div>
+            ) : (
+              <div
+                style={{
+                  background: "var(--color-card)",
+                  border: "1px solid var(--color-border)",
+                  borderRadius: "10px",
+                  padding: "1.5rem",
+                }}
+              >
+                {payoutStatus?.connected ? (
+                  <>
+                    <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1rem" }}>
+                      <span style={{ fontSize: "1.5rem" }}>✅</span>
+                      <div>
+                        <div style={{ fontWeight: 600 }}>Stripe account connected</div>
+                        <div style={{ fontSize: "0.8rem", color: "var(--color-text-muted)", fontFamily: "monospace" }}>
+                          {payoutStatus.stripeAccountId}
+                        </div>
+                      </div>
+                    </div>
+                    <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginBottom: "1.25rem" }}>
+                      <span
+                        style={{
+                          padding: "0.3rem 0.75rem",
+                          borderRadius: "20px",
+                          fontSize: "0.8rem",
+                          background: payoutStatus.details_submitted ? "#1e3a2f" : "#3a1e1e",
+                          color: payoutStatus.details_submitted ? "#2ecc71" : "#e74c3c",
+                          border: `1px solid ${payoutStatus.details_submitted ? "#2ecc71" : "#e74c3c"}`,
+                        }}
+                      >
+                        {payoutStatus.details_submitted ? "Details submitted" : "Details pending"}
+                      </span>
+                      <span
+                        style={{
+                          padding: "0.3rem 0.75rem",
+                          borderRadius: "20px",
+                          fontSize: "0.8rem",
+                          background: payoutStatus.payouts_enabled ? "#1e3a2f" : "#3a1e1e",
+                          color: payoutStatus.payouts_enabled ? "#2ecc71" : "#e74c3c",
+                          border: `1px solid ${payoutStatus.payouts_enabled ? "#2ecc71" : "#e74c3c"}`,
+                        }}
+                      >
+                        {payoutStatus.payouts_enabled ? "Payouts enabled" : "Payouts not yet enabled"}
+                      </span>
+                    </div>
+                    {!payoutStatus.payouts_enabled && (
+                      <a
+                        href="/v1/stripe/connect/onboard"
+                        className="btn btn-outline"
+                        style={{ fontSize: "0.875rem" }}
+                      >
+                        Complete Stripe onboarding →
+                      </a>
+                    )}
+                  </>
+                ) : (
+                  <>
+                    <p style={{ marginBottom: "1rem", color: "var(--color-text-muted)", fontSize: "0.9rem" }}>
+                      You haven't connected a Stripe account yet. Connect now to receive payouts when users subscribe to your skills.
+                    </p>
+                    <a
+                      href="/v1/stripe/connect/onboard"
+                      className="btn btn-primary"
+                      style={{ fontSize: "0.875rem" }}
+                    >
+                      Connect with Stripe →
+                    </a>
+                  </>
+                )}
+              </div>
+            )}
+
+            <div
+              style={{
+                marginTop: "1.5rem",
+                padding: "1rem 1.25rem",
+                background: "rgba(var(--color-primary-rgb, 99, 102, 241), 0.06)",
+                border: "1px solid var(--color-border)",
+                borderRadius: "8px",
+                fontSize: "0.82rem",
+                color: "var(--color-text-muted)",
+              }}
+            >
+              <strong>Revenue split:</strong> 70% to you · 30% platform fee.
+              Stripe settles T+2 business days. Monthly aggregation via Stripe Connect Standard.
+            </div>
           </div>
         )}
 

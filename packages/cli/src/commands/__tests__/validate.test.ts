@@ -31,8 +31,8 @@ describe("validateCommand", () => {
       author: "test",
       license: "MIT",
     });
-    vi.mocked(fs.stat).mockResolvedValue({ isDirectory: () => true } as any);
-    vi.mocked(fs.readdir).mockResolvedValue(["rule1.md"] as any);
+    vi.mocked(fs.stat).mockResolvedValue({ isDirectory: () => true } as never);
+    vi.mocked(fs.readdir).mockResolvedValue(["rule1.md"] as never);
 
     await expect(validateCommand()).resolves.not.toThrow();
   });

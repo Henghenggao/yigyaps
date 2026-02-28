@@ -2,6 +2,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { statusCommand } from "../status.js";
 import * as registry from "../../lib/registry.js";
 import { CliError } from "../../lib/errors.js";
+import type { YigYapsRegistryClient } from "@yigyaps/client";
 
 vi.mock("../../lib/registry.js");
 vi.mock("../../lib/logger.js");
@@ -29,7 +30,7 @@ describe("statusCommand", () => {
       ratingCount: 10,
     };
     const mockClient = { getByPackageId: vi.fn().mockResolvedValue(mockPkg) };
-    vi.mocked(registry.createRegistryClient).mockReturnValue(mockClient as any);
+    vi.mocked(registry.createRegistryClient).mockReturnValue(mockClient as unknown as YigYapsRegistryClient);
 
     await statusCommand("test-skill");
 
@@ -40,7 +41,7 @@ describe("statusCommand", () => {
     const mockClient = {
       getByPackageId: vi.fn().mockRejectedValue(new Error("404")),
     };
-    vi.mocked(registry.createRegistryClient).mockReturnValue(mockClient as any);
+    vi.mocked(registry.createRegistryClient).mockReturnValue(mockClient as unknown as YigYapsRegistryClient);
 
     await expect(statusCommand("missing")).rejects.toThrow(CliError);
   });

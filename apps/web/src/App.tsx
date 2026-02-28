@@ -1,5 +1,6 @@
 import { Routes, Route } from "react-router-dom";
 import { lazy, Suspense } from "react";
+import { LandingPage } from "./pages/LandingPage";
 import { HomePage } from "./pages/HomePage";
 import { SkillDetailPage } from "./pages/SkillDetailPage";
 import { AuthCallback } from "./pages/AuthCallback";
@@ -40,7 +41,8 @@ function App() {
     <ErrorBoundary>
       <Suspense fallback={null}>
         <Routes>
-          <Route path="/" element={<HomePage />} />
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/marketplace" element={<HomePage />} />
 
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>

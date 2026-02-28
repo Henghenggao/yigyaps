@@ -5,6 +5,7 @@ import { useToast } from "../contexts/ToastContext";
 import { fetchApi } from "../lib/api";
 import { Header } from "../components/Header";
 import { MarkdownEditor } from "../components/MarkdownEditor";
+import { TemplateEditor } from "../components/TemplateEditor";
 
 const CATEGORIES = [
   { value: "development", label: "Development" },
@@ -523,18 +524,10 @@ export function PublishSkillPage() {
 
               <div style={fieldStyle}>
                 <label style={labelStyle}>Expert IP Rules *</label>
-                <textarea
-                  name="rules"
+                <TemplateEditor
                   value={formData.rules}
-                  onChange={handleChange}
-                  rows={14}
-                  placeholder={`Rule 1: When reviewing a contract, always check for automatic renewal clauses.\nRule 2: Flag any jurisdiction clause that favors the counterparty.\nRule 3: Identify limitation of liability caps and compare to deal size.\n...`}
-                  className="publish-textarea"
-                  style={{ ...inputStyle, resize: "vertical", fontFamily: "monospace", fontSize: "0.85rem" }}
+                  onChange={(v) => set("rules", v)}
                 />
-                <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)", textAlign: "right", marginTop: "0.3rem" }}>
-                  {formData.rules.length} characters
-                </div>
               </div>
 
               <div

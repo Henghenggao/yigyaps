@@ -20,6 +20,16 @@ const createApiKeySchema = z.object({
   name: z.string().min(1).max(100),
   scopes: z.array(z.string()).optional().default([]),
   expiresInDays: z.number().int().min(1).max(365).optional(),
+  /**
+   * Must be true to confirm acceptance of the Anti-Training EULA (Terms Section 4).
+   * Callers that omit or set this to false receive a 400 with a link to the terms.
+   */
+  accepted_anti_training_terms: z.literal(true, {
+    errorMap: () => ({
+      message:
+        "You must accept the Anti-Training Terms of Service (accepted_anti_training_terms: true). See /terms for details.",
+    }),
+  }),
 });
 
 // ─── API Key Routes ───────────────────────────────────────────────────────────
@@ -48,6 +58,7 @@ export const apiKeysRoutes: FastifyPluginAsync = async (fastify) => {
       }
 
       const { name, scopes, expiresInDays } = parsed.data;
+      const termsAcceptedAt = Date.now();
 
       // Generate a random 32-byte key with yg_ prefix
       const rawKey = 'yg_' + crypto.randomBytes(32).toString('hex');
@@ -69,6 +80,7 @@ export const apiKeysRoutes: FastifyPluginAsync = async (fastify) => {
         keyPrefix,
         scopes: scopes ?? [],
         expiresAt,
+        termsAcceptedAt,
         createdAt: now,
       });
 

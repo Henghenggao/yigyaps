@@ -4,11 +4,44 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import { useSkillDetail } from "../hooks/useSkillDetail";
 import { useAuth } from "../contexts/AuthContext";
+import { useToast } from "../contexts/ToastContext";
 import { Header } from "../components/Header";
 import { ReviewList } from "../components/ReviewList";
 import { ReviewForm } from "../components/ReviewForm";
 import { InstallButton } from "../components/InstallButton";
 import { fetchApi } from "../lib/api";
+
+function SubscribeButton({ packageId, priceUsd }: { packageId: string; priceUsd: number }) {
+  const [loading, setLoading] = useState(false);
+  const { addToast } = useToast();
+
+  if (priceUsd <= 0) return null;
+
+  const handleSubscribe = async () => {
+    setLoading(true);
+    try {
+      const data = await fetchApi<{ checkoutUrl: string }>(
+        `/v1/stripe/checkout/${encodeURIComponent(packageId)}`,
+        { method: "POST", body: JSON.stringify({ tier: "pro" }) },
+      );
+      window.location.href = data.checkoutUrl;
+    } catch {
+      addToast({ message: "Could not start checkout. Please try again.", type: "error" });
+      setLoading(false);
+    }
+  };
+
+  return (
+    <button
+      className="btn btn-primary"
+      onClick={handleSubscribe}
+      disabled={loading}
+      style={{ minWidth: "140px" }}
+    >
+      {loading ? "Redirecting…" : `Subscribe · $${priceUsd.toFixed(2)}/mo`}
+    </button>
+  );
+}
 
 export function SkillDetailPage() {
   const { packageId } = useParams<{ packageId: string }>();
@@ -18,13 +51,12 @@ export function SkillDetailPage() {
 
   if (loading) {
     return (
-      <div className="app-container">
+      <div className="detail-layout">
         <Header user={user} login={login} />
-        <main className="main-content">
-          <div className="skeleton-detail-placeholder">
-            <div className="skeleton skeleton-icon" />
-            <div className="skeleton skeleton-title" />
-            <div className="skeleton skeleton-text" />
+        <main className="container">
+          <div className="skeleton-loading">
+            <div className="skeleton-line" style={{ width: '40%', height: '3rem' }} />
+            <div className="skeleton-line" style={{ width: '60%', height: '1.5rem' }} />
           </div>
         </main>
       </div>
@@ -33,16 +65,11 @@ export function SkillDetailPage() {
 
   if (error || !skillDetail) {
     return (
-      <div className="app-container">
+      <div className="detail-layout">
         <Header user={user} login={login} />
-        <main className="main-content">
-          <div className="error-container fade-in">
-            <div className="error-icon">⚠️</div>
-            <h2>{error || "Skill not found"}</h2>
-            <Link to="/" className="btn btn-outline" style={{ marginTop: "1rem" }}>
-              Back to Marketplace
-            </Link>
-          </div>
+        <main className="container error-page">
+          <h2>{error || "Skill not found"}</h2>
+          <Link to="/" className="clear-link">Back to Marketplace</Link>
         </main>
       </div>
     );
@@ -50,142 +77,249 @@ export function SkillDetailPage() {
 
   const displayName = skillDetail.displayName || skillDetail.packageId;
   const detailData = skillDetail as unknown as Record<string, unknown>;
-  const hasLimitedEdition =
-    detailData.maxEditions !== null && detailData.maxEditions !== undefined;
-  const mintProgress = hasLimitedEdition
-    ? ((Number(detailData.mintedCount) || 0) /
-      (Number(detailData.maxEditions) || 1)) *
-    100
-    : 0;
 
   return (
-    <div className="app-container">
+    <div className="detail-layout">
       <Header user={user} login={login} />
 
-      <main className="main-content">
-        {/* Skill Hero Section */}
-        <section className="skill-detail-hero fade-in-up">
-          <div className="skill-header">
-            <div className="skill-header-left">
-              <div className="skill-icon-large">
-                {skillDetail.icon || displayName.charAt(0).toUpperCase()}
+      <main className="detail-main">
+        {/* Header Section */}
+        <section className="detail-hero animate-fade-in">
+          <div className="container">
+            <div className="hero-top">
+              <div className="hero-info">
+                <h1 className="hero-title">{displayName}</h1>
+                <div className="hero-meta">
+                  <span className="meta-author">by @{String(detailData.authorUsername || detailData.authorName || skillDetail.authorName || "anonymous")}</span>
+                  <span className="meta-dot">·</span>
+                  <span className="meta-installs">{skillDetail.installCount.toLocaleString()} installations</span>
+                </div>
               </div>
-              <div className="skill-title-section">
-                <h1 className="skill-title">{displayName}</h1>
-                <div className="skill-meta">
-                  <span className="skill-author">
-                    @{String(detailData.authorUsername || detailData.authorName || skillDetail.authorName || "anonymous")}
-                  </span>
-                  {skillDetail.rating > 0 && (
-                    <>
-                      <span className="meta-separator">/</span>
-                      <span className="skill-rating-meta">
-                        ⭐ {skillDetail.rating.toFixed(1)}
-                        <span className="review-count">({skillDetail.reviewCount} reviews)</span>
-                      </span>
-                    </>
-                  )}
-                  <span className="meta-separator">/</span>
-                  <span className="skill-installs-meta">{skillDetail.installCount.toLocaleString()} installs</span>
+              <div className="hero-action" style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+                <InstallButton skill={skillDetail} />
+                <SubscribeButton
+                  packageId={skillDetail.packageId}
+                  priceUsd={parseFloat(String(skillDetail.priceUsd ?? "0"))}
+                />
+              </div>
+            </div>
+
+            <div className="hero-pills">
+              {skillDetail.category && (
+                <span className="pill category">{skillDetail.category}</span>
+              )}
+              {skillDetail.tags?.map((tag) => (
+                <span key={tag} className="pill tag">#{tag}</span>
+              ))}
+            </div>
+          </div>
+        </section>
+
+        {/* Content Body */}
+        <div className="container detail-content-grid">
+          <div className="detail-primary">
+            {/* Description */}
+            <section className="content-section card">
+              <h2 className="section-title">Overview</h2>
+              <div className="markdown-body">
+                {skillDetail.readme || detailData.longDescription ? (
+                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                    {String(skillDetail.readme || detailData.longDescription)}
+                  </ReactMarkdown>
+                ) : (
+                  <p>{skillDetail.description || "No detailed description available."}</p>
+                )}
+              </div>
+            </section>
+
+            {/* Sandbox */}
+            <section className="content-section card">
+              <div className="section-header-flex">
+                <h2 className="section-title">Simulation Sandbox</h2>
+                <span className="badge-secure">EVR Secure</span>
+              </div>
+              <p className="section-desc">Test how an external AI sees when invoking this secure skill.</p>
+              <SimulationSandbox packageId={packageId!} />
+            </section>
+
+            {/* Reviews */}
+            <section className="content-section card">
+              <h2 className="section-title">Community Voice</h2>
+              <ReviewList reviews={reviews} />
+              <div className="review-form-box">
+                <h3 className="sub-title">Share your experience</h3>
+                <ReviewForm
+                  skill={skillDetail}
+                  onReviewSubmitted={refreshReviews}
+                />
+              </div>
+            </section>
+          </div>
+
+          <aside className="detail-sidebar">
+            <div className="sidebar-card card">
+              <h3 className="sidebar-title">Technical Specs</h3>
+              <div className="spec-list">
+                <div className="spec-item">
+                  <span className="spec-label">Version</span>
+                  <span className="spec-value">{skillDetail.version}</span>
+                </div>
+                <div className="spec-item">
+                  <span className="spec-label">License</span>
+                  <span className="spec-value">{skillDetail.license}</span>
+                </div>
+                <div className="spec-item">
+                  <span className="spec-label">Transport</span>
+                  <span className="spec-value">{skillDetail.mcpTransport}</span>
+                </div>
+                <div className="spec-item">
+                  <span className="spec-label">Rating</span>
+                  <span className="spec-value">★ {skillDetail.rating?.toFixed(1) || "N/A"}</span>
                 </div>
               </div>
             </div>
-            <div className="skill-header-right">
-              <InstallButton skill={skillDetail} />
-            </div>
-          </div>
-
-          {/* Tags */}
-          {(skillDetail.category || skillDetail.tags) && (
-            <div className="skill-tags">
-              {skillDetail.category && (
-                <span className="skill-tag category">{skillDetail.category}</span>
-              )}
-              {skillDetail.tags?.map((tag) => (
-                <span key={tag} className="skill-tag">
-                  #{tag}
-                </span>
-              ))}
-            </div>
-          )}
-        </section>
-
-        {/* README Section */}
-        <section className="readme-section fade-in" style={{ animationDelay: "0.2s" }}>
-          <h2 className="section-heading">Description</h2>
-          {skillDetail.readme || detailData.longDescription ? (
-            <div className="markdown-content">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {String(skillDetail.readme || detailData.longDescription)}
-              </ReactMarkdown>
-            </div>
-          ) : (
-            <p className="no-content">
-              {skillDetail.description || "No description provided."}
-            </p>
-          )}
-        </section>
-
-        {/* EVR Simulation Sandbox */}
-        <section className="sandbox-section fade-in" style={{ animationDelay: "0.3s" }}>
-          <div className="sandbox-header">
-            <div className="sandbox-title-container">
-              <h2 className="section-heading">Simulation Sandbox</h2>
-              <span className="sandbox-badge">
-                <span className="status-dot"></span>
-                Encrypted Virtual Room Active
-              </span>
-            </div>
-            <p className="sandbox-desc">
-              Test what an external AI sees when invoking this secure skill. The
-              raw rules are decrypted only in volatile memory (RAM) and
-              immediately wiped.
-            </p>
-          </div>
-
-          <SimulationSandbox packageId={packageId!} />
-        </section>
-
-        {/* Mint Status */}
-        {hasLimitedEdition && (
-          <section className="mint-status-section fade-in" style={{ animationDelay: "0.4s" }}>
-            <div className="mint-status-header">
-              <h3 className="section-heading">
-                {String(detailData.editionType)?.toUpperCase()}: {Number(detailData.mintedCount) || 0} / {Number(detailData.maxEditions)} Claimed
-              </h3>
-              <span className="mint-percentage">
-                {mintProgress.toFixed(1)}%
-              </span>
-            </div>
-            <div className="mint-progress-bar">
-              <div
-                className="mint-progress-fill"
-                style={{ width: `${Math.min(mintProgress, 100)}%` }}
-              />
-            </div>
-          </section>
-        )}
-
-        {/* Reviews Section */}
-        <section className="reviews-section fade-in" style={{ animationDelay: "0.5s" }}>
-          <h2 className="section-heading">Community Reviews ({reviews.length})</h2>
-          <ReviewList reviews={reviews} />
-          <div className="review-form-container">
-            <ReviewForm
-              skill={skillDetail}
-              onReviewSubmitted={refreshReviews}
-            />
-          </div>
-        </section>
+          </aside>
+        </div>
       </main>
 
-      <footer className="footer">
-        <p>&copy; {new Date().getFullYear()} YigYaps. Built for the Agentic Future.</p>
-        <div className="footer-links">
-          <Link to="/terms">Terms</Link>
-          <Link to="/privacy">Privacy</Link>
+      <footer className="site-footer">
+        <div className="container">
+          <p>&copy; {new Date().getFullYear()} YigYaps. Shared Wisdom for AI Agents.</p>
         </div>
       </footer>
+
+      <style>{`
+        .detail-layout {
+          min-height: 100vh;
+        }
+        .detail-hero {
+          padding: 4rem 0 3rem;
+          border-bottom: 1px solid var(--color-border);
+          background: var(--color-surface);
+        }
+        .hero-top {
+          display: flex;
+          justify-content: space-between;
+          align-items: flex-start;
+          margin-bottom: 2rem;
+        }
+        .hero-title {
+          font-size: 3.5rem;
+          margin-bottom: 0.5rem;
+        }
+        .hero-meta {
+          color: var(--color-text-sub);
+          font-weight: 500;
+        }
+        .meta-dot {
+          margin: 0 0.75rem;
+        }
+        .hero-pills {
+          display: flex;
+          gap: 0.75rem;
+          flex-wrap: wrap;
+        }
+        .pill {
+          padding: 0.25rem 0.75rem;
+          border-radius: 20px;
+          font-size: 0.85rem;
+          font-weight: 600;
+        }
+        .pill.category {
+          background: var(--color-accent-bg);
+          color: var(--color-primary);
+        }
+        .pill.tag {
+          background: #F3F4F6;
+          color: var(--color-text-sub);
+        }
+
+        .detail-content-grid {
+          display: grid;
+          grid-template-columns: 1fr 320px;
+          gap: 3rem;
+          padding-top: 4rem;
+          padding-bottom: 6rem;
+        }
+
+        .content-section {
+          margin-bottom: 3rem;
+        }
+        .section-title {
+          font-size: 1.75rem;
+          margin-bottom: 1.5rem;
+        }
+        .section-desc {
+          color: var(--color-text-sub);
+          margin-bottom: 1.5rem;
+        }
+        .section-header-flex {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+        }
+        .badge-secure {
+          background: #EEF2FF;
+          color: #4338CA;
+          font-size: 0.75rem;
+          font-weight: 700;
+          padding: 0.25rem 0.6rem;
+          border-radius: 6px;
+        }
+
+        .markdown-body {
+          line-height: 1.8;
+          color: var(--color-text-main);
+          font-size: 1.1rem;
+        }
+        .markdown-body h1, .markdown-body h2 {
+          font-family: var(--font-sans);
+          font-size: 1.5rem;
+          margin-top: 2rem;
+          margin-bottom: 1rem;
+        }
+
+        .sidebar-title {
+          font-size: 1.25rem;
+          margin-bottom: 1.5rem;
+        }
+        .spec-list {
+          display: flex;
+          flex-direction: column;
+          gap: 1rem;
+        }
+        .spec-item {
+          display: flex;
+          justify-content: space-between;
+          font-size: 0.95rem;
+        }
+        .spec-label {
+          color: var(--color-text-sub);
+        }
+        .spec-value {
+          font-weight: 600;
+          color: var(--color-text-main);
+        }
+
+        .review-form-box {
+          margin-top: 3rem;
+          padding-top: 2rem;
+          border-top: 1px solid var(--color-border);
+        }
+        .sub-title {
+          font-size: 1.25rem;
+          margin-bottom: 1.5rem;
+        }
+
+        @media (max-width: 1024px) {
+          .detail-content-grid {
+            grid-template-columns: 1fr;
+          }
+          .hero-title {
+            font-size: 2.5rem;
+          }
+        }
+      `}</style>
     </div>
   );
 }
@@ -216,57 +350,78 @@ function SimulationSandbox({ packageId }: { packageId: string }) {
         disclaimer: response.disclaimer,
       });
     } catch (err: unknown) {
-      if (err instanceof Error) {
-        setError(err.message || "Simulation failed");
-      } else {
-        setError("Simulation failed owing to an unknown error.");
-      }
+      setError(err instanceof Error ? err.message : "Simulation failed");
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="sandbox-content">
-      <div className="sandbox-actions">
-        <button
-          onClick={handleSimulate}
-          disabled={loading}
-          className={`btn btn-primary btn-large ${loading ? 'btn-loading' : ''}`}
-        >
-          {loading ? (
-            <>
-              <span className="spinner"></span>
-              Initializing EVR Sandbox...
-            </>
-          ) : (
-            "Simulate Secure Agent Call"
-          )}
-        </button>
-      </div>
+    <div className="sandbox-box">
+      <button
+        onClick={handleSimulate}
+        disabled={loading}
+        className="btn-primary"
+        style={{ width: 'auto', minWidth: '240px' }}
+      >
+        {loading ? "Initializing Sandbox..." : "Run Security Simulation"}
+      </button>
 
-      {error && (
-        <div className="form-error fade-in">
-          ❌ {error}
-        </div>
-      )}
+      {error && <div className="error-msg">❌ {error}</div>}
 
       {result && (
-        <div className="sandbox-results fade-in">
-          <div className="sandbox-result-box conclusion">
-            <div className="result-label">Agent Output (Sanitized):</div>
-            <div className="result-value">
-              {result.conclusion}
-            </div>
+        <div className="results-box animate-fade-in">
+          <div className="result-group">
+            <span className="res-label">Agent Conclusion</span>
+            <div className="res-value">{result.conclusion}</div>
           </div>
-          <div className="sandbox-result-box disclaimer">
-            <div className="result-label">Security Protocol:</div>
-            <div className="result-value">
-              🛡️ {result.disclaimer}
-            </div>
+          <div className="result-group">
+            <span className="res-label">Security Protocol</span>
+            <div className="res-value protocol">🛡️ {result.disclaimer}</div>
           </div>
         </div>
       )}
+
+      <style>{`
+        .sandbox-box {
+          margin-top: 1rem;
+        }
+        .error-msg {
+          margin-top: 1rem;
+          color: #ef4444;
+          font-weight: 500;
+        }
+        .results-box {
+          margin-top: 2rem;
+          padding: 1.5rem;
+          background: var(--color-bg);
+          border-radius: 12px;
+          border: 1px solid var(--color-border);
+        }
+        .result-group {
+          margin-bottom: 1.5rem;
+        }
+        .result-group:last-child {
+          margin-bottom: 0;
+        }
+        .res-label {
+          display: block;
+          font-size: 0.75rem;
+          text-transform: uppercase;
+          font-weight: 700;
+          color: var(--color-text-sub);
+          margin-bottom: 0.5rem;
+        }
+        .res-value {
+          font-size: 0.95rem;
+          color: var(--color-text-main);
+          line-height: 1.5;
+        }
+        .res-value.protocol {
+          font-weight: 600;
+          color: #4338CA;
+        }
+      `}</style>
     </div>
   );
 }

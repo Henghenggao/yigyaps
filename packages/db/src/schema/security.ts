@@ -13,8 +13,9 @@ import {
   bigint,
   integer,
   numeric,
+  boolean,
   index,
-  uuid,
+  uniqueIndex,
   customType,
 } from "drizzle-orm/pg-core";
 
@@ -47,10 +48,20 @@ export const encryptedKnowledgeTable = pgTable(
     contentCiphertext: buffer("content_ciphertext").notNull(),
     contentHash: text("content_hash").notNull(),
     version: integer("version").notNull().default(1),
+    /**
+     * Soft-archive flag for knowledge versioning (migration 0008).
+     * true  = current active version used for invoke/decrypt
+     * false = archived version preserved for legal evidence / version history
+     */
+    isActive: boolean("is_active").notNull().default(true),
     createdAt: bigint("created_at", { mode: "number" }).notNull(),
   },
   (table) => [
     index("idx_yy_encrypted_knowledge_package").on(table.skillPackageId),
+    index("idx_yy_encrypted_knowledge_active").on(
+      table.skillPackageId,
+      table.isActive,
+    ),
   ],
 );
 
@@ -68,6 +79,14 @@ export const invocationLogsTable = pgTable(
     expertSplit: numeric("expert_split", { precision: 10, scale: 4 }),
     inferenceMs: integer("inference_ms"),
     conclusionHash: text("conclusion_hash").notNull(),
+    /**
+     * Hash-chain fields for tamper-evident audit log.
+     * prevHash = eventHash of the previous log entry for this skill (or "GENESIS" for first).
+     * eventHash = SHA-256(skillPackageId + apiClientId + conclusionHash + prevHash)
+     * Verifiable via GET /v1/admin/audit-verify/:skillId
+     */
+    prevHash: text("prev_hash"),
+    eventHash: text("event_hash"),
     createdAt: bigint("created_at", { mode: "number" }).notNull(),
   },
   (table) => [
@@ -97,3 +116,38 @@ export const ipRegistrationsTable = pgTable(
 
 export type IpRegistrationRow = typeof ipRegistrationsTable.$inferSelect;
 export type IpRegistrationInsert = typeof ipRegistrationsTable.$inferInsert;
+
+/**
+ * Shamir Secret Sharing — (2,3) threshold shares for DEK protection.
+ *
+ * Each encrypted knowledge entry can optionally have its DEK split into 3 shares:
+ *   share_index 1 → platform DB     (custodian: "platform")
+ *   share_index 2 → expert local    (custodian: "expert", returned to client)
+ *   share_index 3 → platform backup (custodian: "backup")
+ *
+ * Reconstructing DEK requires any 2 of 3 shares.
+ * Expert revocation = delete all shares → crypto-shredding.
+ */
+export const shamirSharesTable = pgTable(
+  "yy_shamir_shares",
+  {
+    id: text("id").primaryKey(),
+    skillPackageId: text("skill_package_id")
+      .notNull()
+      .references(() => skillPackagesTable.id, { onDelete: "cascade" }),
+    shareIndex: integer("share_index").notNull(),
+    shareData: text("share_data").notNull(),
+    custodian: text("custodian").notNull(), // "platform" | "expert" | "backup"
+    createdAt: bigint("created_at", { mode: "number" }).notNull(),
+  },
+  (table) => [
+    index("idx_yy_shamir_shares_package").on(table.skillPackageId),
+    uniqueIndex("uq_yy_shamir_shares_pkg_idx").on(
+      table.skillPackageId,
+      table.shareIndex,
+    ),
+  ],
+);
+
+export type ShamirShareRow = typeof shamirSharesTable.$inferSelect;
+export type ShamirShareInsert = typeof shamirSharesTable.$inferInsert;

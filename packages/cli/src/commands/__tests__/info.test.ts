@@ -1,6 +1,7 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { infoCommand } from "../info.js";
 import * as registry from "../../lib/registry.js";
+import type { YigYapsRegistryClient } from "@yigyaps/client";
 
 vi.mock("../../lib/registry.js");
 vi.mock("../../lib/logger.js");
@@ -35,7 +36,7 @@ describe("infoCommand", () => {
       getByPackageId: vi.fn().mockResolvedValue(mockPkg),
       getById: vi.fn(),
     };
-    vi.mocked(registry.createRegistryClient).mockReturnValue(mockClient as any);
+    vi.mocked(registry.createRegistryClient).mockReturnValue(mockClient as unknown as YigYapsRegistryClient);
 
     await infoCommand("test-skill", {});
 

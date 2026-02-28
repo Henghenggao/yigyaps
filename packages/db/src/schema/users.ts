@@ -35,6 +35,8 @@ export const usersTable = pgTable(
     role: text("role").$type<"user" | "admin">().notNull().default("user"),
     bio: text("bio"),
     websiteUrl: text("website_url"),
+    /** Stripe Connect connected account ID (set after expert Stripe onboarding) */
+    stripeAccountId: text("stripe_account_id"),
     isVerifiedCreator: boolean("is_verified_creator").notNull().default(false),
     totalPackages: integer("total_packages").notNull().default(0),
     totalEarningsUsd: numeric("total_earnings_usd", { precision: 10, scale: 2 })
@@ -71,6 +73,12 @@ export const apiKeysTable = pgTable(
     expiresAt: bigint("expires_at", { mode: "number" }),
     createdAt: bigint("created_at", { mode: "number" }).notNull(),
     revokedAt: bigint("revoked_at", { mode: "number" }),
+    /**
+     * Timestamp when the user accepted the Anti-Training EULA (Section 4).
+     * NULL = key created before EULA was introduced (grandfathered).
+     * Non-null = EULA accepted at this Unix ms timestamp.
+     */
+    termsAcceptedAt: bigint("terms_accepted_at", { mode: "number" }),
   },
   (table) => [
     index("idx_yy_api_keys_user").on(table.userId),

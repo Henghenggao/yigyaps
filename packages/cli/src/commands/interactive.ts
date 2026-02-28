@@ -1,5 +1,4 @@
 import { p, assertNotCancelled } from "../lib/ui/prompts.js";
-import { colors } from "../lib/ui/theme.js";
 import { renderBanner } from "../lib/ui/banner.js";
 import { searchCommand } from "./search.js";
 import { listCommand } from "./list.js";
@@ -46,9 +45,9 @@ export async function interactiveCommand() {
               : "Sign in with GitHub",
           },
           { value: "exit", label: "🚪 Exit", hint: "Quit the CLI" },
-        ] as any,
+        ] as Array<{ value: string; label: string; hint?: string }>,
       }),
-    ) as any;
+    ) as string;
 
     if (choice === "exit") break;
 

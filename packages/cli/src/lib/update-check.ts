@@ -5,7 +5,7 @@ import boxen from "boxen";
 /**
  * Checks for package updates and notifies the user
  */
-export async function checkForUpdates(pkg: any) {
+export async function checkForUpdates(pkg: { name: string; version: string }) {
   const notifier = updateNotifier({
     pkg,
     updateCheckInterval: 1000 * 60 * 60 * 24, // Check once a day

@@ -2,6 +2,8 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 import { installCommand } from "../install.js";
 import * as registry from "../../lib/registry.js";
 import * as auth from "../../lib/auth.js";
+import type { YigYapsRegistryClient } from "@yigyaps/client";
+import type { UserProfile } from "../../lib/auth.js";
 
 vi.mock("../../lib/registry.js");
 vi.mock("../../lib/auth.js");
@@ -28,7 +30,7 @@ describe("installCommand", () => {
     vi.mocked(auth.ensureAuthenticated).mockResolvedValue({
       id: "u1",
       tier: "pro",
-    } as any);
+    } as unknown as UserProfile);
   });
 
   it("should install a skill with confirmation", async () => {
@@ -42,7 +44,7 @@ describe("installCommand", () => {
       getByPackageId: vi.fn().mockResolvedValue(mockPkg),
       install: vi.fn().mockResolvedValue({ id: "inst1" }),
     };
-    vi.mocked(registry.createRegistryClient).mockReturnValue(mockClient as any);
+    vi.mocked(registry.createRegistryClient).mockReturnValue(mockClient as unknown as YigYapsRegistryClient);
 
     await installCommand("test-skill", { agentId: "agent1" });
 

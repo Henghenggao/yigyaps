@@ -24,6 +24,8 @@ import {
 } from "../../../src/routes/registry.js";
 import { authRoutes } from "../../../src/routes/auth.js";
 import { usersRoutes } from "../../../src/routes/users.js";
+import { securityRoutes } from "../../../src/routes/security.js";
+import { stripeRoutes } from "../../../src/routes/stripe.js";
 
 // ─── Test Server Creation ─────────────────────────────────────────────────────
 
@@ -68,6 +70,8 @@ export async function createTestServer(
   await fastify.register(installationsRoutes, { prefix: "/v1/installations" });
   await fastify.register(reviewsRoutes, { prefix: "/v1/reviews" });
   await fastify.register(mintsRoutes, { prefix: "/v1/mints" });
+  await fastify.register(securityRoutes, { prefix: "/v1/security" });
+  await fastify.register(stripeRoutes, { prefix: "/v1" });
 
   return { fastify, pool, db };
 }

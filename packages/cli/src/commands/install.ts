@@ -42,7 +42,7 @@ export async function installCommand(id: string, options: InstallOptions) {
     }
 
     // Show preview card
-    console.log(skillCard(pkg as any));
+    console.log(skillCard(pkg));
 
     // 3. Confirm installation if no -y flag
     if (!options.yes) {
