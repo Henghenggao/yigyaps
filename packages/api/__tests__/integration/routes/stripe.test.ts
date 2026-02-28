@@ -198,6 +198,7 @@ describe("Stripe Routes", () => {
           version: "1.0.0",
           displayName: "Stripe Test Skill",
           description: "A test skill for stripe integration test validation",
+          authorName: "Stripe Author",
           category: "other",
           tags: ["test"],
           priceUsd: 0,

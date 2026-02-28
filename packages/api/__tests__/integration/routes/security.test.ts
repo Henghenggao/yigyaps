@@ -119,6 +119,7 @@ async function createTestPackage(serverContext: TestServerContext) {
       version: "1.0.0",
       displayName: "Security Test Skill",
       description: "A test skill for security integration tests validation",
+      authorName: "Skill Author",
       category: "other",
       tags: ["test"],
       priceUsd: 0,

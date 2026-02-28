@@ -174,7 +174,7 @@ export function SkillDetailPage() {
                 </div>
                 <div className="spec-item">
                   <span className="spec-label">Rating</span>
-                  <span className="spec-value">★ {skillDetail.rating?.toFixed(1) || "N/A"}</span>
+                  <span className="spec-value">★ {Number(skillDetail.rating || 0).toFixed(1) || "N/A"}</span>
                 </div>
               </div>
             </div>

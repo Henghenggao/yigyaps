@@ -168,48 +168,44 @@ export function LandingPage() {
         </section>
 
         {/* ── Security Trust ──────────────────────────────── */}
-        <section className="section-block">
+        <section className="section-block section-trust">
           <div className="container">
-            <h2 className="section-title">Four layers of protection</h2>
+            <h2 className="section-title">Assetize your knowledge, don't donate it<span className="dot">.</span></h2>
             <p className="section-subtitle">
-              Your knowledge is protected at every level — cryptography, runtime, legal, and market.
+              Most platforms treat your expertise as fuel for their models. At YigYaps, we treat it as your private property.
             </p>
 
             <div className="trust-grid">
-              <div className="trust-card">
-                <div className="trust-layer">Layer 1</div>
-                <h3>Cryptography</h3>
+              <div className="trust-card highlight-negative">
+                <div className="trust-layer">OpenAI / ChatGPT</div>
+                <h3>Fueling the Goliaths</h3>
                 <p>
-                  AES-256-GCM envelope encryption with per-skill DEK.
-                  Shamir secret sharing splits keys so no single party
-                  can decrypt alone.
+                  When you give your expertise to ChatGPT, it becomes training data.
+                  You're effectively training your own replacement for free.
+                </p>
+              </div>
+              <div className="trust-card highlight-positive">
+                <div className="trust-layer">The YigYaps Way</div>
+                <h3>AES-256 Encrypted</h3>
+                <p>
+                  Your knowledge is stored with bank-grade encryption. Not even we can see it.
+                  Only authorized Agents receive encrypted conclusions during calls.
                 </p>
               </div>
               <div className="trust-card">
-                <div className="trust-layer">Layer 2</div>
-                <h3>Runtime Isolation</h3>
+                <div className="trust-layer">Control</div>
+                <h3>Instant 'Kill Switch'</h3>
                 <p>
-                  Local rule engine evaluates in-process. Plaintext rules
-                  never leave the server. SecureBuffer zeroizes memory
-                  after each call.
+                  You are the master of your expertise. Revoke access anytime to make your
+                  knowledge permanently 'brick' for everyone with one click.
                 </p>
               </div>
               <div className="trust-card">
-                <div className="trust-layer">Layer 3</div>
-                <h3>Legal Shield</h3>
+                <div className="trust-layer">IP Proof</div>
+                <h3>Immutable Authorship</h3>
                 <p>
-                  Anti-training EULA prohibits model distillation.
-                  IP timestamps create verifiable proof of authorship.
-                  Liquidated damages deter bad actors.
-                </p>
-              </div>
-              <div className="trust-card">
-                <div className="trust-layer">Layer 4</div>
-                <h3>Market Moat</h3>
-                <p>
-                  Expert identity, continuous updates, community reviews,
-                  and limited editions create value that static copies
-                  can never replicate.
+                  Every skill is hashed and timestamped. Your intellectual property
+                  is verifiable, protected, and legally assetized.
                 </p>
               </div>
             </div>
@@ -554,6 +550,33 @@ export function LandingPage() {
         .trust-card p {
           font-size: 0.9rem;
           line-height: 1.65;
+        }
+        .trust-card.highlight-positive {
+          border-color: var(--color-primary);
+          background: #FFF;
+          box-shadow: 0 4px 20px rgba(212, 163, 148, 0.1);
+          position: relative;
+        }
+        .trust-card.highlight-positive::after {
+          content: 'The Standard';
+          position: absolute;
+          top: -12px;
+          right: 20px;
+          background: var(--color-primary);
+          color: white;
+          padding: 2px 10px;
+          border-radius: 20px;
+          font-size: 0.7rem;
+          font-weight: 700;
+          letter-spacing: 0.05em;
+        }
+        .trust-card.highlight-negative {
+          background: #F5F5F3;
+          border-color: #E0E0DE;
+          opacity: 0.8;
+        }
+        .trust-card.highlight-negative .trust-layer {
+          color: #888;
         }
 
         /* ── Ecosystem ──────────────────────────────────── */

@@ -39,9 +39,9 @@ export function SkillCard({ skill, onClick }: SkillCardProps) {
           <span className="stat-item">
             <strong>{skill.installCount.toLocaleString()}</strong> installs
           </span>
-          {skill.rating > 0 && (
+          {Number(skill.rating) > 0 && (
             <span className="stat-item rating">
-              ★ {skill.rating.toFixed(1)}
+              ★ {Number(skill.rating).toFixed(1)}
             </span>
           )}
         </div>
