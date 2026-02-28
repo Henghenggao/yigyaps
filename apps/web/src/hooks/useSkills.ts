@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { YigYapsRegistryClient } from "@yigyaps/client";
 import type { SkillPackage, SkillPackageSearchQuery } from "@yigyaps/types";
 import { API_URL } from "../lib/api";
+import { normalizePackage } from "../utils/normalize";
 
 export function useSkills(searchParams?: SkillPackageSearchQuery) {
   const [skills, setSkills] = useState<SkillPackage[]>([]);
@@ -25,7 +26,11 @@ export function useSkills(searchParams?: SkillPackageSearchQuery) {
             limit: 20,
           },
         );
-        setSkills(response.packages || []);
+        setSkills(
+          (response.packages || []).map((p) =>
+            normalizePackage(p as unknown as Record<string, unknown>),
+          ),
+        );
         setTotal(response.total || 0);
       } catch (err) {
         console.error("Failed to fetch skills:", err);

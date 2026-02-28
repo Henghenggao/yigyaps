@@ -46,7 +46,7 @@ export function SkillCard({ skill, onClick }: SkillCardProps) {
           )}
         </div>
         <div className="skill-price">
-          {skill.license === 'open-source' ? 'Free' : `$${skill.priceUsd ?? 0}`}
+          {Number(skill.priceUsd || 0) === 0 ? 'Free' : `$${Number(skill.priceUsd).toFixed(2)}`}
         </div>
       </div>
 

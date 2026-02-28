@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import { UserMenu } from "./UserMenu";
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3100";
+import { API_URL } from "../lib/api";
 
 interface HeaderProps {
   user: {
@@ -163,6 +162,20 @@ export function Header({ user, login }: HeaderProps) {
         }
         .github-button:hover {
           color: var(--color-text-main);
+        }
+        @media (max-width: 768px) {
+          .header-container {
+            padding: 0 1rem;
+          }
+          .site-nav {
+            display: none;
+          }
+          .brand-name {
+            font-size: 1.4rem;
+          }
+          .alpha-tag {
+            display: none;
+          }
         }
       `}</style>
     </header>

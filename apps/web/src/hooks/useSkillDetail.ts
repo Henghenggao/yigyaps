@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { YigYapsRegistryClient } from "@yigyaps/client";
 import type { SkillPackage, SkillPackageReview } from "@yigyaps/types";
 import { API_URL, fetchApi } from "../lib/api";
+import { normalizePackage } from "../utils/normalize";
 
 export function useSkillDetail(packageId: string) {
   const [skillDetail, setSkillDetail] = useState<SkillPackage | null>(null);
@@ -36,7 +37,9 @@ export function useSkillDetail(packageId: string) {
           ),
         ]);
 
-        setSkillDetail(pkg);
+        setSkillDetail(
+          normalizePackage(pkg as unknown as Record<string, unknown>),
+        );
         setReviews(reviewsData.reviews || []);
       } catch (err) {
         console.error("Failed to fetch skill detail:", err);

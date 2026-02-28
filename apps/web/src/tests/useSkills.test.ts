@@ -14,6 +14,7 @@ describe("useSkills", () => {
         description: "Description 1",
         installCount: 100,
         rating: 4.5,
+        priceUsd: 0,
       },
       {
         id: "skill-2",
@@ -22,6 +23,7 @@ describe("useSkills", () => {
         description: "Description 2",
         installCount: 50,
         rating: 4.0,
+        priceUsd: 0,
       },
     ],
     total: 2,

@@ -98,12 +98,12 @@ export function MyPackagesPage() {
                 ? [
                     {
                       label: "Earnings (30d)",
-                      value: `$${earnings.last30dUsd.toFixed(2)}`,
+                      value: `$${Number(earnings.last30dUsd || 0).toFixed(2)}`,
                       icon: "💰",
                     },
                     {
                       label: "Earnings (all time)",
-                      value: `$${earnings.allTimeUsd.toFixed(2)}`,
+                      value: `$${Number(earnings.allTimeUsd || 0).toFixed(2)}`,
                       icon: "💎",
                     },
                   ]

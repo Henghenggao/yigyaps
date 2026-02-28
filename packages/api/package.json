@@ -18,7 +18,7 @@
   "scripts": {
     "build": "tsc -b",
     "clean": "tsc -b --clean",
-    "dev": "node --watch dist/server.js",
+    "dev": "node --watch-path=dist dist/server.js",
     "start": "node dist/server.js",
     "test": "vitest run",
     "test:watch": "vitest",

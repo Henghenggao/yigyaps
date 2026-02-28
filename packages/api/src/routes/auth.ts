@@ -12,6 +12,7 @@ import { signJWT, verifyJWT } from "../lib/jwt.js";
 import { requireAuth } from "../middleware/auth-v2.js";
 import { customAlphabet } from "nanoid";
 import { env } from "../lib/env.js";
+import { AUTH_COOKIE_NAME } from "../lib/constants.js";
 
 const nanoid = customAlphabet("0123456789abcdefghijklmnopqrstuvwxyz", 8);
 
@@ -214,7 +215,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       });
 
       // Set JWT cookie
-      reply.setCookie("yigyaps_jwt", jwt, {
+      reply.setCookie(AUTH_COOKIE_NAME, jwt, {
         httpOnly: true,
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
@@ -242,7 +243,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
         reply.clearCookie("session_token");
       }
 
-      reply.clearCookie("yigyaps_jwt");
+      reply.clearCookie(AUTH_COOKIE_NAME);
 
       return reply.send({ success: true });
     },
@@ -289,7 +290,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
   // GET /v1/auth/refresh - Refresh JWT if expiring within 48h
   fastify.get("/refresh", { preHandler: requireAuth() }, async (request, reply) => {
     if (!request.user) return reply.status(401).send({ error: "Unauthorized", message: "Not authenticated" });
-    const jwt = request.cookies?.yigyaps_jwt;
+    const jwt = request.cookies?.[AUTH_COOKIE_NAME];
     const THRESHOLD = 48 * 60 * 60 * 1000;
     let refresh = true;
     if (jwt) { try { const d = verifyJWT(jwt); if (((d.exp ?? 0) * 1000 - Date.now()) > THRESHOLD) refresh = false; } catch { refresh = true; } }
@@ -298,7 +299,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     const user = await userDAL.getById(request.user.userId);
     if (!user) return reply.status(404).send({ error: "Not found", message: "User not found" });
     const newJwt = signJWT({ userId: user.id, userName: user.displayName, githubUsername: user.githubUsername, tier: user.tier as "free" | "pro" | "epic" | "legendary", role: user.role as "user" | "admin" });
-    reply.setCookie("yigyaps_jwt", newJwt, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", maxAge: 7 * 24 * 60 * 60, path: "/" });
+    reply.setCookie(AUTH_COOKIE_NAME, newJwt, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", maxAge: 7 * 24 * 60 * 60, path: "/" });
     return reply.send({ refreshed: true, user: { id: user.id, githubUsername: user.githubUsername, displayName: user.displayName, email: user.email, avatarUrl: user.avatarUrl, tier: user.tier, role: user.role } });
   });
 };

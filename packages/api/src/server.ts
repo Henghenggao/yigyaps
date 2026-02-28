@@ -120,6 +120,11 @@ async function buildServer() {
       return;
     }
 
+    // Skip CSRF in development mode (allows 127.0.0.1 / localhost interop)
+    if (env.NODE_ENV === "development") {
+      return;
+    }
+
     // Skip CSRF check for clients using Bearer tokens (CLI, API keys)
     // as these are not subject to traditional CSRF attacks.
     if (request.headers.authorization) {

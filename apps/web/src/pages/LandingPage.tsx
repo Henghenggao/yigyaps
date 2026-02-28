@@ -1,8 +1,7 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { Header } from "../components/Header";
-
-const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3100";
+import { API_URL } from "../lib/api";
 
 export function LandingPage() {
   const { user, login } = useAuth();

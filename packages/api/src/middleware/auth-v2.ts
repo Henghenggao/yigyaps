@@ -11,6 +11,7 @@ import type { FastifyRequest, FastifyReply } from "fastify";
 import { verifyJWT } from "../lib/jwt.js";
 import { ApiKeyDAL, UserDAL } from "@yigyaps/db";
 import crypto from "crypto";
+import { AUTH_COOKIE_NAME } from "../lib/constants.js";
 
 // ─── User Context ─────────────────────────────────────────────────────────────
 
@@ -124,8 +125,8 @@ export async function optionalAuth(
     }
   }
 
-  if (!tokenToValidate && request.cookies?.yigyaps_jwt) {
-    tokenToValidate = request.cookies.yigyaps_jwt;
+  if (!tokenToValidate && request.cookies?.[AUTH_COOKIE_NAME]) {
+    tokenToValidate = request.cookies[AUTH_COOKIE_NAME];
   }
 
   if (!tokenToValidate) {
@@ -173,8 +174,8 @@ export function requireAuth(scopes?: string[]) {
       }
     }
 
-    if (!tokenToValidate && request.cookies?.yigyaps_jwt) {
-      tokenToValidate = request.cookies.yigyaps_jwt;
+    if (!tokenToValidate && request.cookies?.[AUTH_COOKIE_NAME]) {
+      tokenToValidate = request.cookies[AUTH_COOKIE_NAME];
     }
 
     if (!tokenToValidate) {

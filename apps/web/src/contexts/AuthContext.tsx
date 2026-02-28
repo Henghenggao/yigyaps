@@ -7,9 +7,9 @@
  * License: Apache 2.0
  */
 
-import { createContext, useContext, useState, useEffect } from "react";
+import { createContext, useContext, useState, useEffect, useRef } from "react";
 import type { ReactNode } from "react";
-import { fetchApi } from "../lib/api";
+import { API_URL, fetchApi } from "../lib/api";
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -53,16 +53,18 @@ export function AuthProvider({ children }: AuthProviderProps) {
   const [user, setUser] = useState<User | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const initRef = useRef(false);
 
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:3100";
-
-  // Initialize auth state
+  // Initialize auth state (with guard against React Strict Mode double-mount)
   useEffect(() => {
+    if (initRef.current) return;
+    initRef.current = true;
+
     const initAuth = async () => {
       try {
         await fetchUserProfile();
-      } catch (err) {
-        console.error("Failed to initialize auth:", err);
+      } catch {
+        // Not logged in is a normal state, no need to log error
       } finally {
         setLoading(false);
       }
@@ -90,13 +92,19 @@ export function AuthProvider({ children }: AuthProviderProps) {
       setUser(userData);
       setError(null);
     } catch (err: unknown) {
-      console.error("Failed to fetch user profile:", err);
+      // 401 is a normal "not logged in" state — not an error
+      if (
+        err instanceof Error &&
+        (err.message === "Unauthorized" || err.message === "Missing or invalid authentication token")
+      ) {
+        setUser(null);
+        return;
+      }
+      // Genuine network errors (not 401) are still worth logging
+      console.warn("Auth check failed:", err);
       if (err instanceof Error) {
         setError(err.message);
-      } else {
-        setError("An unknown error occurred");
       }
-      // Clear invalid state
       setUser(null);
     }
   };
