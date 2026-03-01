@@ -38,9 +38,9 @@ export function TermsPage() {
           <div style={sectionStyle}>
             <h2 style={headingStyle}>2. Description of Service</h2>
             <p style={paraStyle}>
-              YigYaps is a marketplace for human expertise packaged as AI skills ("Skills" or "YAPs"). Creators publish
-              encrypted skill rules that AI agents can license and invoke. The Platform operates as an intermediary
-              between Creators and AI operators.
+              YigYaps is a marketplace for human expertise packaged as **Yigbot Augmented Plugin** skills ("Skills" or "YAPs").
+              Creators publish encrypted skill rules that AI agents can license and invoke. The Platform operates as
+              an intermediary between Creators and AI operators.
             </p>
           </div>
 

@@ -8,7 +8,15 @@
 
 **🚀 Try it Live:** [https://yigyaps.com](https://yigyaps.com)
 
-**Empowering Humans in the Agent Economy.** YigYaps is an independent, community-governed registry for YAP (Yet Another Plugin) skills, fully compatible with the [Model Context Protocol (MCP)](https://modelcontextprotocol.io).
+**Empowering Humans in the Agent Economy.** YigYaps is an independent, community-governed registry for **YAP (Yigbot Augmented Plugin)** skills, fully compatible with the [Model Context Protocol (MCP)](https://modelcontextprotocol.io).
+
+---
+
+### 🧠 The YAP Philosophy: Augmented Intelligence
+The name **YAP** stands for **Yigbot Augmented Plugin**. It emphasizes that AI skills are not just static tools, but modular cognitive extensions. 
+**Agent + Skill = Augmented Agent.** By assetizing human expertise into the YAP format, we enable a future where AI agents are powered by verified, specialized human wisdom.
+
+---
 
 ---
 

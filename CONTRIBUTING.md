@@ -1,6 +1,6 @@
 # Contributing to YigYaps
 
-YigYaps is an open marketplace for YAP skills, licensed under Apache 2.0.
+YigYaps is an open marketplace for **Yigbot Augmented Plugin (YAP)** skills, licensed under Apache 2.0.
 We welcome contributions from all members of the MCP ecosystem community.
 
 ## Governance

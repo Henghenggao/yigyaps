@@ -224,7 +224,7 @@ export function LandingPage() {
                 <h3>MCP Bridge</h3>
                 <p>
                   Any MCP-compatible client — Claude Code, Codex, Verdent —
-                  can invoke YigYaps skills as native tools via
+                  can invoke **Yigbot Augmented Plugins (YAPs)** as native tools via
                   <code>npx yigyaps mcp-bridge</code>.
                 </p>
               </div>
@@ -280,7 +280,7 @@ export function LandingPage() {
 
       <footer className="site-footer">
         <div className="container footer-row">
-          <p>&copy; {new Date().getFullYear()} YigYaps. Shared Wisdom for AI Agents.</p>
+          <p>&copy; {new Date().getFullYear()} YigYaps. Empowering Augmented Agents with Human Expertise.</p>
           <div className="footer-links">
             <Link to="/terms">Terms</Link>
             <Link to="/privacy">Privacy</Link>
