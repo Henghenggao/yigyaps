@@ -209,7 +209,15 @@ describe("Stripe Routes", () => {
       const pkgId = pkgRes.json().id;
 
       // Insert usage ledger entries directly
+      // yy_usage_ledger.user_id has a FK to yy_users, so the buyer must exist first
       const now = Date.now();
+      await testDb.execute(
+        sql.raw(`
+          INSERT INTO yy_users (id, github_id, github_username, display_name, created_at, updated_at, last_login_at)
+          VALUES ('${USER_ID}', 'gh_stripe_buyer', 'stripeuser', 'Stripe Test User', ${now}, ${now}, ${now})
+          ON CONFLICT (id) DO NOTHING
+        `),
+      );
       await testDb.execute(
         sql.raw(`
           INSERT INTO yy_usage_ledger (id, user_id, skill_package_id, cost_usd, creator_royalty_usd, created_at)

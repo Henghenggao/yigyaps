@@ -30,6 +30,11 @@ const buffer = customType<{ data: Buffer; driverData: string }>({
     return "\\x" + val.toString("hex");
   },
   fromDriver(value: string): Buffer {
+    // node-postgres returns bytea as a Buffer object in binary mode
+    const v = value as unknown;
+    if (Buffer.isBuffer(v)) {
+      return v as Buffer;
+    }
     if (value.startsWith("\\x")) {
       return Buffer.from(value.slice(2), "hex");
     }
