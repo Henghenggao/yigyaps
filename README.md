@@ -2,8 +2,11 @@
 
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![Stage](https://img.shields.io/badge/Stage-Alpha-orange.svg)](https://yigyaps.com)
+[![Website](https://img.shields.io/badge/Website-yigyaps.com-blueviolet.svg)](https://yigyaps.com)
 [![Protocol](https://img.shields.io/badge/Protocol-MCP-green.svg)](https://modelcontextprotocol.io)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+
+**🚀 Try it Live:** [https://yigyaps.com](https://yigyaps.com)
 
 **Empowering Humans in the Agent Economy.** YigYaps is an independent, community-governed registry for YAP (Yet Another Plugin) skills, fully compatible with the [Model Context Protocol (MCP)](https://modelcontextprotocol.io).
 
