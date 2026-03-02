@@ -128,9 +128,10 @@ export function MarkdownEditor({
         <div
           style={{
             padding: "0.75rem",
-            background: "rgba(0,0,0,0.15)",
+            background: "var(--color-accent-bg)",
             overflowY: "auto",
             fontSize: "0.875rem",
+            color: "var(--color-text-main)",
           }}
           className="markdown-content"
         >

@@ -363,7 +363,7 @@ export function AdminPage() {
                 style={{
                   width: "300px",
                   padding: "0.6rem 0.75rem",
-                  background: "var(--color-input-bg, #1a1a1a)",
+                  background: "var(--color-input-bg)",
                   border: "1px solid var(--color-border)",
                   borderRadius: "6px",
                   color: "var(--color-text)",
@@ -413,7 +413,7 @@ export function AdminPage() {
                       onChange={(e) => handleUserRole(u.id, e.target.value)}
                       style={{
                         padding: "0.35rem 0.6rem",
-                        background: "var(--color-input-bg, #1a1a1a)",
+                        background: "var(--color-input-bg)",
                         border: "1px solid var(--color-border)",
                         borderRadius: "4px",
                         color: "var(--color-text)",
@@ -489,7 +489,7 @@ export function AdminPage() {
                           style={{
                             flex: 1,
                             padding: "0.4rem 0.6rem",
-                            background: "var(--color-input-bg, #1a1a1a)",
+                            background: "var(--color-input-bg)",
                             border: "1px solid var(--color-border)",
                             borderRadius: "4px",
                             color: "var(--color-text)",

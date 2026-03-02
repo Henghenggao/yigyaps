@@ -186,7 +186,7 @@ export function EditPackagePage() {
   const inputStyle = {
     width: "100%",
     padding: "0.6rem 0.75rem",
-    background: "var(--color-input-bg, #1a1a1a)",
+    background: "var(--color-input-bg)",
     border: "1px solid var(--color-border)",
     borderRadius: "6px",
     color: "var(--color-text)",

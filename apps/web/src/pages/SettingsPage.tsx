@@ -173,7 +173,7 @@ export function SettingsPage() {
                     padding: "0.75rem",
                   }}
                 >
-                  <code style={{ flex: 1, wordBreak: "break-all", fontSize: "0.85rem" }}>
+                  <code style={{ flex: 1, wordBreak: "break-all", fontSize: "0.85rem", color: "rgba(255,255,255,0.9)", fontFamily: "monospace" }}>
                     {generatedKey}
                   </code>
                   <button className="btn btn-outline" onClick={handleCopy} style={{ flexShrink: 0 }}>
@@ -189,7 +189,7 @@ export function SettingsPage() {
                   style={{
                     background: "none",
                     border: "none",
-                    color: "var(--color-text-muted)",
+                    color: "rgba(255,255,255,0.5)",
                     cursor: "pointer",
                     fontSize: "0.8rem",
                     marginTop: "0.5rem",
