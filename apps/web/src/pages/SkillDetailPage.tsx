@@ -9,6 +9,7 @@ import { Header } from "../components/Header";
 import { ReviewList } from "../components/ReviewList";
 import { ReviewForm } from "../components/ReviewForm";
 import { InstallButton } from "../components/InstallButton";
+import { QuickStartModal } from "../components/QuickStartModal";
 import { fetchApi } from "../lib/api";
 import type { User } from "../contexts/AuthContext";
 import type { SkillPackage } from "@yigyaps/types";
@@ -50,6 +51,7 @@ export function SkillDetailPage() {
   const { skillDetail, reviews, loading, error, refreshReviews } =
     useSkillDetail(packageId!);
   const { user, login } = useAuth();
+  const [showQuickStart, setShowQuickStart] = useState(false);
 
   if (loading) {
     return (
@@ -183,6 +185,13 @@ export function SkillDetailPage() {
           </aside>
         </div>
       </main>
+
+      {showQuickStart && (
+        <QuickStartModal
+          packageId={skillDetail.packageId}
+          onClose={() => setShowQuickStart(false)}
+        />
+      )}
 
       <footer className="site-footer">
         <div className="container">
@@ -437,8 +446,8 @@ function SimulationSandbox({
   const ev = result?.evaluation_details;
   const verdictColor = ev
     ? ev.verdict === "recommend" ? "#16a34a"
-    : ev.verdict === "neutral"  ? "#d97706"
-    : "#6b7280"
+      : ev.verdict === "neutral" ? "#d97706"
+        : "#6b7280"
     : undefined;
 
   return (
