@@ -44,9 +44,14 @@ export async function fetchApi<T = unknown>(
       const message = errorData.error || response.statusText;
 
       if (response.status === 401) {
-        // Trigger global auth expiration event for automatic logout
-        window.dispatchEvent(new Event("auth:expired"));
-        console.warn("Unauthorized request, triggering automatic logout.");
+        // Only dispatch auth:expired for auth-related endpoints to avoid
+        // false logouts when non-auth endpoints return 401 (e.g. simulate)
+        const isAuthEndpoint =
+          url.includes("/v1/auth/") || url.includes("/v1/users/");
+        if (isAuthEndpoint) {
+          window.dispatchEvent(new Event("auth:expired"));
+          console.warn("Unauthorized request, triggering automatic logout.");
+        }
       } else if (response.status === 429) {
         console.warn("Rate limit exceeded.");
       }

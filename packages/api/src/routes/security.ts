@@ -21,7 +21,7 @@ import {
   ipRegistrationsTable,
   shamirSharesTable,
 } from "@yigyaps/db";
-import { SkillPackageDAL } from "@yigyaps/db";
+import { SkillPackageDAL, SkillRuleDAL } from "@yigyaps/db";
 import { ShamirManager } from "../lib/shamir.js";
 import { eq, desc, and, sql } from "drizzle-orm";
 import crypto from "crypto";
@@ -349,9 +349,71 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
         .limit(1);
 
       if (!knowledgeRecords.length) {
-        return reply
-          .code(404)
-          .send({ error: "No encrypted knowledge found for this skill." });
+        // Fallback: check for plaintext rules in yy_skill_rules (e.g. seed/demo skills)
+        const ruleDAL = new SkillRuleDAL(fastify.db);
+        const ruleRows = await ruleDAL.getByPackage(pkg.id);
+        const rulesContent =
+          ruleRows.find((r) => r.path.endsWith(".json"))?.content ??
+          ruleRows[0]?.content;
+
+        if (!rulesContent) {
+          return reply
+            .code(404)
+            .send({ error: "No encrypted knowledge found for this skill." });
+        }
+
+        const parsedRules = RuleEngine.tryParseRules(rulesContent);
+        let demoText: string;
+
+        if (!parsedRules) {
+          demoText = RuleEngine.mockResponseForFreeformRules(userQuery);
+        } else {
+          const evaluation = RuleEngine.evaluate(parsedRules, userQuery);
+          const scoreLines = evaluation.results
+            .map((r) => `• ${r.dimension}: ${r.score}/10 — ${r.conclusion_key}`)
+            .join("\n");
+          demoText = `Skill Evaluation\nOverall: ${evaluation.overall_score}/10 (${evaluation.verdict})\n\n${scoreLines}`;
+        }
+
+        // Record demo invocation in audit log
+        const demoConclusionHash = crypto
+          .createHash("sha256")
+          .update(demoText)
+          .digest("hex");
+        const demoLastLog = await fastify.db
+          .select({ eventHash: invocationLogsTable.eventHash })
+          .from(invocationLogsTable)
+          .where(eq(invocationLogsTable.skillPackageId, pkg.id))
+          .orderBy(desc(invocationLogsTable.createdAt))
+          .limit(1);
+        const demoPrevHash = demoLastLog[0]?.eventHash ?? "GENESIS";
+        const demoEventHash = crypto
+          .createHash("sha256")
+          .update(`${pkg.id}${callerId}${demoConclusionHash}${demoPrevHash}`)
+          .digest("hex");
+
+        await fastify.db.insert(invocationLogsTable).values({
+          id: randomUUID(),
+          skillPackageId: pkg.id,
+          apiClientId: callerId,
+          inferenceMs: null,
+          conclusionHash: demoConclusionHash,
+          prevHash: demoPrevHash,
+          eventHash: demoEventHash,
+          createdAt: Date.now(),
+        });
+
+        recordInvocation(fastify.db, callerId, pkg.id, quota).catch((err) => {
+          request.log.warn({ err }, "Failed to record demo invocation usage");
+        });
+
+        return reply.send({
+          success: true,
+          conclusion: demoText,
+          mode: "local",
+          privacy_notice:
+            "LOCAL MODE — Rules evaluated entirely in-process. No data was transmitted to any external service.",
+        });
       }
 
       const record = knowledgeRecords[0];

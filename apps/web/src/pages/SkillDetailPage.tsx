@@ -10,6 +10,7 @@ import { ReviewList } from "../components/ReviewList";
 import { ReviewForm } from "../components/ReviewForm";
 import { InstallButton } from "../components/InstallButton";
 import { fetchApi } from "../lib/api";
+import type { User } from "../contexts/AuthContext";
 
 function SubscribeButton({ packageId, priceUsd }: { packageId: string; priceUsd: number }) {
   const [loading, setLoading] = useState(false);
@@ -139,7 +140,7 @@ export function SkillDetailPage() {
                 <span className="badge-secure">EVR Secure</span>
               </div>
               <p className="section-desc">Test how an external AI sees when invoking this secure skill.</p>
-              <SimulationSandbox packageId={packageId!} />
+              <SimulationSandbox packageId={packageId!} user={user} login={login} />
             </section>
 
             {/* Reviews */}
@@ -324,13 +325,38 @@ export function SkillDetailPage() {
   );
 }
 
-function SimulationSandbox({ packageId }: { packageId: string }) {
+function SimulationSandbox({
+  packageId,
+  user,
+  login,
+}: {
+  packageId: string;
+  user: User | null;
+  login: () => void;
+}) {
   const [loading, setLoading] = useState(false);
   const [result, setResult] = useState<{
     conclusion: string;
     disclaimer: string;
   } | null>(null);
   const [error, setError] = useState<string | null>(null);
+
+  if (!user) {
+    return (
+      <div className="sandbox-box">
+        <button
+          onClick={login}
+          className="btn-primary"
+          style={{ width: "auto", minWidth: "240px" }}
+        >
+          Sign In to Simulate
+        </button>
+        <p style={{ marginTop: "0.75rem", color: "var(--color-text-sub)", fontSize: "0.9rem" }}>
+          Authentication required to run the security simulation.
+        </p>
+      </div>
+    );
+  }
 
   const handleSimulate = async () => {
     setLoading(true);
