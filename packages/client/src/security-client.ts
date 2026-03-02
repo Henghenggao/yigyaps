@@ -1,10 +1,13 @@
 /**
- * YigYaps Security Client — for MVP Enclave API interactions
+ * YigYaps Security Client — Encrypted Virtual Room (EVR) API
  *
- * Used to communicate with the MVP Security Vault (/v1/security).
+ * Communicates with /v1/security to encrypt skill knowledge and
+ * invoke skills through the local Rule Engine pipeline.
  *
  * License: Apache 2.0
  */
+
+import type { SkillInvokeResult } from "@yigyaps/types";
 
 export interface SecurityClientOptions {
   baseUrl?: string;
@@ -24,7 +27,8 @@ export class YigYapsSecurityClient {
   }
 
   /**
-   * Pushes raw plaintext rules into the pipeline to be Envelope Encrypted.
+   * Encrypt plaintext rules for a skill package.
+   * Rules are envelope-encrypted server-side; the plaintext is never stored.
    */
   async encryptKnowledge(
     packageId: string,
@@ -41,35 +45,48 @@ export class YigYapsSecurityClient {
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(
-        `YigYaps security encryptKnowledge failed: ${res.status} ${JSON.stringify(err)}`,
+        `YigYaps encryptKnowledge failed: ${res.status} ${JSON.stringify(err)}`,
       );
     }
     return res.json() as Promise<{ success: boolean; message: string }>;
   }
 
   /**
-   * Simulates an agent hitting the Encrypted Virtual Room (EVR).
+   * Invoke a skill through the Encrypted Virtual Room (EVR).
+   *
+   * The skill's rules are evaluated entirely in-process on the server
+   * (LOCAL mode). If the platform has an Anthropic API key configured,
+   * only a structured skeleton (scores + conclusion tokens) is sent to
+   * the LLM for language polishing (HYBRID mode). Rule content is never
+   * transmitted externally.
+   *
+   * @param packageId  The skill's packageId (e.g. "meeting-notes-extractor")
+   * @param userQuery  The content or question to evaluate against the skill
+   * @param expertShare  Optional Shamir share from the skill author (for
+   *                     skills that require (2,3) threshold key reconstruction)
    */
-  async invokeEvr(
+  async invoke(
     packageId: string,
-  ): Promise<{ success: boolean; conclusion: string; disclaimer: string }> {
+    userQuery: string,
+    expertShare?: string,
+  ): Promise<SkillInvokeResult> {
     const res = await fetch(
       `${this.baseUrl}/v1/security/invoke/${encodeURIComponent(packageId)}`,
       {
         method: "POST",
         headers: this.headers,
+        body: JSON.stringify({
+          user_query: userQuery,
+          ...(expertShare ? { expert_share: expertShare } : {}),
+        }),
       },
     );
     if (!res.ok) {
       const err = await res.json().catch(() => ({}));
       throw new Error(
-        `YigYaps security invokeEvr failed: ${res.status} ${JSON.stringify(err)}`,
+        `YigYaps invoke failed: ${res.status} ${JSON.stringify(err)}`,
       );
     }
-    return res.json() as Promise<{
-      success: boolean;
-      conclusion: string;
-      disclaimer: string;
-    }>;
+    return res.json() as Promise<SkillInvokeResult>;
   }
 }

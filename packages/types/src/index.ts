@@ -30,3 +30,10 @@ export type {
   ApiErrorResponse,
   PublishSkillRequest,
 } from "./registry.js";
+
+export type {
+  SkillDimensionScore,
+  SkillEvaluationDetails,
+  SkillInvokeMode,
+  SkillInvokeResult,
+} from "./invoke.js";
