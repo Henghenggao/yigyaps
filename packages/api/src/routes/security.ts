@@ -10,7 +10,7 @@
 import { FastifyPluginAsync } from "fastify";
 import Anthropic from "@anthropic-ai/sdk";
 import { KMS } from "../lib/kms.js";
-import { RuleEngine } from "../lib/rule-engine.js";
+import { RuleEngine, type RuleEvaluation } from "../lib/rule-engine.js";
 import { CKKSPoC } from "../lib/ckks.js";
 import { registerIpTimestamp } from "../lib/ip-timestamp.js";
 import { SecureBuffer } from "../middleware/memory-zeroizer.js";
@@ -364,11 +364,25 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
 
         const parsedRules = RuleEngine.tryParseRules(rulesContent);
         let demoText: string;
+        let demoEvaluationDetails: {
+          overall_score: number;
+          verdict: "recommend" | "neutral" | "caution";
+          dimensions: Array<{ name: string; score: number; conclusion_key: string }>;
+        } | null = null;
 
         if (!parsedRules) {
           demoText = RuleEngine.mockResponseForFreeformRules(userQuery);
         } else {
           const evaluation = RuleEngine.evaluate(parsedRules, userQuery);
+          demoEvaluationDetails = {
+            overall_score: evaluation.overall_score,
+            verdict: evaluation.verdict,
+            dimensions: evaluation.results.map((r) => ({
+              name: r.dimension,
+              score: r.score,
+              conclusion_key: r.conclusion_key,
+            })),
+          };
           const scoreLines = evaluation.results
             .map((r) => `• ${r.dimension}: ${r.score}/10 — ${r.conclusion_key}`)
             .join("\n");
@@ -413,6 +427,7 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
           mode: "local",
           privacy_notice:
             "LOCAL MODE — Rules evaluated entirely in-process. No data was transmitted to any external service.",
+          evaluation_details: demoEvaluationDetails,
         });
       }
 
@@ -429,6 +444,22 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
         | "lab-preview-expert-key"
         | "lab-preview-platform-key"
         | "mock";
+
+      interface EvaluationDetails {
+        overall_score: number;
+        verdict: "recommend" | "neutral" | "caution";
+        dimensions: Array<{ name: string; score: number; conclusion_key: string }>;
+      }
+
+      const toEvaluationDetails = (ev: RuleEvaluation): EvaluationDetails => ({
+        overall_score: ev.overall_score,
+        verdict: ev.verdict,
+        dimensions: ev.results.map((r) => ({
+          name: r.dimension,
+          score: r.score,
+          conclusion_key: r.conclusion_key,
+        })),
+      });
 
       // ── DEK Recovery: Shamir or KEK ────────────────────────────────────────
       // If Shamir shares exist for this package, require expert_share to
@@ -458,7 +489,7 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
       };
 
       // ── Secure Pipeline ───────────────────────────────────────────────────
-      let conclusion: { text: string; mode: InvokeMode };
+      let conclusion: { text: string; mode: InvokeMode; evaluationDetails?: EvaluationDetails | null };
       try {
         conclusion = await SecureBuffer.withSecureContext(
           dekProvider,
@@ -489,6 +520,7 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
                   ? firstBlock.text
                   : "Skill processed the request.",
               mode: "lab-preview-expert-key" as InvokeMode,
+              evaluationDetails: null,
             };
           }
 
@@ -501,11 +533,13 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
             return {
               text: RuleEngine.mockResponseForFreeformRules(userQuery),
               mode: "local" as InvokeMode,
+              evaluationDetails: null,
             };
           }
 
           // Mode A: Local evaluation — 100% in-process, zero external calls
           const evaluation = RuleEngine.evaluate(rules, userQuery);
+          const evaluationDetails = toEvaluationDetails(evaluation);
 
           // Mode B upgrade: if platform API key is configured, polish via LLM.
           // Only the safe skeleton (scores + conclusion tokens) is transmitted.
@@ -528,6 +562,7 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
                   ? firstBlock.text
                   : `Overall: ${evaluation.verdict} (score ${evaluation.overall_score}/10)`,
               mode: "hybrid" as InvokeMode,
+              evaluationDetails,
             };
           }
 
@@ -538,6 +573,7 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
           return {
             text: `Skill Evaluation\nOverall: ${evaluation.overall_score}/10 (${evaluation.verdict})\n\n${scoreLines}`,
             mode: "local" as InvokeMode,
+            evaluationDetails,
           };
 
           // dekBuffer is zeroized by SecureBuffer.withSecureContext after this scope
@@ -602,6 +638,7 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
         conclusion: conclusion.text,
         mode: conclusion.mode,
         privacy_notice: privacyNotice,
+        evaluation_details: conclusion.evaluationDetails ?? null,
       });
     },
   );
