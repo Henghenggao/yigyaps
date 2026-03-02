@@ -18,7 +18,7 @@ export function LandingPage() {
               Don't be replaced by AI.<br />Let the AI economy work for you<span className="dot">.</span>
             </h1>
             <p className="landing-hero-sub">
-              YigYaps is the world's first knowledge assetization platform built specifically for human experts. Turn your experience into AI skills while absolutely protecting your trade secrets, and let thousands of AI agents pay to consult your expertise.
+              YigYaps is a pioneer knowledge assetization platform built specifically for human experts. Turn your experience into AI skills while absolutely protecting your trade secrets, and let thousands of AI agents pay to consult your expertise.
             </p>
             <div className="hero-cta-row">
               <Link to="/publish" className="btn-primary btn-lg">

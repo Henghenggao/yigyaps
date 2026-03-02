@@ -8,6 +8,7 @@ import { PublishSkillPage } from "./pages/PublishSkillPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { BlogPage } from "./pages/BlogPage";
 import "./App.css";
 
 const MyPackagesPage = lazy(() =>
@@ -43,6 +44,7 @@ function App() {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/marketplace" element={<HomePage />} />
+          <Route path="/blog" element={<BlogPage />} />
 
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
