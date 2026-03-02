@@ -1,6 +1,6 @@
 {
   "name": "@yigyaps/client",
-  "version": "0.1.0",
+  "version": "0.2.0",
   "description": "YigYaps TypeScript/JavaScript SDK for consumers and publishers",
   "license": "Apache-2.0",
   "type": "module",

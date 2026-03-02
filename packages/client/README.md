@@ -67,6 +67,134 @@ await publisher.publishPackage({
 });
 ```
 
+---
+
+## Framework Adapters (Phase 2)
+
+Zero-dependency helpers that convert any YigYaps skill into the tool format
+expected by popular LLM frameworks. No additional packages required.
+
+### OpenAI / GPT-4o
+
+```typescript
+import OpenAI from "openai";
+import { YigYapsSecurityClient, toOpenAITool } from "@yigyaps/client";
+
+const yy     = new YigYapsSecurityClient({ apiKey: process.env.YIGYAPS_API_KEY });
+const openai = new OpenAI();
+const tool   = toOpenAITool(yy, "meeting-notes-extractor");
+
+const response = await openai.chat.completions.create({
+  model: "gpt-4o",
+  tools: [tool.schema],
+  messages: [{ role: "user", content: "Summarise our last standup" }],
+});
+
+for (const call of response.choices[0].message.tool_calls ?? []) {
+  const result = await tool.execute(JSON.parse(call.function.arguments));
+  console.log(result.conclusion);
+}
+```
+
+### Vercel AI SDK
+
+```typescript
+import { generateText, tool, jsonSchema } from "ai";
+import { openai } from "@ai-sdk/openai";
+import { YigYapsSecurityClient, toVercelAITool } from "@yigyaps/client";
+
+const yy  = new YigYapsSecurityClient({ apiKey: process.env.YIGYAPS_API_KEY });
+const yyt = toVercelAITool(yy, "meeting-notes-extractor");
+
+// Wrap the JSON Schema with jsonSchema() from the 'ai' package
+const meetingTool = tool({ ...yyt, parameters: jsonSchema(yyt.parameters) });
+
+const { text } = await generateText({
+  model: openai("gpt-4o"),
+  tools: { meeting_notes: meetingTool },
+  prompt: "Summarise our last standup notes",
+});
+```
+
+### LangChain
+
+```typescript
+import { ChatOpenAI } from "@langchain/openai";
+import { DynamicStructuredTool } from "@langchain/core/tools";
+import { z } from "zod";
+import { YigYapsSecurityClient, toLangChainTool } from "@yigyaps/client";
+
+const yy  = new YigYapsSecurityClient({ apiKey: process.env.YIGYAPS_API_KEY });
+const yyt = toLangChainTool(yy, "meeting-notes-extractor");
+
+const lcTool = new DynamicStructuredTool({
+  name: yyt.name,
+  description: yyt.description,
+  schema: z.object({ user_query: z.string() }),
+  func: yyt.func,
+});
+
+const model = new ChatOpenAI({ model: "gpt-4o" }).bindTools([lcTool]);
+const result = await model.invoke("Summarise our last standup notes");
+```
+
+### Google Gemini
+
+```typescript
+import { GoogleGenerativeAI } from "@google/generative-ai";
+import { YigYapsSecurityClient, toGeminiFunctionDeclaration } from "@yigyaps/client";
+
+const yy     = new YigYapsSecurityClient({ apiKey: process.env.YIGYAPS_API_KEY });
+const gemini = new GoogleGenerativeAI(process.env.GOOGLE_API_KEY!);
+const tool   = toGeminiFunctionDeclaration(yy, "meeting-notes-extractor");
+
+const model = gemini.getGenerativeModel({
+  model: "gemini-1.5-pro",
+  tools: [{ functionDeclarations: [tool.declaration] }],
+});
+
+const chat = model.startChat();
+const res  = await chat.sendMessage("Summarise our last standup notes");
+
+for (const part of res.response.candidates?.[0].content.parts ?? []) {
+  if (part.functionCall) {
+    const result = await tool.execute(part.functionCall.args as { user_query: string });
+    console.log(result.conclusion);
+  }
+}
+```
+
+### Claude (via Anthropic SDK)
+
+```typescript
+import Anthropic from "@anthropic-ai/sdk";
+import { YigYapsSecurityClient, toOpenAITool } from "@yigyaps/client";
+
+const yy     = new YigYapsSecurityClient({ apiKey: process.env.YIGYAPS_API_KEY });
+const claude = new Anthropic();
+const tool   = toOpenAITool(yy, "meeting-notes-extractor");
+
+const response = await claude.messages.create({
+  model: "claude-opus-4-6",
+  max_tokens: 1024,
+  tools: [{
+    name: tool.schema.function.name,
+    description: tool.schema.function.description,
+    input_schema: tool.schema.function.parameters,
+  }],
+  messages: [{ role: "user", content: "Summarise our last standup notes" }],
+});
+
+for (const block of response.content) {
+  if (block.type === "tool_use") {
+    const result = await tool.execute(block.input as { user_query: string });
+    console.log(result.conclusion);
+  }
+}
+```
+
+---
+
 ## Connecting to Claude Desktop via MCP
 
 The `@yigyaps/cli` package includes a `mcp-bridge` command that exposes any
@@ -111,6 +239,15 @@ happened for that specific invocation.
 |--------|-------------|
 | `invoke(packageId, userQuery, expertShare?)` | Invoke a skill and get a structured result |
 | `encryptKnowledge(packageId, plaintextRules)` | Upload and encrypt skill rules |
+
+### Framework Adapters
+
+| Function | Returns | Description |
+|----------|---------|-------------|
+| `toOpenAITool(client, packageId, desc?)` | `YigYapsOpenAITool` | OpenAI / GPT-4o function-calling tool |
+| `toVercelAITool(client, packageId, desc?)` | `YigYapsVercelTool` | Vercel AI SDK tool descriptor |
+| `toLangChainTool(client, packageId, desc?)` | `YigYapsLangChainTool` | LangChain `DynamicStructuredTool` descriptor |
+| `toGeminiFunctionDeclaration(client, packageId, desc?)` | `YigYapsGeminiTool` | Google Gemini function declaration |
 
 ### `YigYapsRegistryClient`
 
