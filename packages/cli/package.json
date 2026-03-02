@@ -15,7 +15,7 @@
     "@clack/prompts": "^1.0.1",
     "@modelcontextprotocol/sdk": "^1.27.1",
     "@types/update-notifier": "^6.0.8",
-    "@yigyaps/client": "^0.1.0",
+    "@yigyaps/client": "^0.2.0",
     "@yigyaps/types": "*",
     "boxen": "^8.0.1",
     "chalk": "^5.3.0",
