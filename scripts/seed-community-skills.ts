@@ -238,7 +238,7 @@ Describe what you need → get the exact formula with explanation.
 
 - Prefers XLOOKUP over VLOOKUP (Google Sheets / Excel 365)
 - Wraps risky formulas in IFERROR
-- Uses absolute references (\$) where needed
+- Uses absolute references ($) where needed
 - Adds formula explanation as a comment`,
     authorName: "Community Productivity",
     category: "productivity" as const,
