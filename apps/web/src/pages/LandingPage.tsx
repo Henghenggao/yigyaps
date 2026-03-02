@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { Header } from "../components/Header";
-import { API_URL } from "../lib/api";
 
 export function LandingPage() {
   const { user, login } = useAuth();
@@ -16,150 +15,87 @@ export function LandingPage() {
           <div className="container">
             <p className="hero-eyebrow">Human expertise for the AI Agent economy</p>
             <h1 className="landing-hero-title">
-              The Trusted Skills Platform<span className="dot">.</span>
+              Don't be replaced by AI.<br />Let the AI economy work for you<span className="dot">.</span>
             </h1>
             <p className="landing-hero-sub">
-              Package your professional knowledge into encrypted, licensable AI skills.
-              Agents pay per call. You earn royalties. Your IP stays yours.
+              YigYaps is the world's first knowledge assetization platform built specifically for human experts. Turn your experience into AI skills while absolutely protecting your trade secrets, and let thousands of AI agents pay to consult your expertise.
             </p>
             <div className="hero-cta-row">
-              <Link to="/marketplace" className="btn-primary btn-lg">
-                Browse Marketplace
-              </Link>
-              <Link to="/publish" className="btn-outline btn-lg">
-                Publish a Skill
+              <Link to="/publish" className="btn-primary btn-lg">
+                Assetize Your Expertise Now
               </Link>
             </div>
             <p className="hero-note">
-              Open source &middot; Apache 2.0 &middot; No vendor lock-in
+              Independent &middot; Security First &middot; The Knowledge Bank of the AI Era
             </p>
-          </div>
-        </section>
-
-        {/* ── Metrics Bar ─────────────────────────────────── */}
-        <section className="metrics-bar">
-          <div className="container metrics-row">
-            <div className="metric">
-              <span className="metric-val">AES-256</span>
-              <span className="metric-label">Envelope Encryption</span>
-            </div>
-            <div className="metric-divider" />
-            <div className="metric">
-              <span className="metric-val">70 %</span>
-              <span className="metric-label">Creator Royalty</span>
-            </div>
-            <div className="metric-divider" />
-            <div className="metric">
-              <span className="metric-val">MCP</span>
-              <span className="metric-label">Native Bridge</span>
-            </div>
-            <div className="metric-divider" />
-            <div className="metric">
-              <span className="metric-val">SKILL.md</span>
-              <span className="metric-label">Ecosystem Standard</span>
-            </div>
           </div>
         </section>
 
         {/* ── Value Props ─────────────────────────────────── */}
         <section className="section-block">
           <div className="container">
-            <h2 className="section-title">Two sides. One marketplace.</h2>
-            <p className="section-subtitle">
-              Experts monetize knowledge. Agents access verified skills. Everyone wins.
-            </p>
-
-            <div className="value-grid">
+            <div className="value-grid-3">
               <div className="value-card">
                 <div className="value-icon">
-                  <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M12 2L2 7l10 5 10-5-10-5z" />
-                    <path d="M2 17l10 5 10-5" />
-                    <path d="M2 12l10 5 10-5" />
-                  </svg>
+                  <span style={{ fontSize: '28px', lineHeight: 1 }}>💰</span>
                 </div>
-                <h3>For Creators</h3>
+                <h3>Knowledge Monetization: Turn Experience Into Passive Income</h3>
                 <p>
-                  Package your expertise once — decision trees, scoring matrices,
-                  case libraries. Agents call your skill via API. You earn 70% of
-                  every invocation. Update anytime; your versioned knowledge keeps
-                  evolving.
+                  Say goodbye to "free sharing". On YigYaps, your methodologies, business acumen, and professional judgment are valuable commodities. Earn real royalty shares whenever global AI agents invoke your skill to solve problems.
                 </p>
-                <ul className="value-list">
-                  <li>Structured template editor</li>
-                  <li>SKILL.md export for ecosystem reach</li>
-                  <li>Stripe Connect payouts</li>
-                  <li>Evolution Lab for iterating rules</li>
-                </ul>
               </div>
 
               <div className="value-card">
                 <div className="value-icon">
-                  <svg viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <rect x="2" y="3" width="20" height="14" rx="2" />
-                    <path d="M8 21h8" />
-                    <path d="M12 17v4" />
-                    <path d="M7 8h2m2 0h2m2 0h2" />
-                    <path d="M7 12h10" />
-                  </svg>
+                  <span style={{ fontSize: '28px', lineHeight: 1 }}>🛡️</span>
                 </div>
-                <h3>For AI Agents</h3>
+                <h3>Patent-Grade Moat: Never Feed The Big Models</h3>
                 <p>
-                  Access verified professional skills through a single API or
-                  MCP bridge. No prompt engineering guesswork — structured
-                  evaluations from real domain experts, delivered in milliseconds.
+                  We solve your biggest fear: IP theft. While other platforms use your data to train their models for free, YigYaps uses an innovative "Blackbox Defense Architecture". Buyers only get the final diagnostic conclusion and can never peek at your core weights and rules. Your secret sauce stays yours.
                 </p>
-                <ul className="value-list">
-                  <li>MCP-native tool integration</li>
-                  <li>Local rule engine (zero-latency)</li>
-                  <li>Pay-per-call or subscription tiers</li>
-                  <li>Hash-chained audit trail</li>
-                </ul>
+              </div>
+
+              <div className="value-card">
+                <div className="value-icon">
+                  <span style={{ fontSize: '28px', lineHeight: 1 }}>⚡</span>
+                </div>
+                <h3>Zero Code: As Easy As Filling a Form</h3>
+                <p>
+                  You don't need to be a programmer to embrace AI. Designed specifically for industry experts, our visual templates let you simply fill in your "decision logic" or "scoring criteria". The system automatically turns you into a globally compliant AI plugin in 10 minutes. Your digital twin is ready for business.
+                </p>
               </div>
             </div>
           </div>
         </section>
 
-        {/* ── How It Works ────────────────────────────────── */}
+        {/* ── Use Cases ────────────────────────────────── */}
         <section className="section-block section-alt">
           <div className="container">
-            <h2 className="section-title">How it works</h2>
-            <p className="section-subtitle">Three steps from expertise to revenue.</p>
+            <h2 className="section-title">Your knowledge is a necessity in the AI world</h2>
+            <p className="section-subtitle">
+              See how other experts are monetizing at scale on YigYaps:
+            </p>
 
-            <div className="steps-grid">
-              <div className="step-card">
-                <div className="step-num">1</div>
-                <h3>Encode</h3>
+            <div className="trust-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+              <div className="trust-card">
+                <div className="trust-layer">💼 Senior Analyst</div>
+                <h3>Project Risk Radar</h3>
                 <p>
-                  Choose a template — decision tree, scoring matrix, or case
-                  library. Fill in your domain knowledge. The structured format
-                  guarantees machine-readable precision without sacrificing nuance.
+                  Every time an AI agent conducts corporate due diligence, it calls this radar. The expert earns high per-call fees while keeping the core evaluation model absolutely confidential.
                 </p>
               </div>
-              <div className="step-arrow">
-                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14m-6-6 6 6-6 6" /></svg>
-              </div>
-              <div className="step-card">
-                <div className="step-num">2</div>
-                <h3>Encrypt &amp; Publish</h3>
+              <div className="trust-card">
+                <div className="trust-layer">⚖️ Compliance Lawyer</div>
+                <h3>Contract Loophole Scanner</h3>
                 <p>
-                  Your rules are encrypted with AES-256-GCM envelope encryption
-                  before touching the database. A SHA-256 content hash is
-                  timestamped for IP proof. Then your skill goes live on the
-                  marketplace.
+                  Turn ten years of "US-China trade contract scanning experience" into a plugin. Empower countless startup AI agents with one click and monetize at scale.
                 </p>
               </div>
-              <div className="step-arrow">
-                <svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" strokeWidth="2"><path d="M5 12h14m-6-6 6 6-6 6" /></svg>
-              </div>
-              <div className="step-card">
-                <div className="step-num">3</div>
-                <h3>Earn</h3>
+              <div className="trust-card">
+                <div className="trust-layer">🎨 Growth Hacker</div>
+                <h3>Viral Potential Scorecard</h3>
                 <p>
-                  Agents invoke your skill via API or MCP bridge. The local rule
-                  engine evaluates queries without sending your knowledge
-                  externally. You receive 70% of every paid call through Stripe
-                  Connect.
+                  Let anyone anywhere who doesn't know how to write viral copy pay a small fee to consult "your AI brain" for scoring and guidance.
                 </p>
               </div>
             </div>
@@ -169,79 +105,24 @@ export function LandingPage() {
         {/* ── Security Trust ──────────────────────────────── */}
         <section className="section-block section-trust">
           <div className="container">
-            <h2 className="section-title">Assetize your knowledge, don't donate it<span className="dot">.</span></h2>
+            <h2 className="section-title">Give Conclusions, Not Your Secrets<span className="dot">.</span></h2>
             <p className="section-subtitle">
-              Most platforms treat your expertise as fuel for their models. At YigYaps, we treat it as your private property.
+              No matter how omnipotent the other party's AI is, it only gets your judgment results and never sees your core logic or reasoning process.
             </p>
 
-            <div className="trust-grid">
+            <div className="trust-grid" style={{ gridTemplateColumns: "1fr 1fr", maxWidth: "860px", margin: "0 auto" }}>
               <div className="trust-card highlight-negative">
-                <div className="trust-layer">OpenAI / ChatGPT</div>
-                <h3>Fueling the Goliaths</h3>
+                <div className="trust-layer">Standard Chat Models & Platforms</div>
+                <h3>Give Away Your Secrets (Train Models for Free)</h3>
                 <p>
-                  When you give your expertise to ChatGPT, it becomes training data.
-                  You're effectively training your own replacement for free.
+                  Your valuable brain ➡️ Sent to an LLM chatbox ➡️ Data ruthlessly used for training ➡️ Your value gets diluted and replaced.
                 </p>
               </div>
               <div className="trust-card highlight-positive">
-                <div className="trust-layer">The YigYaps Way</div>
-                <h3>AES-256 Encrypted</h3>
+                <div className="trust-layer">The YigYaps Assetization Model</div>
+                <h3>Earn Passive Income (Bank-Grade Protection)</h3>
                 <p>
-                  Your knowledge is stored with bank-grade encryption. Not even we can see it.
-                  Only authorized Agents receive encrypted conclusions during calls.
-                </p>
-              </div>
-              <div className="trust-card">
-                <div className="trust-layer">Control</div>
-                <h3>Instant 'Kill Switch'</h3>
-                <p>
-                  You are the master of your expertise. Revoke access anytime to make your
-                  knowledge permanently 'brick' for everyone with one click.
-                </p>
-              </div>
-              <div className="trust-card">
-                <div className="trust-layer">IP Proof</div>
-                <h3>Immutable Authorship</h3>
-                <p>
-                  Every skill is hashed and timestamped. Your intellectual property
-                  is verifiable, protected, and legally assetized.
-                </p>
-              </div>
-            </div>
-          </div>
-        </section>
-
-        {/* ── Ecosystem ───────────────────────────────────── */}
-        <section className="section-block section-alt">
-          <div className="container">
-            <h2 className="section-title">Built for the AI ecosystem</h2>
-            <p className="section-subtitle">
-              Works with the tools agents already use.
-            </p>
-
-            <div className="eco-grid">
-              <div className="eco-card">
-                <h3>MCP Bridge</h3>
-                <p>
-                  Any MCP-compatible client — Claude Code, Codex, Verdent —
-                  can invoke **Yigbot Augmented Plugins (YAPs)** as native tools via
-                  <code>npx yigyaps mcp-bridge</code>.
-                </p>
-              </div>
-              <div className="eco-card">
-                <h3>SKILL.md Export</h3>
-                <p>
-                  Export the public layer of any skill in SKILL.md format.
-                  Compatible with SkillsMP and the emerging skill standard.
-                  Private rules stay encrypted.
-                </p>
-              </div>
-              <div className="eco-card">
-                <h3>REST API + CLI</h3>
-                <p>
-                  Full Swagger-documented API. 17-command CLI for
-                  publishing, testing, and managing skills.
-                  <code>npm install -g @yigyaps/cli</code>.
+                  Your valuable brain ➡️ YigYaps Top-Secret Rule Engine Defense ➡️ Outputs only structured conclusion reports ➡️ Ding! Royalty received 💰.
                 </p>
               </div>
             </div>
@@ -253,26 +134,18 @@ export function LandingPage() {
           <div className="container">
             <h2 className="cta-title">Ready to assetize your expertise?</h2>
             <p className="cta-sub">
-              Join the marketplace. Start earning from what you know.
+              Join the exclusive knowledge monetization network for human experts.
             </p>
             <div className="hero-cta-row">
               {user ? (
                 <Link to="/publish" className="btn-primary btn-lg">
-                  Publish Your First Skill
+                  Start Creating Skills
                 </Link>
               ) : (
                 <button className="btn-primary btn-lg" onClick={login}>
-                  Sign In with GitHub
+                  Sign in with GitHub
                 </button>
               )}
-              <a
-                href={`${API_URL}/docs`}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="btn-outline btn-lg"
-              >
-                Read the Docs
-              </a>
             </div>
           </div>
         </section>
@@ -280,12 +153,15 @@ export function LandingPage() {
 
       <footer className="site-footer">
         <div className="container footer-row">
-          <p>&copy; {new Date().getFullYear()} YigYaps. Empowering Augmented Agents with Human Expertise.</p>
-          <div className="footer-links">
+          <p>&copy; {new Date().getFullYear()} YigYaps | Protecting human wisdom, empowering the AI economy.</p>
+          <div className="footer-links" style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
             <Link to="/terms">Terms</Link>
             <Link to="/privacy">Privacy</Link>
             <a href="https://github.com/Henghenggao/yigyaps" target="_blank" rel="noopener noreferrer">GitHub</a>
           </div>
+        </div>
+        <div className="container" style={{ marginTop: '1.5rem', fontSize: '0.85rem', color: 'var(--color-text-sub)' }}>
+          <p>🔒 <b>Under the Hood:</b> Independent decentralized registry | End-to-end AES-256-GCM isolated encryption | 100% Model Context Protocol (MCP) compatible | Enterprise-grade settlement by Stripe</p>
         </div>
       </footer>
 
@@ -307,21 +183,21 @@ export function LandingPage() {
         }
         .landing-hero-title {
           font-family: var(--font-serif);
-          font-size: clamp(3rem, 7vw, 5rem);
+          font-size: clamp(2.5rem, 6vw, 4.25rem);
           font-weight: 700;
-          line-height: 1.05;
-          letter-spacing: -0.03em;
+          line-height: 1.35;
+          letter-spacing: -0.01em;
           margin-bottom: 2rem;
         }
         .landing-hero-title .dot {
           color: var(--color-dot);
         }
         .landing-hero-sub {
-          font-size: clamp(1.15rem, 2vw, 1.35rem);
-          max-width: 680px;
+          font-size: clamp(1.1rem, 2vw, 1.25rem);
+          max-width: 720px;
           margin: 0 auto 3rem;
           color: var(--color-text-sub);
-          line-height: 1.7;
+          line-height: 1.8;
         }
         .hero-cta-row {
           display: flex;
@@ -334,62 +210,10 @@ export function LandingPage() {
           font-size: 1.05rem;
           border-radius: var(--radius-lg);
         }
-        .btn-outline {
-          background: transparent;
-          color: var(--color-text-main);
-          border: 1.5px solid var(--color-border);
-          font-weight: 600;
-          display: inline-flex;
-          align-items: center;
-          gap: 0.6rem;
-          transition: var(--transition);
-        }
-        .btn-outline:hover {
-          border-color: var(--color-primary);
-          color: var(--color-primary);
-          background: var(--color-surface);
-        }
         .hero-note {
           margin-top: 2rem;
           font-size: 0.85rem;
           color: var(--color-text-sub);
-        }
-
-        /* ── Metrics Bar ────────────────────────────────── */
-        .metrics-bar {
-          border-top: 1px solid var(--color-border);
-          border-bottom: 1px solid var(--color-border);
-          padding: 2rem 0;
-          background: var(--color-surface);
-        }
-        .metrics-row {
-          display: flex;
-          justify-content: center;
-          align-items: center;
-          gap: 3rem;
-          flex-wrap: wrap;
-        }
-        .metric {
-          text-align: center;
-        }
-        .metric-val {
-          display: block;
-          font-family: var(--font-mono);
-          font-size: 1.25rem;
-          font-weight: 700;
-          color: var(--color-text-main);
-          letter-spacing: -0.02em;
-        }
-        .metric-label {
-          font-size: 0.8rem;
-          color: var(--color-text-sub);
-          margin-top: 0.25rem;
-          display: block;
-        }
-        .metric-divider {
-          width: 1px;
-          height: 40px;
-          background: var(--color-border);
         }
 
         /* ── Sections ───────────────────────────────────── */
@@ -404,7 +228,7 @@ export function LandingPage() {
         .section-title {
           text-align: center;
           font-size: clamp(2rem, 4vw, 2.75rem);
-          margin-bottom: 1rem;
+          margin-bottom: 1.5rem;
         }
         .section-subtitle {
           text-align: center;
@@ -412,13 +236,13 @@ export function LandingPage() {
           margin: 0 auto 4rem;
           font-size: 1.1rem;
           color: var(--color-text-sub);
-          line-height: 1.6;
+          line-height: 1.7;
         }
 
         /* ── Value Props ────────────────────────────────── */
-        .value-grid {
+        .value-grid-3 {
           display: grid;
-          grid-template-columns: repeat(2, 1fr);
+          grid-template-columns: repeat(3, 1fr);
           gap: 2.5rem;
         }
         .value-card {
@@ -440,86 +264,23 @@ export function LandingPage() {
           display: flex;
           align-items: center;
           justify-content: center;
-          color: var(--color-primary);
           margin-bottom: 1.5rem;
         }
         .value-card h3 {
-          font-size: 1.5rem;
-          margin-bottom: 1rem;
+          font-size: 1.45rem;
+          margin-bottom: 1.2rem;
+          color: var(--color-text-main);
+          font-weight: 700;
         }
         .value-card p {
-          line-height: 1.7;
-          margin-bottom: 1.5rem;
-        }
-        .value-list {
-          list-style: none;
-          padding: 0;
-          margin: 0;
-        }
-        .value-list li {
-          padding: 0.4rem 0;
-          padding-left: 1.5rem;
-          position: relative;
+          line-height: 1.75;
           color: var(--color-text-sub);
           font-size: 0.95rem;
-        }
-        .value-list li::before {
-          content: '';
-          position: absolute;
-          left: 0;
-          top: 0.75rem;
-          width: 6px;
-          height: 6px;
-          background: var(--color-primary);
-          border-radius: 50%;
-        }
-
-        /* ── Steps ──────────────────────────────────────── */
-        .steps-grid {
-          display: flex;
-          align-items: flex-start;
-          gap: 1.5rem;
-          justify-content: center;
-        }
-        .step-card {
-          flex: 1;
-          max-width: 320px;
-          text-align: center;
-          padding: 2.5rem 2rem;
-        }
-        .step-num {
-          width: 48px;
-          height: 48px;
-          border: 2px solid var(--color-primary);
-          border-radius: 50%;
-          display: inline-flex;
-          align-items: center;
-          justify-content: center;
-          font-family: var(--font-serif);
-          font-size: 1.25rem;
-          font-weight: 700;
-          color: var(--color-primary);
-          margin-bottom: 1.5rem;
-        }
-        .step-card h3 {
-          font-size: 1.35rem;
-          margin-bottom: 0.75rem;
-        }
-        .step-card p {
-          font-size: 0.95rem;
-          line-height: 1.7;
-        }
-        .step-arrow {
-          display: flex;
-          align-items: center;
-          padding-top: 4rem;
-          color: var(--color-border);
         }
 
         /* ── Trust ──────────────────────────────────────── */
         .trust-grid {
           display: grid;
-          grid-template-columns: repeat(4, 1fr);
           gap: 2rem;
         }
         .trust-card {
@@ -535,20 +296,19 @@ export function LandingPage() {
         }
         .trust-layer {
           font-family: var(--font-mono);
-          font-size: 0.7rem;
-          text-transform: uppercase;
-          letter-spacing: 0.15em;
+          font-size: 0.9rem;
           color: var(--color-primary);
-          margin-bottom: 1rem;
+          margin-bottom: 1.25rem;
           font-weight: 600;
         }
         .trust-card h3 {
-          font-size: 1.15rem;
-          margin-bottom: 0.75rem;
+          font-size: 1.25rem;
+          margin-bottom: 0.85rem;
         }
         .trust-card p {
-          font-size: 0.9rem;
-          line-height: 1.65;
+          font-size: 0.95rem;
+          line-height: 1.7;
+          color: var(--color-text-sub);
         }
         .trust-card.highlight-positive {
           border-color: var(--color-primary);
@@ -557,7 +317,7 @@ export function LandingPage() {
           position: relative;
         }
         .trust-card.highlight-positive::after {
-          content: 'The Standard';
+          content: 'The YigYaps Standard';
           position: absolute;
           top: -12px;
           right: 20px;
@@ -573,36 +333,6 @@ export function LandingPage() {
           background: #F5F5F3;
           border-color: #E0E0DE;
           opacity: 0.8;
-        }
-        .trust-card.highlight-negative .trust-layer {
-          color: #888;
-        }
-
-        /* ── Ecosystem ──────────────────────────────────── */
-        .eco-grid {
-          display: grid;
-          grid-template-columns: repeat(3, 1fr);
-          gap: 2rem;
-        }
-        .eco-card {
-          text-align: center;
-          padding: 2.5rem 2rem;
-        }
-        .eco-card h3 {
-          font-size: 1.25rem;
-          margin-bottom: 0.75rem;
-        }
-        .eco-card p {
-          font-size: 0.95rem;
-          line-height: 1.7;
-        }
-        .eco-card code {
-          font-family: var(--font-mono);
-          font-size: 0.8rem;
-          background: var(--color-accent-bg);
-          padding: 0.2rem 0.5rem;
-          border-radius: var(--radius-sm);
-          color: var(--color-text-main);
         }
 
         /* ── CTA ────────────────────────────────────────── */
@@ -624,34 +354,24 @@ export function LandingPage() {
         .cta-section .btn-primary {
           background: var(--color-primary);
         }
-        .cta-section .btn-outline {
-          color: #FFFFFF;
-          border-color: rgba(255,255,255,0.3);
-        }
-        .cta-section .btn-outline:hover {
-          border-color: #FFFFFF;
-          color: #FFFFFF;
-          background: rgba(255,255,255,0.1);
-        }
 
         /* ── Footer ─────────────────────────────────────── */
         .site-footer {
           padding: 3rem 0;
           border-top: 1px solid var(--color-border);
-          font-size: 0.9rem;
+          font-size: 0.95rem;
           color: var(--color-text-sub);
         }
         .footer-row {
           display: flex;
           justify-content: space-between;
           align-items: center;
-        }
-        .footer-links {
-          display: flex;
-          gap: 2rem;
+          flex-wrap: wrap;
+          gap: 1rem;
         }
         .footer-links a {
           color: var(--color-text-sub);
+          transition: color 0.2s;
         }
         .footer-links a:hover {
           color: var(--color-primary);
@@ -659,18 +379,12 @@ export function LandingPage() {
 
         /* ── Responsive ─────────────────────────────────── */
         @media (max-width: 1024px) {
-          .value-grid { grid-template-columns: 1fr; }
-          .trust-grid { grid-template-columns: repeat(2, 1fr); }
-          .eco-grid { grid-template-columns: 1fr; }
-          .steps-grid { flex-direction: column; align-items: center; }
-          .step-arrow { transform: rotate(90deg); padding: 0; }
+          .value-grid-3 { grid-template-columns: 1fr; }
+          .trust-grid { grid-template-columns: 1fr !important; }
         }
         @media (max-width: 640px) {
           .landing-hero { padding: 5rem 0 4rem; }
-          .trust-grid { grid-template-columns: 1fr; }
-          .metrics-row { gap: 1.5rem; }
-          .metric-divider { display: none; }
-          .footer-row { flex-direction: column; gap: 1rem; text-align: center; }
+          .footer-row { flex-direction: column; text-align: center; }
         }
       `}</style>
     </div>
