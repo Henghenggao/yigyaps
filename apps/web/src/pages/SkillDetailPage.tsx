@@ -342,12 +342,14 @@ function SimulationSandbox({ packageId }: { packageId: string }) {
         success: boolean;
         conclusion: string;
         disclaimer: string;
+        privacy_notice?: string;
       }>(`/v1/security/invoke/${packageId}`, {
         method: "POST",
+        body: JSON.stringify({}),
       });
       setResult({
         conclusion: response.conclusion,
-        disclaimer: response.disclaimer,
+        disclaimer: response.privacy_notice ?? response.disclaimer ?? "",
       });
     } catch (err: unknown) {
       setError(err instanceof Error ? err.message : "Simulation failed");
