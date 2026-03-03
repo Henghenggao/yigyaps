@@ -1,5 +1,12 @@
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+import dotenv from "dotenv";
 import { z } from "zod";
 import crypto from "node:crypto";
+
+const __dirname = fileURLToPath(new URL(".", import.meta.url));
+dotenv.config({ path: join(__dirname, "../../../../.env") });
+
 
 const nodeEnv = process.env.NODE_ENV || "development";
 const isTest = nodeEnv === "test";

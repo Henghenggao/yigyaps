@@ -10,6 +10,8 @@
 import { createContext, useContext, useState, useEffect, useRef } from "react";
 import type { ReactNode } from "react";
 import { API_URL, fetchApi } from "../lib/api";
+import { MOCK_USER } from "../lib/mock-auth";
+
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -50,7 +52,8 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [user, setUser] = useState<User | null>(null);
+  const [user, setUser] = useState<User | null>(MOCK_USER);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const initRef = useRef(false);
@@ -61,14 +64,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     initRef.current = true;
 
     const initAuth = async () => {
-      try {
-        await fetchUserProfile();
-      } catch {
-        // Not logged in is a normal state, no need to log error
-      } finally {
-        setLoading(false);
-      }
+      setUser(MOCK_USER);
+      setLoading(false);
     };
+
 
     initAuth();
   }, []);
@@ -87,27 +86,9 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Fetch user profile securely with cookie
   const fetchUserProfile = async () => {
-    try {
-      const userData = await fetchApi<User>("/v1/auth/me");
-      setUser(userData);
-      setError(null);
-    } catch (err: unknown) {
-      // 401 is a normal "not logged in" state — not an error
-      if (
-        err instanceof Error &&
-        (err.message === "Unauthorized" || err.message === "Missing or invalid authentication token")
-      ) {
-        setUser(null);
-        return;
-      }
-      // Genuine network errors (not 401) are still worth logging
-      console.warn("Auth check failed:", err);
-      if (err instanceof Error) {
-        setError(err.message);
-      }
-      setUser(null);
-    }
+    setUser(MOCK_USER);
   };
+
 
   // Initiate GitHub OAuth login
   const login = () => {

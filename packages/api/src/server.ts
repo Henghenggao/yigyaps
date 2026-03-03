@@ -18,7 +18,13 @@
  * License: Apache 2.0
  */
 
-import "dotenv/config";
+import { join } from "node:path";
+import { fileURLToPath } from "node:url";
+import dotenv from "dotenv";
+
+const __dirname = fileURLToPath(new URL(".", import.meta.url));
+dotenv.config({ path: join(__dirname, "../../../../.env") });
+
 import Fastify from "fastify";
 import { z } from "zod";
 import cors from "@fastify/cors";

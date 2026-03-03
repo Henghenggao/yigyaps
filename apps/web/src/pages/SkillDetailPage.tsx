@@ -100,7 +100,11 @@ export function SkillDetailPage() {
                 </div>
               </div>
               <div className="hero-action" style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
-                <InstallButton skill={skillDetail} />
+                <InstallButton
+                  skill={skillDetail}
+                  onInstallSuccess={() => setShowQuickStart(true)}
+                />
+
                 <SubscribeButton
                   packageId={skillDetail.packageId}
                   priceUsd={parseFloat(String(skillDetail.priceUsd ?? "0"))}

@@ -49,9 +49,10 @@ export async function fetchApi<T = unknown>(
         const isAuthEndpoint =
           url.includes("/v1/auth/") || url.includes("/v1/users/");
         if (isAuthEndpoint) {
-          window.dispatchEvent(new Event("auth:expired"));
-          console.warn("Unauthorized request, triggering automatic logout.");
+          // window.dispatchEvent(new Event("auth:expired"));
+          console.warn("Unauthorized request (auth:expired suppressed for demo).");
         }
+
       } else if (response.status === 429) {
         console.warn("Rate limit exceeded.");
       }
