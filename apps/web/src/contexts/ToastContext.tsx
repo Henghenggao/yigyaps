@@ -105,7 +105,7 @@ export function ToastProvider({ children }: { children: ReactNode }) {
                 lineHeight: 1,
                 flexShrink: 0,
               }}
-              aria-label="Dismiss"
+              aria-label="Dismiss toast"
             >
               ×
             </button>

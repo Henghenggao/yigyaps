@@ -446,6 +446,7 @@ export function PublishSkillPage() {
                           type="button"
                           onClick={() => removeTag(tag)}
                           style={{ background: "none", border: "none", color: "#fff", cursor: "pointer", padding: 0, fontSize: "0.9rem", lineHeight: 1 }}
+                          aria-label={`Remove tag ${tag}`}
                         >
                           ×
                         </button>
