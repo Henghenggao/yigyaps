@@ -12,6 +12,7 @@
  */
 
 import type { FastifyInstance } from "fastify";
+import crypto from "crypto";
 import { z } from "zod";
 import { SkillPackageDAL, SkillMintDAL, RoyaltyLedgerDAL } from "@yigyaps/db";
 import { requireAuth } from "../middleware/auth-v2.js";
@@ -91,7 +92,7 @@ export async function mintsRoutes(fastify: FastifyInstance) {
     const origin: "manual" | "beta-lab" =
       body.rarity !== "common" ? "beta-lab" : "manual";
 
-    const id = `smint_${now}_${Math.random().toString(36).slice(2, 8)}`;
+    const id = `smint_${now}_${crypto.randomBytes(4).toString("hex")}`;
     const mint = await mintDAL.create({
       id,
       skillPackageId: body.skillPackageId,
