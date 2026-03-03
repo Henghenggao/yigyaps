@@ -104,6 +104,7 @@ export function ReviewForm({ skill, onReviewSubmitted }: ReviewFormProps) {
               onClick={() => setRating(star)}
               onMouseEnter={() => setHoveredRating(star)}
               onMouseLeave={() => setHoveredRating(0)}
+              aria-label={`Rate ${star} star${star > 1 ? "s" : ""}`}
             >
               ★
             </button>
