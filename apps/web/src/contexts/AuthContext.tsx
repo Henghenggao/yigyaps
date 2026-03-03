@@ -10,7 +10,6 @@
 import { createContext, useContext, useState, useEffect, useRef } from "react";
 import type { ReactNode } from "react";
 import { API_URL, fetchApi } from "../lib/api";
-import { MOCK_USER } from "../lib/mock-auth";
 
 
 // ─── Types ────────────────────────────────────────────────────────────────────
@@ -52,7 +51,7 @@ interface AuthProviderProps {
 }
 
 export function AuthProvider({ children }: AuthProviderProps) {
-  const [user, setUser] = useState<User | null>(MOCK_USER);
+  const [user, setUser] = useState<User | null>(null);
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -64,10 +63,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
     initRef.current = true;
 
     const initAuth = async () => {
-      setUser(MOCK_USER);
-      setLoading(false);
+      try {
+        const userData = await fetchApi("/v1/auth/me") as User;
+        setUser(userData);
+      } catch (err) {
+        setUser(null);
+        setError(err instanceof Error ? err.message : "Authentication failed");
+      } finally {
+        setLoading(false);
+      }
     };
-
 
     initAuth();
   }, []);
@@ -86,7 +91,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   // Fetch user profile securely with cookie
   const fetchUserProfile = async () => {
-    setUser(MOCK_USER);
+    try {
+      const userData = await fetchApi("/v1/auth/me") as User;
+      setUser(userData);
+    } catch (err) {
+      console.error("Failed to refresh user profile:", err);
+    }
   };
 
 

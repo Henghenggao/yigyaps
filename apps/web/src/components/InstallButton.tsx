@@ -8,6 +8,7 @@
 
 import { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
+import { API_URL } from "../lib/api";
 import type { SkillPackage } from "@yigyaps/types";
 import { getTierName, canAccessTier } from "../utils/tierHelpers";
 
@@ -26,7 +27,7 @@ type InstallStatus =
 export function InstallButton({ skill, onInstallSuccess }: InstallButtonProps) {
   const { user, login } = useAuth();
   const [status, setStatus] = useState<InstallStatus>("idle");
-  const [error] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
 
   // Check if user is not logged in
   if (!user) {
@@ -42,11 +43,29 @@ export function InstallButton({ skill, onInstallSuccess }: InstallButtonProps) {
 
   const handleInstall = async () => {
     setStatus("checking_tier");
+    setError(null);
 
-    // DEMO MODE: Force success state to show QuickStartModal in non-interactive environment
-    onInstallSuccess?.();
-    setStatus("success");
-    setTimeout(() => setStatus("idle"), 2000);
+    try {
+      setStatus("installing");
+      const res = await fetch(`${API_URL}/v1/installations`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ packageId: skill.packageId }),
+      });
+
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        throw new Error(data.message || `Install failed (${res.status})`);
+      }
+
+      setStatus("success");
+      onInstallSuccess?.();
+      setTimeout(() => setStatus("idle"), 2000);
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Installation failed");
+      setStatus("error");
+    }
   };
 
   // Render button based on status
