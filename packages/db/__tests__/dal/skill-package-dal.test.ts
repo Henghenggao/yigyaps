@@ -81,6 +81,7 @@ describe("SkillPackageDAL", () => {
         SkillPackageFactory.create({
           category: "development",
           displayName: "Test Dev Tool",
+          description: "A development utility for code analysis",
           tags: ["typescript", "testing"],
           priceUsd: "10.00",
           maturity: "stable",
@@ -91,6 +92,7 @@ describe("SkillPackageDAL", () => {
         SkillPackageFactory.create({
           category: "productivity",
           displayName: "Productivity Helper",
+          description: "Helps organize daily workflows",
           tags: ["workflow"],
           priceUsd: "0.00",
           maturity: "beta",
@@ -101,6 +103,7 @@ describe("SkillPackageDAL", () => {
         SkillPackageFactory.create({
           category: "development",
           displayName: "Another Dev Package",
+          description: "A JavaScript bundler plugin",
           tags: ["javascript"],
           priceUsd: "25.00",
           maturity: "stable",
