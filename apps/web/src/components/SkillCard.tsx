@@ -1,3 +1,4 @@
+import React from 'react';
 import { Link } from "react-router-dom";
 import type { SkillPackage } from "@yigyaps/types";
 
@@ -6,7 +7,9 @@ interface SkillCardProps {
   onClick?: () => void;
 }
 
-export function SkillCard({ skill, onClick }: SkillCardProps) {
+// ⚡ Bolt: Wrapped in React.memo to prevent unnecessary re-renders when parent lists update
+// Impact: Reduces rendering time of large marketplace grids
+export const SkillCard = React.memo(function SkillCard({ skill, onClick }: SkillCardProps) {
   const displayName = skill.displayName || skill.packageId;
 
   return (
@@ -143,4 +146,4 @@ export function SkillCard({ skill, onClick }: SkillCardProps) {
       `}</style>
     </Link>
   );
-}
+});
