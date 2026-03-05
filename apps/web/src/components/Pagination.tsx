@@ -53,6 +53,8 @@ export function Pagination({
         <button
           key={i}
           className={`pagination-btn ${i === currentPage ? "active" : ""}`}
+          aria-current={i === currentPage ? "page" : undefined}
+          aria-label={`Page ${i}`}
           onClick={() => onPageChange(i)}
         >
           {i}
@@ -64,14 +66,15 @@ export function Pagination({
   };
 
   return (
-    <div className="pagination">
-      <div className="pagination-info">
+    <nav className="pagination" aria-label="Pagination Navigation">
+      <div className="pagination-info" aria-live="polite">
         Showing {startItem}-{endItem} of {totalItems} results
       </div>
       <div className="pagination-controls">
         <button
           className="pagination-btn"
           onClick={handlePrevious}
+          aria-label="Previous page"
           disabled={currentPage === 1}
         >
           ← Prev
@@ -80,11 +83,12 @@ export function Pagination({
         <button
           className="pagination-btn"
           onClick={handleNext}
+          aria-label="Next page"
           disabled={currentPage === totalPages}
         >
           Next →
         </button>
       </div>
-    </div>
+    </nav>
   );
 }
