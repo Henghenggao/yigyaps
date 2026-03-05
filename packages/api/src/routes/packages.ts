@@ -61,7 +61,7 @@ const createPackageSchema = z.object({
   description: z.string().min(10).max(500),
   readme: z.string().max(5000).optional(),
   authorName: z.string().min(1).max(100),
-  authorUrl: z.string().url().optional(),
+  authorUrl: z.string().url().refine((url) => url.toLowerCase().startsWith("http://") || url.toLowerCase().startsWith("https://"), { message: "URL must use http or https protocol" }).optional(),
   license: z
     .enum(["open-source", "free", "premium", "enterprise"])
     .default("open-source"),
@@ -94,10 +94,10 @@ const createPackageSchema = z.object({
   requiredTier: z.number().int().min(0).max(3).default(0),
   mcpTransport: z.enum(["stdio", "http", "sse"]).default("stdio"),
   mcpCommand: z.string().max(500).optional(),
-  mcpUrl: z.string().url().optional(),
+  mcpUrl: z.string().url().refine((url) => url.toLowerCase().startsWith("http://") || url.toLowerCase().startsWith("https://"), { message: "URL must use http or https protocol" }).optional(),
   icon: z.string().max(500).optional(),
-  repositoryUrl: z.string().url().optional(),
-  homepageUrl: z.string().url().optional(),
+  repositoryUrl: z.string().url().refine((url) => url.toLowerCase().startsWith("http://") || url.toLowerCase().startsWith("https://"), { message: "URL must use http or https protocol" }).optional(),
+  homepageUrl: z.string().url().refine((url) => url.toLowerCase().startsWith("http://") || url.toLowerCase().startsWith("https://"), { message: "URL must use http or https protocol" }).optional(),
   rules: z
     .array(
       z.object({
