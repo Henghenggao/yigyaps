@@ -138,7 +138,9 @@ export function MarkdownEditor({
           {value ? (
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{value}</ReactMarkdown>
           ) : (
-            <p style={{ color: "var(--color-text-muted)", fontStyle: "italic" }}>
+            <p
+              style={{ color: "var(--color-text-muted)", fontStyle: "italic" }}
+            >
               Preview will appear here...
             </p>
           )}

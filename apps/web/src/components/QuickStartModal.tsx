@@ -25,7 +25,9 @@ export function QuickStartModal({ packageId, onClose }: QuickStartModalProps) {
   const [copied, setCopied] = useState<string | null>(null);
 
   const copy = (text: string, key: string) => {
-    navigator.clipboard.writeText(text).catch(() => {/* ignore */});
+    navigator.clipboard.writeText(text).catch(() => {
+      /* ignore */
+    });
     setCopied(key);
     setTimeout(() => setCopied(null), 1500);
   };
@@ -77,7 +79,6 @@ const tool = toOpenAITool(client, "${packageId}");
   return (
     <div className="qs-overlay" onClick={onClose}>
       <div className="qs-modal" onClick={(e) => e.stopPropagation()}>
-
         {/* ── Header ── */}
         <div className="qs-header">
           <div className="qs-title-row">
@@ -118,16 +119,16 @@ const tool = toOpenAITool(client, "${packageId}");
 
         {/* ── Content ── */}
         <div className="qs-content">
-
           {/* MCP tab */}
           {tab === "mcp" && (
             <div className="qs-pane">
               <p className="qs-desc">
-                Expose this skill as a native tool in Claude Desktop, Cursor, or any MCP host.
-                Your API key is in{" "}
+                Expose this skill as a native tool in Claude Desktop, Cursor, or
+                any MCP host. Your API key is in{" "}
                 <Link to="/settings" onClick={onClose} className="qs-link">
                   Settings → API Keys
-                </Link>.
+                </Link>
+                .
               </p>
 
               <div className="qs-step">
@@ -161,8 +162,9 @@ const tool = toOpenAITool(client, "${packageId}");
               </div>
 
               <p className="qs-hint">
-                The skill will appear as a tool named <strong>{packageId}</strong> in your AI host.
-                Replace <code>yyy_xxxx</code> with your real API key.
+                The skill will appear as a tool named{" "}
+                <strong>{packageId}</strong> in your AI host. Replace{" "}
+                <code>yyy_xxxx</code> with your real API key.
               </p>
             </div>
           )}
@@ -171,10 +173,13 @@ const tool = toOpenAITool(client, "${packageId}");
           {tab === "sdk" && (
             <div className="qs-pane">
               <p className="qs-desc">
-                Zero-dependency adapters for OpenAI, Claude, Gemini, Vercel AI SDK, and LangChain.
+                Zero-dependency adapters for OpenAI, Claude, Gemini, Vercel AI
+                SDK, and LangChain.
               </p>
               <div className="qs-install-row">
-                <code className="qs-inline-cmd">npm install @yigyaps/client</code>
+                <code className="qs-inline-cmd">
+                  npm install @yigyaps/client
+                </code>
                 <button
                   className="qs-copy-inline"
                   onClick={() => copy("npm install @yigyaps/client", "npm")}
@@ -190,11 +195,13 @@ const tool = toOpenAITool(client, "${packageId}");
                 lang="typescript"
               />
               <p className="qs-hint">
-                Replace <code>process.env.YIGYAPS_API_KEY</code> with your key from{" "}
+                Replace <code>process.env.YIGYAPS_API_KEY</code> with your key
+                from{" "}
                 <Link to="/settings" onClick={onClose} className="qs-link">
                   Settings → API Keys
-                </Link>.
-                Use <code>toVercelAITool()</code>, <code>toLangChainTool()</code>, or{" "}
+                </Link>
+                . Use <code>toVercelAITool()</code>,{" "}
+                <code>toLangChainTool()</code>, or{" "}
                 <code>toGeminiFunctionDeclaration()</code> for other frameworks.
               </p>
             </div>
@@ -204,7 +211,8 @@ const tool = toOpenAITool(client, "${packageId}");
           {tab === "rest" && (
             <div className="qs-pane">
               <p className="qs-desc">
-                Direct HTTP — works with any language, curl, Postman, or n8n workflow.
+                Direct HTTP — works with any language, curl, Postman, or n8n
+                workflow.
               </p>
               <CodeBlock
                 code={restCode}
@@ -217,9 +225,10 @@ const tool = toOpenAITool(client, "${packageId}");
                 Get your API key from{" "}
                 <Link to="/settings" onClick={onClose} className="qs-link">
                   Settings → API Keys
-                </Link>.
-                The response includes <code>conclusion</code>, <code>evaluation_details</code>,
-                and <code>privacy_notice</code>.
+                </Link>
+                . The response includes <code>conclusion</code>,{" "}
+                <code>evaluation_details</code>, and <code>privacy_notice</code>
+                .
               </p>
             </div>
           )}
@@ -227,7 +236,11 @@ const tool = toOpenAITool(client, "${packageId}");
 
         {/* ── Footer ── */}
         <div className="qs-footer">
-          <Link to="/settings" onClick={onClose} className="btn btn-outline btn-sm">
+          <Link
+            to="/settings"
+            onClick={onClose}
+            className="btn btn-outline btn-sm"
+          >
             Get API Key
           </Link>
           <button className="btn btn-primary btn-sm" onClick={onClose}>
@@ -479,10 +492,7 @@ function CodeBlock({
     <div className="qs-codeblock">
       <div className="qs-codeblock-bar">
         <span className="qs-codeblock-lang">{lang}</span>
-        <button
-          className="qs-copy-btn"
-          onClick={() => onCopy(code, id)}
-        >
+        <button className="qs-copy-btn" onClick={() => onCopy(code, id)}>
           {copied === id ? "✓ Copied!" : "Copy"}
         </button>
       </div>

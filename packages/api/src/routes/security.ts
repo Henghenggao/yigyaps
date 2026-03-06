@@ -219,7 +219,9 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
       if (pkg.author !== userId) {
         return reply
           .code(403)
-          .send({ error: "Only the package author can access their knowledge" });
+          .send({
+            error: "Only the package author can access their knowledge",
+          });
       }
 
       const knowledgeRecords = await fastify.db
@@ -367,7 +369,11 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
         let demoEvaluationDetails: {
           overall_score: number;
           verdict: "recommend" | "neutral" | "caution";
-          dimensions: Array<{ name: string; score: number; conclusion_key: string }>;
+          dimensions: Array<{
+            name: string;
+            score: number;
+            conclusion_key: string;
+          }>;
         } | null = null;
 
         if (!parsedRules) {
@@ -448,7 +454,11 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
       interface EvaluationDetails {
         overall_score: number;
         verdict: "recommend" | "neutral" | "caution";
-        dimensions: Array<{ name: string; score: number; conclusion_key: string }>;
+        dimensions: Array<{
+          name: string;
+          score: number;
+          conclusion_key: string;
+        }>;
       }
 
       const toEvaluationDetails = (ev: RuleEvaluation): EvaluationDetails => ({
@@ -489,96 +499,102 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
       };
 
       // ── Secure Pipeline ───────────────────────────────────────────────────
-      let conclusion: { text: string; mode: InvokeMode; evaluationDetails?: EvaluationDetails | null };
+      let conclusion: {
+        text: string;
+        mode: InvokeMode;
+        evaluationDetails?: EvaluationDetails | null;
+      };
       try {
         conclusion = await SecureBuffer.withSecureContext(
           dekProvider,
-        async (dekBuffer) => {
-          // Decrypt knowledge — plaintext only exists within this scope
-          const plaintextRules = KMS.decryptKnowledge(
-            ciphertext as Buffer,
-            dekBuffer,
-          );
+          async (dekBuffer) => {
+            // Decrypt knowledge — plaintext only exists within this scope
+            const plaintextRules = KMS.decryptKnowledge(
+              ciphertext as Buffer,
+              dekBuffer,
+            );
 
-          // ── Mode C: Lab Preview (author-only, explicit consent) ───────────
-          if (labApiKey) {
-            // Author has provided their own API key — data agreement is between
-            // the author and Anthropic, not YigYaps. Plaintext rules are sent.
-            const client = new Anthropic({ apiKey: labApiKey });
-            const start = Date.now();
-            const message = await client.messages.create({
-              model: "claude-haiku-4-5-20251001",
-              max_tokens: 1024,
-              system: plaintextRules,
-              messages: [{ role: "user", content: userQuery }],
-            });
-            inferenceMs = Date.now() - start;
-            const firstBlock = message.content[0];
+            // ── Mode C: Lab Preview (author-only, explicit consent) ───────────
+            if (labApiKey) {
+              // Author has provided their own API key — data agreement is between
+              // the author and Anthropic, not YigYaps. Plaintext rules are sent.
+              const client = new Anthropic({ apiKey: labApiKey });
+              const start = Date.now();
+              const message = await client.messages.create({
+                model: "claude-haiku-4-5-20251001",
+                max_tokens: 1024,
+                system: plaintextRules,
+                messages: [{ role: "user", content: userQuery }],
+              });
+              inferenceMs = Date.now() - start;
+              const firstBlock = message.content[0];
+              return {
+                text:
+                  firstBlock.type === "text"
+                    ? firstBlock.text
+                    : "Skill processed the request.",
+                mode: "lab-preview-expert-key" as InvokeMode,
+                evaluationDetails: null,
+              };
+            }
+
+            // ── Mode A / B: Parse rules and evaluate locally ──────────────────
+            const rules = RuleEngine.tryParseRules(plaintextRules);
+
+            if (!rules) {
+              // Free-form rules (plain text / markdown) — cannot evaluate locally.
+              // Return a safe stub. No rule content is exposed.
+              return {
+                text: RuleEngine.mockResponseForFreeformRules(userQuery),
+                mode: "local" as InvokeMode,
+                evaluationDetails: null,
+              };
+            }
+
+            // Mode A: Local evaluation — 100% in-process, zero external calls
+            const evaluation = RuleEngine.evaluate(rules, userQuery);
+            const evaluationDetails = toEvaluationDetails(evaluation);
+
+            // Mode B upgrade: if platform API key is configured, polish via LLM.
+            // Only the safe skeleton (scores + conclusion tokens) is transmitted.
+            if (env.ANTHROPIC_API_KEY) {
+              const safePrompt = RuleEngine.toSafePrompt(evaluation, userQuery);
+              const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
+              const start = Date.now();
+              const message = await client.messages.create({
+                model: "claude-haiku-4-5-20251001",
+                max_tokens: 512,
+                system:
+                  "You are a professional report writer. Rephrase the following structured evaluation into a concise natural language response. Do not add information beyond what is provided.",
+                messages: [{ role: "user", content: safePrompt }],
+              });
+              inferenceMs = Date.now() - start;
+              const firstBlock = message.content[0];
+              return {
+                text:
+                  firstBlock.type === "text"
+                    ? firstBlock.text
+                    : `Overall: ${evaluation.verdict} (score ${evaluation.overall_score}/10)`,
+                mode: "hybrid" as InvokeMode,
+                evaluationDetails,
+              };
+            }
+
+            // Mode A pure: no external API configured
+            const scoreLines = evaluation.results
+              .map(
+                (r) => `• ${r.dimension}: ${r.score}/10 — ${r.conclusion_key}`,
+              )
+              .join("\n");
             return {
-              text:
-                firstBlock.type === "text"
-                  ? firstBlock.text
-                  : "Skill processed the request.",
-              mode: "lab-preview-expert-key" as InvokeMode,
-              evaluationDetails: null,
-            };
-          }
-
-          // ── Mode A / B: Parse rules and evaluate locally ──────────────────
-          const rules = RuleEngine.tryParseRules(plaintextRules);
-
-          if (!rules) {
-            // Free-form rules (plain text / markdown) — cannot evaluate locally.
-            // Return a safe stub. No rule content is exposed.
-            return {
-              text: RuleEngine.mockResponseForFreeformRules(userQuery),
+              text: `Skill Evaluation\nOverall: ${evaluation.overall_score}/10 (${evaluation.verdict})\n\n${scoreLines}`,
               mode: "local" as InvokeMode,
-              evaluationDetails: null,
-            };
-          }
-
-          // Mode A: Local evaluation — 100% in-process, zero external calls
-          const evaluation = RuleEngine.evaluate(rules, userQuery);
-          const evaluationDetails = toEvaluationDetails(evaluation);
-
-          // Mode B upgrade: if platform API key is configured, polish via LLM.
-          // Only the safe skeleton (scores + conclusion tokens) is transmitted.
-          if (env.ANTHROPIC_API_KEY) {
-            const safePrompt = RuleEngine.toSafePrompt(evaluation, userQuery);
-            const client = new Anthropic({ apiKey: env.ANTHROPIC_API_KEY });
-            const start = Date.now();
-            const message = await client.messages.create({
-              model: "claude-haiku-4-5-20251001",
-              max_tokens: 512,
-              system:
-                "You are a professional report writer. Rephrase the following structured evaluation into a concise natural language response. Do not add information beyond what is provided.",
-              messages: [{ role: "user", content: safePrompt }],
-            });
-            inferenceMs = Date.now() - start;
-            const firstBlock = message.content[0];
-            return {
-              text:
-                firstBlock.type === "text"
-                  ? firstBlock.text
-                  : `Overall: ${evaluation.verdict} (score ${evaluation.overall_score}/10)`,
-              mode: "hybrid" as InvokeMode,
               evaluationDetails,
             };
-          }
 
-          // Mode A pure: no external API configured
-          const scoreLines = evaluation.results
-            .map((r) => `• ${r.dimension}: ${r.score}/10 — ${r.conclusion_key}`)
-            .join("\n");
-          return {
-            text: `Skill Evaluation\nOverall: ${evaluation.overall_score}/10 (${evaluation.verdict})\n\n${scoreLines}`,
-            mode: "local" as InvokeMode,
-            evaluationDetails,
-          };
-
-          // dekBuffer is zeroized by SecureBuffer.withSecureContext after this scope
-        },
-      );
+            // dekBuffer is zeroized by SecureBuffer.withSecureContext after this scope
+          },
+        );
       } catch (err: unknown) {
         if (err instanceof Error && err.message === "SHAMIR_SHARE_REQUIRED") {
           return reply.code(400).send({

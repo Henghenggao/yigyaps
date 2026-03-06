@@ -123,7 +123,9 @@ export class RuleEngine {
         maxWeight > 0 ? Math.round((triggeredWeight / maxWeight) * 10) : 5;
 
       // Pick the conclusion of the highest-weight triggered rule
-      const topRule = triggered.sort((a, b) => (b.weight ?? 0) - (a.weight ?? 0))[0];
+      const topRule = triggered.sort(
+        (a, b) => (b.weight ?? 0) - (a.weight ?? 0),
+      )[0];
 
       results.push({
         dimension,
@@ -136,11 +138,17 @@ export class RuleEngine {
     // Aggregate verdict
     const overallScore =
       results.length > 0
-        ? Math.round(results.reduce((acc, r) => acc + r.score, 0) / results.length)
+        ? Math.round(
+            results.reduce((acc, r) => acc + r.score, 0) / results.length,
+          )
         : 5;
 
     const verdict: RuleEvaluation["verdict"] =
-      overallScore >= 7 ? "recommend" : overallScore >= 4 ? "neutral" : "caution";
+      overallScore >= 7
+        ? "recommend"
+        : overallScore >= 4
+          ? "neutral"
+          : "caution";
 
     return { results, verdict, overall_score: overallScore };
   }

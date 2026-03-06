@@ -20,56 +20,56 @@ export async function registryRoutes(fastify: FastifyInstance) {
     "/health",
     { config: { rateLimit: { max: 120, timeWindow: "1 minute" } } },
     async (request, reply) => {
-    // 1. Check if database configuration exists
-    const hasDbConfig = !!process.env.DATABASE_URL;
+      // 1. Check if database configuration exists
+      const hasDbConfig = !!process.env.DATABASE_URL;
 
-    // 2. Test database connection
-    let dbStatus = "disconnected";
-    let dbError: string | null = null;
+      // 2. Test database connection
+      let dbStatus = "disconnected";
+      let dbError: string | null = null;
 
-    if (!hasDbConfig) {
-      dbError = "DATABASE_URL environment variable is missing";
-      request.log.warn(
-        "Database health check skipped: No connection string provided",
-      );
-    } else {
-      try {
-        await fastify.db.execute(sql`SELECT 1`);
-        dbStatus = "connected";
-      } catch (error) {
-        dbError = error instanceof Error ? error.message : String(error);
-        request.log.error({ error }, "Database health check failed");
+      if (!hasDbConfig) {
+        dbError = "DATABASE_URL environment variable is missing";
+        request.log.warn(
+          "Database health check skipped: No connection string provided",
+        );
+      } else {
+        try {
+          await fastify.db.execute(sql`SELECT 1`);
+          dbStatus = "connected";
+        } catch (error) {
+          dbError = error instanceof Error ? error.message : String(error);
+          request.log.error({ error }, "Database health check failed");
+        }
       }
-    }
 
-    const memMB = (bytes: number) => `${Math.round(bytes / 1024 / 1024)}MB`;
-    const mem = process.memoryUsage();
+      const memMB = (bytes: number) => `${Math.round(bytes / 1024 / 1024)}MB`;
+      const mem = process.memoryUsage();
 
-    const response = {
-      status: dbStatus === "connected" ? "healthy" : "degraded",
-      service: "yigyaps-api",
-      version: "0.1.0",
-      timestamp: new Date().toISOString(),
-      uptime: Math.round(process.uptime()),
-      database: {
-        status: dbStatus,
-        configured: hasDbConfig,
-        error: dbError,
-      },
-      memory: {
-        heapUsed: memMB(mem.heapUsed),
-        heapTotal: memMB(mem.heapTotal),
-        rss: memMB(mem.rss),
-      },
-      environment: process.env.NODE_ENV || "development",
-    };
+      const response = {
+        status: dbStatus === "connected" ? "healthy" : "degraded",
+        service: "yigyaps-api",
+        version: "0.1.0",
+        timestamp: new Date().toISOString(),
+        uptime: Math.round(process.uptime()),
+        database: {
+          status: dbStatus,
+          configured: hasDbConfig,
+          error: dbError,
+        },
+        memory: {
+          heapUsed: memMB(mem.heapUsed),
+          heapTotal: memMB(mem.heapTotal),
+          rss: memMB(mem.rss),
+        },
+        environment: process.env.NODE_ENV || "development",
+      };
 
-    // Return 200 even if degraded if explicitly allowed, otherwise 503
-    // This helps services stay up for debugging even if DB is flaky
-    const allowDegraded = process.env.ALLOW_DEGRADED_HEALTH === "true";
-    const statusCode = dbStatus === "connected" || allowDegraded ? 200 : 503;
+      // Return 200 even if degraded if explicitly allowed, otherwise 503
+      // This helps services stay up for debugging even if DB is flaky
+      const allowDegraded = process.env.ALLOW_DEGRADED_HEALTH === "true";
+      const statusCode = dbStatus === "connected" || allowDegraded ? 200 : 503;
 
-    return reply.status(statusCode).send(response);
+      return reply.status(statusCode).send(response);
     },
   );
 }

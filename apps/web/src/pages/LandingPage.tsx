@@ -13,12 +13,19 @@ export function LandingPage() {
         {/* ── Hero ────────────────────────────────────────── */}
         <section className="landing-hero animate-fade-in">
           <div className="container">
-            <p className="hero-eyebrow">Human expertise for the AI Agent economy</p>
+            <p className="hero-eyebrow">
+              Human expertise for the AI Agent economy
+            </p>
             <h1 className="landing-hero-title">
-              Don't be replaced by AI.<br />Let the AI economy work for you<span className="dot">.</span>
+              Don't be replaced by AI.
+              <br />
+              Let the AI economy work for you<span className="dot">.</span>
             </h1>
             <p className="landing-hero-sub">
-              YigYaps is a pioneer knowledge assetization platform built specifically for human experts. Turn your experience into AI skills while absolutely protecting your trade secrets, and let thousands of AI agents pay to consult your expertise.
+              YigYaps is a pioneer knowledge assetization platform built
+              specifically for human experts. Turn your experience into AI
+              skills while absolutely protecting your trade secrets, and let
+              thousands of AI agents pay to consult your expertise.
             </p>
             <div className="hero-cta-row">
               <Link to="/publish" className="btn-primary btn-lg">
@@ -26,7 +33,8 @@ export function LandingPage() {
               </Link>
             </div>
             <p className="hero-note">
-              Independent &middot; Security First &middot; The Knowledge Bank of the AI Era
+              Independent &middot; Security First &middot; The Knowledge Bank of
+              the AI Era
             </p>
           </div>
         </section>
@@ -37,31 +45,45 @@ export function LandingPage() {
             <div className="value-grid-3">
               <div className="value-card">
                 <div className="value-icon">
-                  <span style={{ fontSize: '28px', lineHeight: 1 }}>💰</span>
+                  <span style={{ fontSize: "28px", lineHeight: 1 }}>💰</span>
                 </div>
-                <h3>Knowledge Monetization: Turn Experience Into Passive Income</h3>
+                <h3>
+                  Knowledge Monetization: Turn Experience Into Passive Income
+                </h3>
                 <p>
-                  Say goodbye to "free sharing". On YigYaps, your methodologies, business acumen, and professional judgment are valuable commodities. Earn real royalty shares whenever global AI agents invoke your skill to solve problems.
+                  Say goodbye to "free sharing". On YigYaps, your methodologies,
+                  business acumen, and professional judgment are valuable
+                  commodities. Earn real royalty shares whenever global AI
+                  agents invoke your skill to solve problems.
                 </p>
               </div>
 
               <div className="value-card">
                 <div className="value-icon">
-                  <span style={{ fontSize: '28px', lineHeight: 1 }}>🛡️</span>
+                  <span style={{ fontSize: "28px", lineHeight: 1 }}>🛡️</span>
                 </div>
                 <h3>Patent-Grade Moat: Never Feed The Big Models</h3>
                 <p>
-                  We solve your biggest fear: IP theft. While other platforms use your data to train their models for free, YigYaps uses an innovative "Blackbox Defense Architecture". Buyers only get the final diagnostic conclusion and can never peek at your core weights and rules. Your secret sauce stays yours.
+                  We solve your biggest fear: IP theft. While other platforms
+                  use your data to train their models for free, YigYaps uses an
+                  innovative "Blackbox Defense Architecture". Buyers only get
+                  the final diagnostic conclusion and can never peek at your
+                  core weights and rules. Your secret sauce stays yours.
                 </p>
               </div>
 
               <div className="value-card">
                 <div className="value-icon">
-                  <span style={{ fontSize: '28px', lineHeight: 1 }}>⚡</span>
+                  <span style={{ fontSize: "28px", lineHeight: 1 }}>⚡</span>
                 </div>
                 <h3>Zero Code: As Easy As Filling a Form</h3>
                 <p>
-                  You don't need to be a programmer to embrace AI. Designed specifically for industry experts, our visual templates let you simply fill in your "decision logic" or "scoring criteria". The system automatically turns you into a globally compliant AI plugin in 10 minutes. Your digital twin is ready for business.
+                  You don't need to be a programmer to embrace AI. Designed
+                  specifically for industry experts, our visual templates let
+                  you simply fill in your "decision logic" or "scoring
+                  criteria". The system automatically turns you into a globally
+                  compliant AI plugin in 10 minutes. Your digital twin is ready
+                  for business.
                 </p>
               </div>
             </div>
@@ -71,31 +93,42 @@ export function LandingPage() {
         {/* ── Use Cases ────────────────────────────────── */}
         <section className="section-block section-alt">
           <div className="container">
-            <h2 className="section-title">Your knowledge is a necessity in the AI world</h2>
+            <h2 className="section-title">
+              Your knowledge is a necessity in the AI world
+            </h2>
             <p className="section-subtitle">
               See how other experts are monetizing at scale on YigYaps:
             </p>
 
-            <div className="trust-grid" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+            <div
+              className="trust-grid"
+              style={{ gridTemplateColumns: "repeat(3, 1fr)" }}
+            >
               <div className="trust-card">
                 <div className="trust-layer">💼 Senior Analyst</div>
                 <h3>Project Risk Radar</h3>
                 <p>
-                  Every time an AI agent conducts corporate due diligence, it calls this radar. The expert earns high per-call fees while keeping the core evaluation model absolutely confidential.
+                  Every time an AI agent conducts corporate due diligence, it
+                  calls this radar. The expert earns high per-call fees while
+                  keeping the core evaluation model absolutely confidential.
                 </p>
               </div>
               <div className="trust-card">
                 <div className="trust-layer">⚖️ Compliance Lawyer</div>
                 <h3>Contract Loophole Scanner</h3>
                 <p>
-                  Turn ten years of "US-China trade contract scanning experience" into a plugin. Empower countless startup AI agents with one click and monetize at scale.
+                  Turn ten years of "US-China trade contract scanning
+                  experience" into a plugin. Empower countless startup AI agents
+                  with one click and monetize at scale.
                 </p>
               </div>
               <div className="trust-card">
                 <div className="trust-layer">🎨 Growth Hacker</div>
                 <h3>Viral Potential Scorecard</h3>
                 <p>
-                  Let anyone anywhere who doesn't know how to write viral copy pay a small fee to consult "your AI brain" for scoring and guidance.
+                  Let anyone anywhere who doesn't know how to write viral copy
+                  pay a small fee to consult "your AI brain" for scoring and
+                  guidance.
                 </p>
               </div>
             </div>
@@ -105,24 +138,43 @@ export function LandingPage() {
         {/* ── Security Trust ──────────────────────────────── */}
         <section className="section-block section-trust">
           <div className="container">
-            <h2 className="section-title">Give Conclusions, Not Your Secrets<span className="dot">.</span></h2>
+            <h2 className="section-title">
+              Give Conclusions, Not Your Secrets<span className="dot">.</span>
+            </h2>
             <p className="section-subtitle">
-              No matter how omnipotent the other party's AI is, it only gets your judgment results and never sees your core logic or reasoning process.
+              No matter how omnipotent the other party's AI is, it only gets
+              your judgment results and never sees your core logic or reasoning
+              process.
             </p>
 
-            <div className="trust-grid" style={{ gridTemplateColumns: "1fr 1fr", maxWidth: "860px", margin: "0 auto" }}>
+            <div
+              className="trust-grid"
+              style={{
+                gridTemplateColumns: "1fr 1fr",
+                maxWidth: "860px",
+                margin: "0 auto",
+              }}
+            >
               <div className="trust-card highlight-negative">
-                <div className="trust-layer">Standard Chat Models & Platforms</div>
+                <div className="trust-layer">
+                  Standard Chat Models & Platforms
+                </div>
                 <h3>Give Away Your Secrets (Train Models for Free)</h3>
                 <p>
-                  Your valuable brain ➡️ Sent to an LLM chatbox ➡️ Data ruthlessly used for training ➡️ Your value gets diluted and replaced.
+                  Your valuable brain ➡️ Sent to an LLM chatbox ➡️ Data
+                  ruthlessly used for training ➡️ Your value gets diluted and
+                  replaced.
                 </p>
               </div>
               <div className="trust-card highlight-positive">
-                <div className="trust-layer">The YigYaps Assetization Model</div>
+                <div className="trust-layer">
+                  The YigYaps Assetization Model
+                </div>
                 <h3>Earn Passive Income (Bank-Grade Protection)</h3>
                 <p>
-                  Your valuable brain ➡️ YigYaps Top-Secret Rule Engine Defense ➡️ Outputs only structured conclusion reports ➡️ Ding! Royalty received 💰.
+                  Your valuable brain ➡️ YigYaps Top-Secret Rule Engine Defense
+                  ➡️ Outputs only structured conclusion reports ➡️ Ding! Royalty
+                  received 💰.
                 </p>
               </div>
             </div>
@@ -134,7 +186,8 @@ export function LandingPage() {
           <div className="container">
             <h2 className="cta-title">Ready to assetize your expertise?</h2>
             <p className="cta-sub">
-              Join the exclusive knowledge monetization network for human experts.
+              Join the exclusive knowledge monetization network for human
+              experts.
             </p>
             <div className="hero-cta-row">
               {user ? (
@@ -153,15 +206,38 @@ export function LandingPage() {
 
       <footer className="site-footer">
         <div className="container footer-row">
-          <p>&copy; {new Date().getFullYear()} YigYaps | Protecting human wisdom, empowering the AI economy.</p>
-          <div className="footer-links" style={{ display: 'flex', gap: '1.5rem', alignItems: 'center' }}>
+          <p>
+            &copy; {new Date().getFullYear()} YigYaps | Protecting human wisdom,
+            empowering the AI economy.
+          </p>
+          <div
+            className="footer-links"
+            style={{ display: "flex", gap: "1.5rem", alignItems: "center" }}
+          >
             <Link to="/terms">Terms</Link>
             <Link to="/privacy">Privacy</Link>
-            <a href="https://github.com/Henghenggao/yigyaps" target="_blank" rel="noopener noreferrer">GitHub</a>
+            <a
+              href="https://github.com/Henghenggao/yigyaps"
+              target="_blank"
+              rel="noopener noreferrer"
+            >
+              GitHub
+            </a>
           </div>
         </div>
-        <div className="container" style={{ marginTop: '1.5rem', fontSize: '0.85rem', color: 'var(--color-text-sub)' }}>
-          <p>🔒 <b>Under the Hood:</b> Independent decentralized registry | End-to-end AES-256-GCM isolated encryption | 100% Model Context Protocol (MCP) compatible | Enterprise-grade settlement by Stripe</p>
+        <div
+          className="container"
+          style={{
+            marginTop: "1.5rem",
+            fontSize: "0.85rem",
+            color: "var(--color-text-sub)",
+          }}
+        >
+          <p>
+            🔒 <b>Under the Hood:</b> Independent decentralized registry |
+            End-to-end AES-256-GCM isolated encryption | 100% Model Context
+            Protocol (MCP) compatible | Enterprise-grade settlement by Stripe
+          </p>
         </div>
       </footer>
 

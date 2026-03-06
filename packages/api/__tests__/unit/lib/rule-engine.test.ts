@@ -8,10 +8,7 @@
  */
 
 import { describe, it, expect } from "vitest";
-import {
-  RuleEngine,
-  type Rule,
-} from "../../../src/lib/rule-engine.js";
+import { RuleEngine, type Rule } from "../../../src/lib/rule-engine.js";
 
 // ─── Fixtures ────────────────────────────────────────────────────────────────
 
@@ -40,7 +37,7 @@ const INVESTMENT_RULES: Rule[] = [
   {
     id: "rule-004",
     dimension: "team_quality",
-    condition: {},  // always fires
+    condition: {}, // always fires
     conclusion: "unknown_team",
     weight: 0.2,
   },
@@ -58,7 +55,8 @@ describe("RuleEngine.tryParseRules", () => {
   });
 
   it("returns null for plain text (markdown)", () => {
-    const text = "# Expert Knowledge\n\nThis is a markdown document.\n\nKey insight: focus on retention.";
+    const text =
+      "# Expert Knowledge\n\nThis is a markdown document.\n\nKey insight: focus on retention.";
     expect(RuleEngine.tryParseRules(text)).toBeNull();
   });
 
@@ -83,7 +81,8 @@ describe("RuleEngine.tryParseRules", () => {
 
 describe("RuleEngine.evaluate", () => {
   it("matches keyword rules and computes per-dimension scores", () => {
-    const query = "This is a B2B SaaS startup founded by a serial entrepreneur from Stanford.";
+    const query =
+      "This is a B2B SaaS startup founded by a serial entrepreneur from Stanford.";
     const result = RuleEngine.evaluate(INVESTMENT_RULES, query);
 
     // Both market_fit rules — rule-001 fires (B2B), rule-002 does not (no "niche")
@@ -102,7 +101,8 @@ describe("RuleEngine.evaluate", () => {
   });
 
   it("returns 'recommend' verdict for high overall score", () => {
-    const query = "B2B enterprise SaaS, serial entrepreneur, Stanford YC background";
+    const query =
+      "B2B enterprise SaaS, serial entrepreneur, Stanford YC background";
     const result = RuleEngine.evaluate(INVESTMENT_RULES, query);
     expect(result.overall_score).toBeGreaterThanOrEqual(7);
     expect(result.verdict).toBe("recommend");
@@ -118,7 +118,10 @@ describe("RuleEngine.evaluate", () => {
         weight: 1.0,
       },
     ];
-    const result = RuleEngine.evaluate(noMatchRules, "completely irrelevant query");
+    const result = RuleEngine.evaluate(
+      noMatchRules,
+      "completely irrelevant query",
+    );
     expect(result.results[0].score).toBe(0);
     expect(result.verdict).toBe("caution");
   });
@@ -189,12 +192,12 @@ describe("RuleEngine.toSafePrompt", () => {
     expect(prompt).toContain(query);
 
     // Must NOT contain rule internals: condition keywords, weights, or rule IDs
-    expect(prompt).not.toContain("B2B");              // rule condition keyword
+    expect(prompt).not.toContain("B2B"); // rule condition keyword
     expect(prompt).not.toContain("serial entrepreneur"); // rule condition keyword
-    expect(prompt).not.toContain("rule-001");           // internal rule id
-    expect(prompt).not.toContain("rule-002");           // internal rule id
-    expect(prompt).not.toContain('"weight"');           // rule structure field
-    expect(prompt).not.toContain('"condition"');        // rule structure field
+    expect(prompt).not.toContain("rule-001"); // internal rule id
+    expect(prompt).not.toContain("rule-002"); // internal rule id
+    expect(prompt).not.toContain('"weight"'); // rule structure field
+    expect(prompt).not.toContain('"condition"'); // rule structure field
   });
 
   it("contains user query for context but no rule internals", () => {

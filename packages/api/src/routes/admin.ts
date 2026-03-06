@@ -48,79 +48,78 @@ export async function adminRoutes(fastify: FastifyInstance) {
   const adminAuth = requireAuth(["admin"]);
 
   // ── Platform Statistics ───────────────────────────────────────────────────
-  fastify.get(
-    "/stats",
-    { preHandler: adminAuth },
-    async (_request, reply) => {
-      const [
-        totalUsers,
-        totalPackages,
-        totalInstalls,
-        todayUsers,
-        todayPackages,
-        pendingReports,
-      ] = await Promise.all([
-        fastify.db
-          .select({ count: sql<number>`count(*)::int` })
-          .from(usersTable),
-        fastify.db
-          .select({ count: sql<number>`count(*)::int` })
-          .from(skillPackagesTable),
-        fastify.db
-          .select({
-            total: sql<number>`COALESCE(SUM(install_count), 0)::int`,
-          })
-          .from(skillPackagesTable),
-        fastify.db
-          .select({ count: sql<number>`count(*)::int` })
-          .from(usersTable)
-          .where(
-            sql`created_at > ${Date.now() - 86_400_000}`,
-          ),
-        fastify.db
-          .select({ count: sql<number>`count(*)::int` })
-          .from(skillPackagesTable)
-          .where(
-            sql`created_at > ${Date.now() - 86_400_000}`,
-          ),
-        fastify.db
-          .select({ count: sql<number>`count(*)::int` })
-          .from(reportsTable)
-          .where(eq(reportsTable.status, "pending")),
-      ]);
+  fastify.get("/stats", { preHandler: adminAuth }, async (_request, reply) => {
+    const [
+      totalUsers,
+      totalPackages,
+      totalInstalls,
+      todayUsers,
+      todayPackages,
+      pendingReports,
+    ] = await Promise.all([
+      fastify.db.select({ count: sql<number>`count(*)::int` }).from(usersTable),
+      fastify.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(skillPackagesTable),
+      fastify.db
+        .select({
+          total: sql<number>`COALESCE(SUM(install_count), 0)::int`,
+        })
+        .from(skillPackagesTable),
+      fastify.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(usersTable)
+        .where(sql`created_at > ${Date.now() - 86_400_000}`),
+      fastify.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(skillPackagesTable)
+        .where(sql`created_at > ${Date.now() - 86_400_000}`),
+      fastify.db
+        .select({ count: sql<number>`count(*)::int` })
+        .from(reportsTable)
+        .where(eq(reportsTable.status, "pending")),
+    ]);
 
-      return reply.send({
-        users: {
-          total: totalUsers[0]?.count ?? 0,
-          today: todayUsers[0]?.count ?? 0,
-        },
-        packages: {
-          total: totalPackages[0]?.count ?? 0,
-          today: todayPackages[0]?.count ?? 0,
-        },
-        installs: {
-          total: totalInstalls[0]?.total ?? 0,
-        },
-        reports: {
-          pending: pendingReports[0]?.count ?? 0,
-        },
-      });
-    },
-  );
+    return reply.send({
+      users: {
+        total: totalUsers[0]?.count ?? 0,
+        today: todayUsers[0]?.count ?? 0,
+      },
+      packages: {
+        total: totalPackages[0]?.count ?? 0,
+        today: todayPackages[0]?.count ?? 0,
+      },
+      installs: {
+        total: totalInstalls[0]?.total ?? 0,
+      },
+      reports: {
+        pending: pendingReports[0]?.count ?? 0,
+      },
+    });
+  });
 
   // ── Package Management ────────────────────────────────────────────────────
   fastify.get(
     "/packages",
     { preHandler: adminAuth },
     async (request, reply) => {
-      const { limit = 50, offset = 0, status } = request.query as {
+      const {
+        limit = 50,
+        offset = 0,
+        status,
+      } = request.query as {
         limit?: number;
         offset?: number;
         status?: string;
       };
 
       const conditions = status
-        ? [eq(skillPackagesTable.status, status as "active" | "archived" | "banned")]
+        ? [
+            eq(
+              skillPackagesTable.status,
+              status as "active" | "archived" | "banned",
+            ),
+          ]
         : [];
 
       const packages = await fastify.db
@@ -172,31 +171,31 @@ export async function adminRoutes(fastify: FastifyInstance) {
   );
 
   // ── User Management ───────────────────────────────────────────────────────
-  fastify.get(
-    "/users",
-    { preHandler: adminAuth },
-    async (request, reply) => {
-      const { limit = 50, offset = 0, query } = request.query as {
-        limit?: number;
-        offset?: number;
-        query?: string;
-      };
+  fastify.get("/users", { preHandler: adminAuth }, async (request, reply) => {
+    const {
+      limit = 50,
+      offset = 0,
+      query,
+    } = request.query as {
+      limit?: number;
+      offset?: number;
+      query?: string;
+    };
 
-      const users = await fastify.db
-        .select()
-        .from(usersTable)
-        .where(
-          query
-            ? sql`github_username ILIKE ${"%" + query + "%"} OR display_name ILIKE ${"%" + query + "%"}`
-            : undefined,
-        )
-        .orderBy(desc(usersTable.createdAt))
-        .limit(Math.min(Number(limit), 200))
-        .offset(Number(offset));
+    const users = await fastify.db
+      .select()
+      .from(usersTable)
+      .where(
+        query
+          ? sql`github_username ILIKE ${"%" + query + "%"} OR display_name ILIKE ${"%" + query + "%"}`
+          : undefined,
+      )
+      .orderBy(desc(usersTable.createdAt))
+      .limit(Math.min(Number(limit), 200))
+      .offset(Number(offset));
 
-      return reply.send({ users });
-    },
-  );
+    return reply.send({ users });
+  });
 
   fastify.patch<{ Params: { id: string } }>(
     "/users/:id/role",
@@ -204,7 +203,9 @@ export async function adminRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       const parsed = userRoleSchema.safeParse(request.body);
       if (!parsed.success) {
-        return reply.code(400).send({ error: "Bad Request", details: parsed.error.issues });
+        return reply
+          .code(400)
+          .send({ error: "Bad Request", details: parsed.error.issues });
       }
 
       const userDAL = new UserDAL(fastify.db);
@@ -216,7 +217,11 @@ export async function adminRoutes(fastify: FastifyInstance) {
       });
 
       request.log.info(
-        { adminId: request.user?.userId, targetUserId: request.params.id, newRole: parsed.data.role },
+        {
+          adminId: request.user?.userId,
+          targetUserId: request.params.id,
+          newRole: parsed.data.role,
+        },
         "Admin changed user role",
       );
 
@@ -225,26 +230,25 @@ export async function adminRoutes(fastify: FastifyInstance) {
   );
 
   // ── Reports Management ────────────────────────────────────────────────────
-  fastify.get(
-    "/reports",
-    { preHandler: adminAuth },
-    async (request, reply) => {
-      const { status = "pending" } = request.query as { status?: string };
+  fastify.get("/reports", { preHandler: adminAuth }, async (request, reply) => {
+    const { status = "pending" } = request.query as { status?: string };
 
-      const reports = await fastify.db
-        .select()
-        .from(reportsTable)
-        .where(
-          status !== "all"
-            ? eq(reportsTable.status, status as "pending" | "resolved" | "dismissed")
-            : undefined,
-        )
-        .orderBy(desc(reportsTable.createdAt))
-        .limit(100);
+    const reports = await fastify.db
+      .select()
+      .from(reportsTable)
+      .where(
+        status !== "all"
+          ? eq(
+              reportsTable.status,
+              status as "pending" | "resolved" | "dismissed",
+            )
+          : undefined,
+      )
+      .orderBy(desc(reportsTable.createdAt))
+      .limit(100);
 
-      return reply.send({ reports });
-    },
-  );
+    return reply.send({ reports });
+  });
 
   fastify.patch<{ Params: { id: string } }>(
     "/reports/:id",
@@ -252,7 +256,9 @@ export async function adminRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       const parsed = reportActionSchema.safeParse(request.body);
       if (!parsed.success) {
-        return reply.code(400).send({ error: "Bad Request", details: parsed.error.issues });
+        return reply
+          .code(400)
+          .send({ error: "Bad Request", details: parsed.error.issues });
       }
 
       const newStatus =
@@ -308,7 +314,8 @@ export async function adminRoutes(fastify: FastifyInstance) {
           valid: true,
           entries: logs.length,
           chained_entries: 0,
-          message: "No hash-chained entries yet (all pre-migration). Chain starts from next invocation.",
+          message:
+            "No hash-chained entries yet (all pre-migration). Chain starts from next invocation.",
         });
       }
 
@@ -320,7 +327,9 @@ export async function adminRoutes(fastify: FastifyInstance) {
         // Recompute event_hash from source fields
         const recomputed = crypto
           .createHash("sha256")
-          .update(`${log.skillPackageId}${log.apiClientId}${log.conclusionHash}${log.prevHash ?? "GENESIS"}`)
+          .update(
+            `${log.skillPackageId}${log.apiClientId}${log.conclusionHash}${log.prevHash ?? "GENESIS"}`,
+          )
           .digest("hex");
 
         if (log.eventHash !== recomputed) {
@@ -339,7 +348,8 @@ export async function adminRoutes(fastify: FastifyInstance) {
             broken_at: log.id,
             broken_at_index: i,
             entries_checked: i + 1,
-            reason: "prev_hash discontinuity — one or more entries may have been deleted",
+            reason:
+              "prev_hash discontinuity — one or more entries may have been deleted",
           });
         }
 

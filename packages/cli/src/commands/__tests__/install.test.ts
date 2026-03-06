@@ -44,7 +44,9 @@ describe("installCommand", () => {
       getByPackageId: vi.fn().mockResolvedValue(mockPkg),
       install: vi.fn().mockResolvedValue({ id: "inst1" }),
     };
-    vi.mocked(registry.createRegistryClient).mockReturnValue(mockClient as unknown as YigYapsRegistryClient);
+    vi.mocked(registry.createRegistryClient).mockReturnValue(
+      mockClient as unknown as YigYapsRegistryClient,
+    );
 
     await installCommand("test-skill", { agentId: "agent1" });
 

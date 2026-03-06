@@ -60,17 +60,13 @@ function renderSkillMd(
   },
   authorUsername: string | null,
 ): string {
-  const authorHandle = authorUsername
-    ? `@${authorUsername}`
-    : pkg.authorName;
+  const authorHandle = authorUsername ? `@${authorUsername}` : pkg.authorName;
 
   // YAML front-matter values — escape double-quotes in strings
   const esc = (s: string) => s.replace(/"/g, '\\"');
 
   const priceUsd =
-    typeof pkg.priceUsd === "string"
-      ? parseFloat(pkg.priceUsd)
-      : pkg.priceUsd;
+    typeof pkg.priceUsd === "string" ? parseFloat(pkg.priceUsd) : pkg.priceUsd;
 
   const lines: string[] = [
     "---",
@@ -197,10 +193,7 @@ export const exportRoutes: FastifyPluginAsync = async (fastify) => {
 
       return reply
         .header("Content-Type", "text/markdown; charset=utf-8")
-        .header(
-          "Content-Disposition",
-          `attachment; filename="${filename}"`,
-        )
+        .header("Content-Disposition", `attachment; filename="${filename}"`)
         .header("Cache-Control", "public, max-age=300") // 5-min cache
         .send(md);
     },

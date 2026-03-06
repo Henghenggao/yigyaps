@@ -14,7 +14,13 @@ import { fetchApi } from "../lib/api";
 import type { User } from "../contexts/AuthContext";
 import type { SkillPackage } from "@yigyaps/types";
 
-function SubscribeButton({ packageId, priceUsd }: { packageId: string; priceUsd: number }) {
+function SubscribeButton({
+  packageId,
+  priceUsd,
+}: {
+  packageId: string;
+  priceUsd: number;
+}) {
   const [loading, setLoading] = useState(false);
   const { addToast } = useToast();
 
@@ -29,7 +35,10 @@ function SubscribeButton({ packageId, priceUsd }: { packageId: string; priceUsd:
       );
       window.location.href = data.checkoutUrl;
     } catch {
-      addToast({ message: "Could not start checkout. Please try again.", type: "error" });
+      addToast({
+        message: "Could not start checkout. Please try again.",
+        type: "error",
+      });
       setLoading(false);
     }
   };
@@ -59,8 +68,14 @@ export function SkillDetailPage() {
         <Header user={user} login={login} />
         <main className="container">
           <div className="skeleton-loading">
-            <div className="skeleton-line" style={{ width: '40%', height: '3rem' }} />
-            <div className="skeleton-line" style={{ width: '60%', height: '1.5rem' }} />
+            <div
+              className="skeleton-line"
+              style={{ width: "40%", height: "3rem" }}
+            />
+            <div
+              className="skeleton-line"
+              style={{ width: "60%", height: "1.5rem" }}
+            />
           </div>
         </main>
       </div>
@@ -73,7 +88,9 @@ export function SkillDetailPage() {
         <Header user={user} login={login} />
         <main className="container error-page">
           <h2>{error || "Skill not found"}</h2>
-          <Link to="/" className="clear-link">Back to Marketplace</Link>
+          <Link to="/" className="clear-link">
+            Back to Marketplace
+          </Link>
         </main>
       </div>
     );
@@ -94,12 +111,29 @@ export function SkillDetailPage() {
               <div className="hero-info">
                 <h1 className="hero-title">{displayName}</h1>
                 <div className="hero-meta">
-                  <span className="meta-author">by @{String(detailData.authorUsername || detailData.authorName || skillDetail.authorName || "anonymous")}</span>
+                  <span className="meta-author">
+                    by @
+                    {String(
+                      detailData.authorUsername ||
+                        detailData.authorName ||
+                        skillDetail.authorName ||
+                        "anonymous",
+                    )}
+                  </span>
                   <span className="meta-dot">·</span>
-                  <span className="meta-installs">{skillDetail.installCount.toLocaleString()} installations</span>
+                  <span className="meta-installs">
+                    {skillDetail.installCount.toLocaleString()} installations
+                  </span>
                 </div>
               </div>
-              <div className="hero-action" style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+              <div
+                className="hero-action"
+                style={{
+                  display: "flex",
+                  gap: "0.75rem",
+                  alignItems: "center",
+                }}
+              >
                 <InstallButton
                   skill={skillDetail}
                   onInstallSuccess={() => setShowQuickStart(true)}
@@ -117,7 +151,9 @@ export function SkillDetailPage() {
                 <span className="pill category">{skillDetail.category}</span>
               )}
               {skillDetail.tags?.map((tag) => (
-                <span key={tag} className="pill tag">#{tag}</span>
+                <span key={tag} className="pill tag">
+                  #{tag}
+                </span>
               ))}
             </div>
           </div>
@@ -135,7 +171,10 @@ export function SkillDetailPage() {
                     {String(skillDetail.readme || detailData.longDescription)}
                   </ReactMarkdown>
                 ) : (
-                  <p>{skillDetail.description || "No detailed description available."}</p>
+                  <p>
+                    {skillDetail.description ||
+                      "No detailed description available."}
+                  </p>
                 )}
               </div>
             </section>
@@ -146,8 +185,15 @@ export function SkillDetailPage() {
                 <h2 className="section-title">Simulation Sandbox</h2>
                 <span className="badge-secure">EVR Secure</span>
               </div>
-              <p className="section-desc">Test how an external AI sees when invoking this secure skill.</p>
-              <SimulationSandbox packageId={packageId!} user={user} login={login} skill={skillDetail} />
+              <p className="section-desc">
+                Test how an external AI sees when invoking this secure skill.
+              </p>
+              <SimulationSandbox
+                packageId={packageId!}
+                user={user}
+                login={login}
+                skill={skillDetail}
+              />
             </section>
 
             {/* Reviews */}
@@ -182,7 +228,9 @@ export function SkillDetailPage() {
                 </div>
                 <div className="spec-item">
                   <span className="spec-label">Rating</span>
-                  <span className="spec-value">★ {Number(skillDetail.rating || 0).toFixed(1) || "N/A"}</span>
+                  <span className="spec-value">
+                    ★ {Number(skillDetail.rating || 0).toFixed(1) || "N/A"}
+                  </span>
                 </div>
               </div>
             </div>
@@ -199,7 +247,10 @@ export function SkillDetailPage() {
 
       <footer className="site-footer">
         <div className="container">
-          <p>&copy; {new Date().getFullYear()} YigYaps. Shared Wisdom for AI Agents.</p>
+          <p>
+            &copy; {new Date().getFullYear()} YigYaps. Shared Wisdom for AI
+            Agents.
+          </p>
         </div>
       </footer>
 
@@ -420,10 +471,20 @@ function SimulationSandbox({
   if (!user) {
     return (
       <div className="sandbox-box">
-        <button onClick={login} className="btn-primary" style={{ width: "auto", minWidth: "220px" }}>
+        <button
+          onClick={login}
+          className="btn-primary"
+          style={{ width: "auto", minWidth: "220px" }}
+        >
           Sign In to Simulate
         </button>
-        <p style={{ marginTop: "0.75rem", color: "var(--color-text-sub)", fontSize: "0.9rem" }}>
+        <p
+          style={{
+            marginTop: "0.75rem",
+            color: "var(--color-text-sub)",
+            fontSize: "0.9rem",
+          }}
+        >
           Authentication required to run the security simulation.
         </p>
       </div>
@@ -437,7 +498,10 @@ function SimulationSandbox({
     try {
       const response = await fetchApi<SimulationResult>(
         `/v1/security/invoke/${packageId}`,
-        { method: "POST", body: JSON.stringify({ user_query: query.trim() || smartQuery }) },
+        {
+          method: "POST",
+          body: JSON.stringify({ user_query: query.trim() || smartQuery }),
+        },
       );
       setResult(response);
     } catch (err: unknown) {
@@ -449,8 +513,10 @@ function SimulationSandbox({
 
   const ev = result?.evaluation_details;
   const verdictColor = ev
-    ? ev.verdict === "recommend" ? "#16a34a"
-      : ev.verdict === "neutral" ? "#d97706"
+    ? ev.verdict === "recommend"
+      ? "#16a34a"
+      : ev.verdict === "neutral"
+        ? "#d97706"
         : "#6b7280"
     : undefined;
 
@@ -467,7 +533,8 @@ function SimulationSandbox({
           rows={4}
         />
         <p className="query-hint">
-          Enter sample content this skill would process. Rules are evaluated entirely in-process — no data is transmitted.
+          Enter sample content this skill would process. Rules are evaluated
+          entirely in-process — no data is transmitted.
         </p>
       </div>
 
@@ -489,9 +556,16 @@ function SimulationSandbox({
               {/* Overall score */}
               <div className="eval-overall">
                 <span className="eval-score" style={{ color: verdictColor }}>
-                  {ev.overall_score}<span className="eval-score-denom">/10</span>
+                  {ev.overall_score}
+                  <span className="eval-score-denom">/10</span>
                 </span>
-                <span className="eval-verdict" style={{ background: verdictColor + "18", color: verdictColor }}>
+                <span
+                  className="eval-verdict"
+                  style={{
+                    background: verdictColor + "18",
+                    color: verdictColor,
+                  }}
+                >
                   {ev.verdict.toUpperCase()}
                 </span>
               </div>
@@ -499,15 +573,30 @@ function SimulationSandbox({
               {/* Dimension breakdown */}
               <div className="dim-list">
                 {ev.dimensions.map((d) => {
-                  const color = d.score >= 7 ? "#16a34a" : d.score >= 4 ? "#d97706" : "#9ca3af";
+                  const color =
+                    d.score >= 7
+                      ? "#16a34a"
+                      : d.score >= 4
+                        ? "#d97706"
+                        : "#9ca3af";
                   return (
                     <div key={d.name} className="dim-row">
                       <span className="dim-name">{d.name}</span>
                       <div className="dim-track">
-                        <div className="dim-fill" style={{ width: `${d.score * 10}%`, background: color }} />
+                        <div
+                          className="dim-fill"
+                          style={{
+                            width: `${d.score * 10}%`,
+                            background: color,
+                          }}
+                        />
                       </div>
-                      <span className="dim-score" style={{ color }}>{d.score}/10</span>
-                      <span className="dim-key">{d.conclusion_key.replace(/_/g, " ")}</span>
+                      <span className="dim-score" style={{ color }}>
+                        {d.score}/10
+                      </span>
+                      <span className="dim-key">
+                        {d.conclusion_key.replace(/_/g, " ")}
+                      </span>
                     </div>
                   );
                 })}
@@ -522,9 +611,7 @@ function SimulationSandbox({
           )}
 
           {/* Privacy notice */}
-          <div className="privacy-bar">
-            🛡️ {result.privacy_notice}
-          </div>
+          <div className="privacy-bar">🛡️ {result.privacy_notice}</div>
         </div>
       )}
 

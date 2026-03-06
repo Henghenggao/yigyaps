@@ -30,7 +30,9 @@ describe("statusCommand", () => {
       ratingCount: 10,
     };
     const mockClient = { getByPackageId: vi.fn().mockResolvedValue(mockPkg) };
-    vi.mocked(registry.createRegistryClient).mockReturnValue(mockClient as unknown as YigYapsRegistryClient);
+    vi.mocked(registry.createRegistryClient).mockReturnValue(
+      mockClient as unknown as YigYapsRegistryClient,
+    );
 
     await statusCommand("test-skill");
 
@@ -41,7 +43,9 @@ describe("statusCommand", () => {
     const mockClient = {
       getByPackageId: vi.fn().mockRejectedValue(new Error("404")),
     };
-    vi.mocked(registry.createRegistryClient).mockReturnValue(mockClient as unknown as YigYapsRegistryClient);
+    vi.mocked(registry.createRegistryClient).mockReturnValue(
+      mockClient as unknown as YigYapsRegistryClient,
+    );
 
     await expect(statusCommand("missing")).rejects.toThrow(CliError);
   });

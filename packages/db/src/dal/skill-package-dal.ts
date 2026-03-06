@@ -154,7 +154,7 @@ export class SkillPackageDAL {
 
         if (params.tags && params.tags.length > 0) {
           conditions.push(
-            sql`${skillPackagesTable.tags} && ${params.tags}::text[]`
+            sql`${skillPackagesTable.tags} && ${params.tags}::text[]`,
           );
         }
 

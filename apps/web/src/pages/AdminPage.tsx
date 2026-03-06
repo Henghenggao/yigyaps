@@ -79,18 +79,26 @@ export function AdminPage() {
       const q = pkgStatusFilter !== "all" ? `?status=${pkgStatusFilter}` : "";
       fetchApi<{ packages: AdminPackage[] }>(`/v1/admin/packages${q}`)
         .then((d) => setPackages(d.packages))
-        .catch(() => addToast({ message: "Failed to load packages", type: "error" }))
+        .catch(() =>
+          addToast({ message: "Failed to load packages", type: "error" }),
+        )
         .finally(() => setLoadingTab(false));
     } else if (tab === "users") {
       const q = userSearch ? `?q=${encodeURIComponent(userSearch)}` : "";
       fetchApi<{ users: AdminUser[] }>(`/v1/admin/users${q}`)
         .then((d) => setUsers(d.users))
-        .catch(() => addToast({ message: "Failed to load users", type: "error" }))
+        .catch(() =>
+          addToast({ message: "Failed to load users", type: "error" }),
+        )
         .finally(() => setLoadingTab(false));
     } else if (tab === "reports") {
-      fetchApi<{ reports: Report[] }>(`/v1/admin/reports?status=${reportStatusFilter}`)
+      fetchApi<{ reports: Report[] }>(
+        `/v1/admin/reports?status=${reportStatusFilter}`,
+      )
         .then((d) => setReports(d.reports))
-        .catch(() => addToast({ message: "Failed to load reports", type: "error" }))
+        .catch(() =>
+          addToast({ message: "Failed to load reports", type: "error" }),
+        )
         .finally(() => setLoadingTab(false));
     }
     // userSearch intentionally omitted — search only on tab switch/Enter, not on every keystroke
@@ -103,7 +111,9 @@ export function AdminPage() {
         method: "PATCH",
         body: JSON.stringify({ status }),
       });
-      setPackages((prev) => prev.map((p) => p.id === id ? { ...p, status } : p));
+      setPackages((prev) =>
+        prev.map((p) => (p.id === id ? { ...p, status } : p)),
+      );
       addToast({ message: `Package ${status}`, type: "success" });
     } catch {
       addToast({ message: "Failed to update package status", type: "error" });
@@ -116,7 +126,7 @@ export function AdminPage() {
         method: "PATCH",
         body: JSON.stringify({ role }),
       });
-      setUsers((prev) => prev.map((u) => u.id === id ? { ...u, role } : u));
+      setUsers((prev) => prev.map((u) => (u.id === id ? { ...u, role } : u)));
       addToast({ message: `User role updated to ${role}`, type: "success" });
     } catch {
       addToast({ message: "Failed to update user role", type: "error" });
@@ -127,7 +137,10 @@ export function AdminPage() {
     try {
       await fetchApi(`/v1/admin/reports/${id}`, {
         method: "PATCH",
-        body: JSON.stringify({ status, adminNote: reportNote[id] || undefined }),
+        body: JSON.stringify({
+          status,
+          adminNote: reportNote[id] || undefined,
+        }),
       });
       setReports((prev) => prev.filter((r) => r.id !== id));
       addToast({ message: `Report ${status}`, type: "success" });
@@ -156,8 +169,18 @@ export function AdminPage() {
     <div className="app-container">
       <Header user={user} login={login} />
 
-      <main className="main-content" style={{ maxWidth: "960px", margin: "0 auto" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1.5rem" }}>
+      <main
+        className="main-content"
+        style={{ maxWidth: "960px", margin: "0 auto" }}
+      >
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: "1rem",
+            marginBottom: "1.5rem",
+          }}
+        >
           <h1 style={{ fontSize: "1.75rem", margin: 0 }}>Admin Dashboard</h1>
           <span
             style={{
@@ -175,7 +198,13 @@ export function AdminPage() {
         </div>
 
         {/* Tabs */}
-        <div style={{ display: "flex", borderBottom: "1px solid var(--color-border)", marginBottom: "2rem" }}>
+        <div
+          style={{
+            display: "flex",
+            borderBottom: "1px solid var(--color-border)",
+            marginBottom: "2rem",
+          }}
+        >
           {tabs.map((t) => (
             <button
               key={t.key}
@@ -183,10 +212,16 @@ export function AdminPage() {
               style={{
                 background: "none",
                 border: "none",
-                borderBottom: tab === t.key ? "2px solid var(--color-primary)" : "2px solid transparent",
+                borderBottom:
+                  tab === t.key
+                    ? "2px solid var(--color-primary)"
+                    : "2px solid transparent",
                 padding: "0.75rem 1.25rem",
                 cursor: "pointer",
-                color: tab === t.key ? "var(--color-primary)" : "var(--color-text-muted)",
+                color:
+                  tab === t.key
+                    ? "var(--color-primary)"
+                    : "var(--color-text-muted)",
                 fontWeight: tab === t.key ? 600 : 400,
                 fontSize: "0.9rem",
                 display: "flex",
@@ -222,15 +257,46 @@ export function AdminPage() {
         {tab === "overview" && (
           <div>
             {loadingStats ? (
-              <div style={{ color: "var(--color-text-muted)" }}>Loading stats...</div>
+              <div style={{ color: "var(--color-text-muted)" }}>
+                Loading stats...
+              </div>
             ) : stats ? (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "1rem", marginBottom: "2rem" }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))",
+                  gap: "1rem",
+                  marginBottom: "2rem",
+                }}
+              >
                 {[
-                  { label: "Total Users", value: stats.users.total, sub: `+${stats.users.newToday} today` },
-                  { label: "Total Packages", value: stats.packages.total, sub: `${stats.packages.active} active` },
-                  { label: "Banned Packages", value: stats.packages.banned, sub: "banned", color: stats.packages.banned > 0 ? "#e74c3c" : undefined },
-                  { label: "Total Installs", value: stats.installations.total, sub: "all time" },
-                  { label: "Pending Reports", value: stats.reports.pending, sub: "need review", color: stats.reports.pending > 0 ? "#e74c3c" : undefined },
+                  {
+                    label: "Total Users",
+                    value: stats.users.total,
+                    sub: `+${stats.users.newToday} today`,
+                  },
+                  {
+                    label: "Total Packages",
+                    value: stats.packages.total,
+                    sub: `${stats.packages.active} active`,
+                  },
+                  {
+                    label: "Banned Packages",
+                    value: stats.packages.banned,
+                    sub: "banned",
+                    color: stats.packages.banned > 0 ? "#e74c3c" : undefined,
+                  },
+                  {
+                    label: "Total Installs",
+                    value: stats.installations.total,
+                    sub: "all time",
+                  },
+                  {
+                    label: "Pending Reports",
+                    value: stats.reports.pending,
+                    sub: "need review",
+                    color: stats.reports.pending > 0 ? "#e74c3c" : undefined,
+                  },
                 ].map((card) => (
                   <div
                     key={card.label}
@@ -241,7 +307,13 @@ export function AdminPage() {
                       padding: "1.25rem",
                     }}
                   >
-                    <div style={{ fontSize: "0.8rem", color: "var(--color-text-muted)", marginBottom: "0.5rem" }}>
+                    <div
+                      style={{
+                        fontSize: "0.8rem",
+                        color: "var(--color-text-muted)",
+                        marginBottom: "0.5rem",
+                      }}
+                    >
                       {card.label}
                     </div>
                     <div
@@ -255,12 +327,21 @@ export function AdminPage() {
                     >
                       {card.value}
                     </div>
-                    <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)" }}>{card.sub}</div>
+                    <div
+                      style={{
+                        fontSize: "0.75rem",
+                        color: "var(--color-text-muted)",
+                      }}
+                    >
+                      {card.sub}
+                    </div>
                   </div>
                 ))}
               </div>
             ) : null}
-            <div style={{ color: "var(--color-text-muted)", fontSize: "0.875rem" }}>
+            <div
+              style={{ color: "var(--color-text-muted)", fontSize: "0.875rem" }}
+            >
               Use the tabs above to manage packages, users, and content reports.
             </div>
           </div>
@@ -269,12 +350,22 @@ export function AdminPage() {
         {/* Packages */}
         {tab === "packages" && (
           <div>
-            <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1.25rem" }}>
+            <div
+              style={{
+                display: "flex",
+                gap: "0.5rem",
+                marginBottom: "1.25rem",
+              }}
+            >
               {["all", "active", "archived", "banned"].map((s) => (
                 <button
                   key={s}
                   onClick={() => setPkgStatusFilter(s)}
-                  className={pkgStatusFilter === s ? "btn btn-primary" : "btn btn-outline"}
+                  className={
+                    pkgStatusFilter === s
+                      ? "btn btn-primary"
+                      : "btn btn-outline"
+                  }
                   style={{ fontSize: "0.8rem", padding: "0.35rem 0.8rem" }}
                 >
                   {s.charAt(0).toUpperCase() + s.slice(1)}
@@ -285,66 +376,126 @@ export function AdminPage() {
             {loadingTab ? (
               <div style={{ color: "var(--color-text-muted)" }}>Loading...</div>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "0.5rem",
+                }}
+              >
                 {packages.length === 0 ? (
-                  <div style={{ color: "var(--color-text-muted)", padding: "2rem 0" }}>No packages found.</div>
-                ) : packages.map((pkg) => (
                   <div
-                    key={pkg.id}
                     style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "1rem",
-                      background: "var(--color-card)",
-                      border: "1px solid var(--color-border)",
-                      borderRadius: "8px",
-                      padding: "0.875rem 1rem",
+                      color: "var(--color-text-muted)",
+                      padding: "2rem 0",
                     }}
                   >
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 600, marginBottom: "0.2rem" }}>
-                        <Link to={`/skill/${pkg.packageId}`} style={{ color: "var(--color-text)", textDecoration: "none" }}>
-                          {pkg.displayName}
-                        </Link>
-                        <span style={{ marginLeft: "0.5rem", fontSize: "0.78rem", fontFamily: "monospace", color: "var(--color-text-muted)" }}>
-                          {pkg.packageId}
-                        </span>
-                      </div>
-                      <div style={{ fontSize: "0.78rem", color: "var(--color-text-muted)" }}>
-                        By {pkg.authorName} · {pkg.category} · {pkg.installCount} installs · {formatDate(pkg.createdAt)}
-                      </div>
-                    </div>
-                    <span
+                    No packages found.
+                  </div>
+                ) : (
+                  packages.map((pkg) => (
+                    <div
+                      key={pkg.id}
                       style={{
-                        padding: "0.2rem 0.6rem",
-                        borderRadius: "4px",
-                        fontSize: "0.75rem",
-                        fontWeight: 600,
-                        background: statusColor(pkg.status) + "22",
-                        color: statusColor(pkg.status),
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "1rem",
+                        background: "var(--color-card)",
+                        border: "1px solid var(--color-border)",
+                        borderRadius: "8px",
+                        padding: "0.875rem 1rem",
                       }}
                     >
-                      {pkg.status}
-                    </span>
-                    <div style={{ display: "flex", gap: "0.4rem" }}>
-                      {pkg.status !== "active" && (
-                        <button className="btn btn-outline" style={{ fontSize: "0.75rem", padding: "0.3rem 0.6rem", color: "#2ecc71" }} onClick={() => handlePkgStatus(pkg.id, "active")}>
-                          Activate
-                        </button>
-                      )}
-                      {pkg.status !== "archived" && (
-                        <button className="btn btn-outline" style={{ fontSize: "0.75rem", padding: "0.3rem 0.6rem" }} onClick={() => handlePkgStatus(pkg.id, "archived")}>
-                          Archive
-                        </button>
-                      )}
-                      {pkg.status !== "banned" && (
-                        <button className="btn btn-outline" style={{ fontSize: "0.75rem", padding: "0.3rem 0.6rem", color: "#e74c3c" }} onClick={() => handlePkgStatus(pkg.id, "banned")}>
-                          Ban
-                        </button>
-                      )}
+                      <div style={{ flex: 1, minWidth: 0 }}>
+                        <div
+                          style={{ fontWeight: 600, marginBottom: "0.2rem" }}
+                        >
+                          <Link
+                            to={`/skill/${pkg.packageId}`}
+                            style={{
+                              color: "var(--color-text)",
+                              textDecoration: "none",
+                            }}
+                          >
+                            {pkg.displayName}
+                          </Link>
+                          <span
+                            style={{
+                              marginLeft: "0.5rem",
+                              fontSize: "0.78rem",
+                              fontFamily: "monospace",
+                              color: "var(--color-text-muted)",
+                            }}
+                          >
+                            {pkg.packageId}
+                          </span>
+                        </div>
+                        <div
+                          style={{
+                            fontSize: "0.78rem",
+                            color: "var(--color-text-muted)",
+                          }}
+                        >
+                          By {pkg.authorName} · {pkg.category} ·{" "}
+                          {pkg.installCount} installs ·{" "}
+                          {formatDate(pkg.createdAt)}
+                        </div>
+                      </div>
+                      <span
+                        style={{
+                          padding: "0.2rem 0.6rem",
+                          borderRadius: "4px",
+                          fontSize: "0.75rem",
+                          fontWeight: 600,
+                          background: statusColor(pkg.status) + "22",
+                          color: statusColor(pkg.status),
+                        }}
+                      >
+                        {pkg.status}
+                      </span>
+                      <div style={{ display: "flex", gap: "0.4rem" }}>
+                        {pkg.status !== "active" && (
+                          <button
+                            className="btn btn-outline"
+                            style={{
+                              fontSize: "0.75rem",
+                              padding: "0.3rem 0.6rem",
+                              color: "#2ecc71",
+                            }}
+                            onClick={() => handlePkgStatus(pkg.id, "active")}
+                          >
+                            Activate
+                          </button>
+                        )}
+                        {pkg.status !== "archived" && (
+                          <button
+                            className="btn btn-outline"
+                            style={{
+                              fontSize: "0.75rem",
+                              padding: "0.3rem 0.6rem",
+                            }}
+                            onClick={() => handlePkgStatus(pkg.id, "archived")}
+                          >
+                            Archive
+                          </button>
+                        )}
+                        {pkg.status !== "banned" && (
+                          <button
+                            className="btn btn-outline"
+                            style={{
+                              fontSize: "0.75rem",
+                              padding: "0.3rem 0.6rem",
+                              color: "#e74c3c",
+                            }}
+                            onClick={() => handlePkgStatus(pkg.id, "banned")}
+                          >
+                            Ban
+                          </button>
+                        )}
+                      </div>
                     </div>
-                  </div>
-                ))}
+                  ))
+                )}
               </div>
             )}
           </div>
@@ -357,7 +508,9 @@ export function AdminPage() {
               <input
                 value={userSearch}
                 onChange={(e) => setUserSearch(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") setTab("users"); }}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") setTab("users");
+                }}
                 placeholder="Search by username..."
                 className="publish-input"
                 style={{
@@ -374,58 +527,85 @@ export function AdminPage() {
             {loadingTab ? (
               <div style={{ color: "var(--color-text-muted)" }}>Loading...</div>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "0.5rem",
+                }}
+              >
                 {users.length === 0 ? (
-                  <div style={{ color: "var(--color-text-muted)", padding: "2rem 0" }}>No users found.</div>
-                ) : users.map((u) => (
                   <div
-                    key={u.id}
                     style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "1rem",
-                      background: "var(--color-card)",
-                      border: "1px solid var(--color-border)",
-                      borderRadius: "8px",
-                      padding: "0.875rem 1rem",
+                      color: "var(--color-text-muted)",
+                      padding: "2rem 0",
                     }}
                   >
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 600 }}>{u.displayName}</div>
-                      <div style={{ fontSize: "0.8rem", color: "var(--color-text-muted)" }}>
-                        @{u.githubUsername} · Tier {u.tier} · Joined {formatDate(u.createdAt)}
-                      </div>
-                    </div>
-                    <span
-                      style={{
-                        padding: "0.2rem 0.6rem",
-                        borderRadius: "4px",
-                        fontSize: "0.75rem",
-                        fontWeight: 600,
-                        background: u.role === "admin" ? "rgba(231,76,60,0.15)" : "var(--color-border)",
-                        color: u.role === "admin" ? "#e74c3c" : "var(--color-text-muted)",
-                      }}
-                    >
-                      {u.role}
-                    </span>
-                    <select
-                      value={u.role}
-                      onChange={(e) => handleUserRole(u.id, e.target.value)}
-                      style={{
-                        padding: "0.35rem 0.6rem",
-                        background: "var(--color-input-bg)",
-                        border: "1px solid var(--color-border)",
-                        borderRadius: "4px",
-                        color: "var(--color-text)",
-                        fontSize: "0.8rem",
-                        cursor: "pointer",
-                      }}
-                    >
-                      <option value="user">User</option>
-                      <option value="admin">Admin</option>
-                    </select>
+                    No users found.
                   </div>
-                ))}
+                ) : (
+                  users.map((u) => (
+                    <div
+                      key={u.id}
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "1rem",
+                        background: "var(--color-card)",
+                        border: "1px solid var(--color-border)",
+                        borderRadius: "8px",
+                        padding: "0.875rem 1rem",
+                      }}
+                    >
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontWeight: 600 }}>{u.displayName}</div>
+                        <div
+                          style={{
+                            fontSize: "0.8rem",
+                            color: "var(--color-text-muted)",
+                          }}
+                        >
+                          @{u.githubUsername} · Tier {u.tier} · Joined{" "}
+                          {formatDate(u.createdAt)}
+                        </div>
+                      </div>
+                      <span
+                        style={{
+                          padding: "0.2rem 0.6rem",
+                          borderRadius: "4px",
+                          fontSize: "0.75rem",
+                          fontWeight: 600,
+                          background:
+                            u.role === "admin"
+                              ? "rgba(231,76,60,0.15)"
+                              : "var(--color-border)",
+                          color:
+                            u.role === "admin"
+                              ? "#e74c3c"
+                              : "var(--color-text-muted)",
+                        }}
+                      >
+                        {u.role}
+                      </span>
+                      <select
+                        value={u.role}
+                        onChange={(e) => handleUserRole(u.id, e.target.value)}
+                        style={{
+                          padding: "0.35rem 0.6rem",
+                          background: "var(--color-input-bg)",
+                          border: "1px solid var(--color-border)",
+                          borderRadius: "4px",
+                          color: "var(--color-text)",
+                          fontSize: "0.8rem",
+                          cursor: "pointer",
+                        }}
+                      >
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    </div>
+                  ))
+                )}
               </div>
             )}
           </div>
@@ -434,12 +614,22 @@ export function AdminPage() {
         {/* Reports */}
         {tab === "reports" && (
           <div>
-            <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1.25rem" }}>
+            <div
+              style={{
+                display: "flex",
+                gap: "0.5rem",
+                marginBottom: "1.25rem",
+              }}
+            >
               {["pending", "resolved", "dismissed"].map((s) => (
                 <button
                   key={s}
                   onClick={() => setReportStatusFilter(s)}
-                  className={reportStatusFilter === s ? "btn btn-primary" : "btn btn-outline"}
+                  className={
+                    reportStatusFilter === s
+                      ? "btn btn-primary"
+                      : "btn btn-outline"
+                  }
                   style={{ fontSize: "0.8rem", padding: "0.35rem 0.8rem" }}
                 >
                   {s.charAt(0).toUpperCase() + s.slice(1)}
@@ -450,75 +640,135 @@ export function AdminPage() {
             {loadingTab ? (
               <div style={{ color: "var(--color-text-muted)" }}>Loading...</div>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "0.75rem",
+                }}
+              >
                 {reports.length === 0 ? (
-                  <div style={{ color: "var(--color-text-muted)", padding: "2rem 0" }}>
-                    No {reportStatusFilter} reports.
-                  </div>
-                ) : reports.map((r) => (
                   <div
-                    key={r.id}
                     style={{
-                      background: "var(--color-card)",
-                      border: "1px solid var(--color-border)",
-                      borderRadius: "8px",
-                      padding: "1rem 1.25rem",
+                      color: "var(--color-text-muted)",
+                      padding: "2rem 0",
                     }}
                   >
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.5rem" }}>
-                      <div>
-                        <span style={{ fontWeight: 600, marginRight: "0.5rem" }}>{r.reason.replace(/_/g, " ")}</span>
-                        <span style={{ fontSize: "0.78rem", color: "var(--color-text-muted)" }}>
-                          {r.targetType}: <code>{r.targetId}</code>
+                    No {reportStatusFilter} reports.
+                  </div>
+                ) : (
+                  reports.map((r) => (
+                    <div
+                      key={r.id}
+                      style={{
+                        background: "var(--color-card)",
+                        border: "1px solid var(--color-border)",
+                        borderRadius: "8px",
+                        padding: "1rem 1.25rem",
+                      }}
+                    >
+                      <div
+                        style={{
+                          display: "flex",
+                          justifyContent: "space-between",
+                          marginBottom: "0.5rem",
+                        }}
+                      >
+                        <div>
+                          <span
+                            style={{ fontWeight: 600, marginRight: "0.5rem" }}
+                          >
+                            {r.reason.replace(/_/g, " ")}
+                          </span>
+                          <span
+                            style={{
+                              fontSize: "0.78rem",
+                              color: "var(--color-text-muted)",
+                            }}
+                          >
+                            {r.targetType}: <code>{r.targetId}</code>
+                          </span>
+                        </div>
+                        <span
+                          style={{
+                            fontSize: "0.75rem",
+                            color: "var(--color-text-muted)",
+                          }}
+                        >
+                          {formatDate(r.createdAt)}
                         </span>
                       </div>
-                      <span style={{ fontSize: "0.75rem", color: "var(--color-text-muted)" }}>{formatDate(r.createdAt)}</span>
-                    </div>
-                    {r.description && (
-                      <div style={{ fontSize: "0.85rem", color: "var(--color-text-muted)", marginBottom: "0.75rem" }}>
-                        {r.description}
-                      </div>
-                    )}
-                    {r.status === "pending" && (
-                      <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginTop: "0.5rem" }}>
-                        <input
-                          value={reportNote[r.id] || ""}
-                          onChange={(e) => setReportNote((prev) => ({ ...prev, [r.id]: e.target.value }))}
-                          placeholder="Optional admin note..."
-                          className="publish-input"
+                      {r.description && (
+                        <div
                           style={{
-                            flex: 1,
-                            padding: "0.4rem 0.6rem",
-                            background: "var(--color-input-bg)",
-                            border: "1px solid var(--color-border)",
-                            borderRadius: "4px",
-                            color: "var(--color-text)",
-                            fontSize: "0.8rem",
+                            fontSize: "0.85rem",
+                            color: "var(--color-text-muted)",
+                            marginBottom: "0.75rem",
                           }}
-                        />
-                        <button
-                          className="btn btn-outline"
-                          style={{ fontSize: "0.78rem", color: "#2ecc71" }}
-                          onClick={() => handleReport(r.id, "resolved")}
                         >
-                          Resolve
-                        </button>
-                        <button
-                          className="btn btn-outline"
-                          style={{ fontSize: "0.78rem" }}
-                          onClick={() => handleReport(r.id, "dismissed")}
+                          {r.description}
+                        </div>
+                      )}
+                      {r.status === "pending" && (
+                        <div
+                          style={{
+                            display: "flex",
+                            gap: "0.5rem",
+                            alignItems: "center",
+                            marginTop: "0.5rem",
+                          }}
                         >
-                          Dismiss
-                        </button>
-                      </div>
-                    )}
-                    {r.adminNote && (
-                      <div style={{ fontSize: "0.78rem", color: "var(--color-text-muted)", marginTop: "0.5rem", fontStyle: "italic" }}>
-                        Admin note: {r.adminNote}
-                      </div>
-                    )}
-                  </div>
-                ))}
+                          <input
+                            value={reportNote[r.id] || ""}
+                            onChange={(e) =>
+                              setReportNote((prev) => ({
+                                ...prev,
+                                [r.id]: e.target.value,
+                              }))
+                            }
+                            placeholder="Optional admin note..."
+                            className="publish-input"
+                            style={{
+                              flex: 1,
+                              padding: "0.4rem 0.6rem",
+                              background: "var(--color-input-bg)",
+                              border: "1px solid var(--color-border)",
+                              borderRadius: "4px",
+                              color: "var(--color-text)",
+                              fontSize: "0.8rem",
+                            }}
+                          />
+                          <button
+                            className="btn btn-outline"
+                            style={{ fontSize: "0.78rem", color: "#2ecc71" }}
+                            onClick={() => handleReport(r.id, "resolved")}
+                          >
+                            Resolve
+                          </button>
+                          <button
+                            className="btn btn-outline"
+                            style={{ fontSize: "0.78rem" }}
+                            onClick={() => handleReport(r.id, "dismissed")}
+                          >
+                            Dismiss
+                          </button>
+                        </div>
+                      )}
+                      {r.adminNote && (
+                        <div
+                          style={{
+                            fontSize: "0.78rem",
+                            color: "var(--color-text-muted)",
+                            marginTop: "0.5rem",
+                            fontStyle: "italic",
+                          }}
+                        >
+                          Admin note: {r.adminNote}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                )}
               </div>
             )}
           </div>

@@ -108,9 +108,7 @@ export function verifyHmacProof(
 async function commitEvidenceToGithub(record: EvidenceRecord): Promise<string> {
   const [owner, repo] = (env.GITHUB_EVIDENCE_REPO ?? "").split("/");
   if (!owner || !repo) {
-    throw new Error(
-      "GITHUB_EVIDENCE_REPO must be in format 'owner/repo'",
-    );
+    throw new Error("GITHUB_EVIDENCE_REPO must be in format 'owner/repo'");
   }
 
   const token = env.GITHUB_EVIDENCE_TOKEN!;

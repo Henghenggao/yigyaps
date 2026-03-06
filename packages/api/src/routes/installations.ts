@@ -106,10 +106,7 @@ export async function installationsRoutes(fastify: FastifyInstance) {
 
         const mint = await mintDalTx.getBySkillPackageId(pkg.id);
 
-        const hasExisting = await installDalTx.hasInstallation(
-          userId,
-          pkg.id,
-        );
+        const hasExisting = await installDalTx.hasInstallation(userId, pkg.id);
         if (hasExisting) {
           return {
             status: 409,

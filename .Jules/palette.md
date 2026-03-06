@@ -1,0 +1,4 @@
+## 2024-05-24 - Accessible Star Rating Widgets
+
+**Learning:** Custom interactive widgets like star ratings using `<button>` arrays lack inherent semantic meaning. Simply making them focusable and clickable isn't enough; screen readers need explicit ARIA roles (like `role="radiogroup"` on the container and `role="radio"` on each button) to understand their purpose and state. Literal characters (like "★") can be confusing if read aloud, so `aria-hidden="true"` should be used alongside a descriptive `aria-label`. Dynamic updates to the rating state require `aria-live` to announce changes properly.
+**Action:** Always apply explicit ARIA roles (`radiogroup`, `radio`), `aria-checked` states, descriptive labels, and `aria-live` regions when building custom interactive components that diverge from native HTML controls. Hide decorative literal characters from screen readers using `aria-hidden`.

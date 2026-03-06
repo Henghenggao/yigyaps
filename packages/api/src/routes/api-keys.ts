@@ -8,11 +8,11 @@
  * License: Apache 2.0
  */
 
-import type { FastifyPluginAsync } from 'fastify';
-import crypto from 'crypto';
-import { z } from 'zod';
-import { ApiKeyDAL } from '@yigyaps/db';
-import { requireAuth } from '../middleware/auth-v2.js';
+import type { FastifyPluginAsync } from "fastify";
+import crypto from "crypto";
+import { z } from "zod";
+import { ApiKeyDAL } from "@yigyaps/db";
+import { requireAuth } from "../middleware/auth-v2.js";
 
 // ─── Validation Schemas ───────────────────────────────────────────────────────
 
@@ -37,22 +37,22 @@ const createApiKeySchema = z.object({
 export const apiKeysRoutes: FastifyPluginAsync = async (fastify) => {
   // POST /v1/auth/api-keys — Generate a new API key
   fastify.post(
-    '/api-keys',
+    "/api-keys",
     { preHandler: requireAuth() },
     async (request, reply) => {
       const userId = request.user?.userId;
       if (!userId) {
         return reply.status(401).send({
-          error: 'Unauthorized',
-          message: 'Not authenticated',
+          error: "Unauthorized",
+          message: "Not authenticated",
         });
       }
 
       const parsed = createApiKeySchema.safeParse(request.body);
       if (!parsed.success) {
         return reply.status(400).send({
-          error: 'Bad Request',
-          message: 'Validation failed',
+          error: "Bad Request",
+          message: "Validation failed",
           details: parsed.error.issues,
         });
       }
@@ -61,8 +61,8 @@ export const apiKeysRoutes: FastifyPluginAsync = async (fastify) => {
       const termsAcceptedAt = Date.now();
 
       // Generate a random 32-byte key with yg_ prefix
-      const rawKey = 'yg_' + crypto.randomBytes(32).toString('hex');
-      const keyHash = crypto.createHash('sha256').update(rawKey).digest('hex');
+      const rawKey = "yg_" + crypto.randomBytes(32).toString("hex");
+      const keyHash = crypto.createHash("sha256").update(rawKey).digest("hex");
       // 'yg_' + first 7 hex chars = 10 chars total as prefix
       const keyPrefix = rawKey.substring(0, 10);
 
@@ -73,7 +73,7 @@ export const apiKeysRoutes: FastifyPluginAsync = async (fastify) => {
 
       const apiKeyDAL = new ApiKeyDAL(fastify.db);
       const apiKey = await apiKeyDAL.create({
-        id: 'ak_' + now + '_' + crypto.randomBytes(4).toString('hex'),
+        id: "ak_" + now + "_" + crypto.randomBytes(4).toString("hex"),
         userId,
         name,
         keyHash,
@@ -99,14 +99,14 @@ export const apiKeysRoutes: FastifyPluginAsync = async (fastify) => {
 
   // GET /v1/auth/api-keys — List user's API keys (no plaintext key returned)
   fastify.get(
-    '/api-keys',
+    "/api-keys",
     { preHandler: requireAuth() },
     async (request, reply) => {
       const userId = request.user?.userId;
       if (!userId) {
         return reply.status(401).send({
-          error: 'Unauthorized',
-          message: 'Not authenticated',
+          error: "Unauthorized",
+          message: "Not authenticated",
         });
       }
 
@@ -118,7 +118,7 @@ export const apiKeysRoutes: FastifyPluginAsync = async (fastify) => {
         id: k.id,
         name: k.name,
         keyPrefix: k.keyPrefix,
-        keyHint: k.keyPrefix + '...',
+        keyHint: k.keyPrefix + "...",
         scopes: k.scopes,
         expiresAt: k.expiresAt ?? null,
         lastUsedAt: k.lastUsedAt ?? null,
@@ -132,41 +132,41 @@ export const apiKeysRoutes: FastifyPluginAsync = async (fastify) => {
 
   // DELETE /v1/auth/api-keys/:id — Revoke an API key
   fastify.delete(
-    '/api-keys/:id',
+    "/api-keys/:id",
     { preHandler: requireAuth() },
     async (request, reply) => {
       const userId = request.user?.userId;
       if (!userId) {
         return reply.status(401).send({
-          error: 'Unauthorized',
-          message: 'Not authenticated',
+          error: "Unauthorized",
+          message: "Not authenticated",
         });
       }
 
-      const { id } = (request.params as { id: string });
+      const { id } = request.params as { id: string };
       const apiKeyDAL = new ApiKeyDAL(fastify.db);
       const apiKey = await apiKeyDAL.getById(id);
 
       if (!apiKey) {
         return reply.status(404).send({
-          error: 'Not Found',
-          message: 'API key not found',
+          error: "Not Found",
+          message: "API key not found",
         });
       }
 
       // Ownership check: key must belong to the authenticated user
       if (apiKey.userId !== userId) {
         return reply.status(403).send({
-          error: 'Forbidden',
-          message: 'You do not have permission to revoke this API key',
+          error: "Forbidden",
+          message: "You do not have permission to revoke this API key",
         });
       }
 
       // Check if already revoked
       if (apiKey.revokedAt) {
         return reply.status(409).send({
-          error: 'Conflict',
-          message: 'API key has already been revoked',
+          error: "Conflict",
+          message: "API key has already been revoked",
         });
       }
 
@@ -176,7 +176,7 @@ export const apiKeysRoutes: FastifyPluginAsync = async (fastify) => {
         id: revoked.id,
         name: revoked.name,
         revokedAt: revoked.revokedAt,
-        message: 'API key revoked successfully',
+        message: "API key revoked successfully",
       });
     },
   );

@@ -48,7 +48,9 @@ describe("publishCommand", () => {
       },
       rules: [{ path: "rule1.md", content: "content" }],
     };
-    vi.mocked(packager.packPackage).mockResolvedValue(mockPayload as unknown as PackagePayload);
+    vi.mocked(packager.packPackage).mockResolvedValue(
+      mockPayload as unknown as PackagePayload,
+    );
 
     const mockClient = {
       publishPackage: vi
@@ -81,7 +83,9 @@ describe("publishCommand", () => {
       },
       rules: [],
     };
-    vi.mocked(packager.packPackage).mockResolvedValue(mockPayload as unknown as PackagePayload);
+    vi.mocked(packager.packPackage).mockResolvedValue(
+      mockPayload as unknown as PackagePayload,
+    );
     const mockClient = { publishPackage: vi.fn() };
     vi.mocked(registry.createPublisherClient).mockReturnValue(
       mockClient as unknown as YigYapsPublisherClient,

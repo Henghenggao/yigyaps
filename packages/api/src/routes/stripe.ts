@@ -49,7 +49,9 @@ function getStripe(): Stripe | null {
   return new Stripe(env.STRIPE_SECRET_KEY, { apiVersion: "2026-02-25.clover" });
 }
 
-function stripeRequired(reply: { code: (n: number) => { send: (b: unknown) => unknown } }) {
+function stripeRequired(reply: {
+  code: (n: number) => { send: (b: unknown) => unknown };
+}) {
   return reply.code(503).send({
     error: "Service Unavailable",
     message:
@@ -78,8 +80,7 @@ export const stripeRoutes: FastifyPluginAsync = async (fastify) => {
         response_type: "code",
         client_id: env.STRIPE_CONNECT_CLIENT_ID,
         scope: "read_write",
-        redirect_uri:
-          `${env.YIGYAPS_API_URL ?? "http://localhost:3100"}/v1/stripe/connect/callback`,
+        redirect_uri: `${env.YIGYAPS_API_URL ?? "http://localhost:3100"}/v1/stripe/connect/callback`,
         state,
       });
 
@@ -217,11 +218,7 @@ export const stripeRoutes: FastifyPluginAsync = async (fastify) => {
                 description: `${TIER_CALL_LIMITS[tier] || "Unlimited"} skill invocations/month`,
               },
               unit_amount:
-                tier === "pro"
-                  ? 2900
-                  : tier === "epic"
-                    ? 9900
-                    : 29900, // cents
+                tier === "pro" ? 2900 : tier === "epic" ? 9900 : 29900, // cents
               recurring: { interval: "month" },
             },
             quantity: 1,
@@ -391,15 +388,16 @@ export const stripeRoutes: FastifyPluginAsync = async (fastify) => {
                 currentPeriodEnd: (invoice.period_end ?? 0) * 1000,
                 updatedAt: now,
               })
-              .where(
-                eq(subscriptionsTable.stripeSubscriptionId, subId),
-              );
+              .where(eq(subscriptionsTable.stripeSubscriptionId, subId));
           }
           break;
         }
 
         case "customer.subscription.deleted": {
-          const sub = event.data.object as { id: string; metadata?: Record<string, string> };
+          const sub = event.data.object as {
+            id: string;
+            metadata?: Record<string, string>;
+          };
           const now = Date.now();
           await fastify.db
             .update(subscriptionsTable)

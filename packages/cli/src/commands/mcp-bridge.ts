@@ -67,9 +67,7 @@ export async function mcpBridgeCommand(
   const config = getConfig();
   const apiKey = options.apiKey ?? config.apiKey;
   const apiUrl =
-    options.apiUrl ??
-    config.registryUrl ??
-    "https://api.yigyaps.com";
+    options.apiUrl ?? config.registryUrl ?? "https://api.yigyaps.com";
 
   if (!apiKey) {
     // Write to stderr so the MCP host sees a clear error, not JSON noise
@@ -137,8 +135,7 @@ export async function mcpBridgeCommand(
       throw new Error(`Unknown tool: ${request.params.name}`);
     }
 
-    const query =
-      (request.params.arguments as { query?: string })?.query ?? "";
+    const query = (request.params.arguments as { query?: string })?.query ?? "";
 
     let data: InvokeResponse;
     try {

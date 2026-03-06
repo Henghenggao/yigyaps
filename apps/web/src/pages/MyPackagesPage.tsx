@@ -38,7 +38,9 @@ export function MyPackagesPage() {
   useEffect(() => {
     fetchApi<{ packages: PackageSummary[] }>("/v1/packages/my-packages")
       .then((data) => setPackages(data.packages ?? []))
-      .catch(() => addToast({ message: "Failed to load your packages", type: "error" }))
+      .catch(() =>
+        addToast({ message: "Failed to load your packages", type: "error" }),
+      )
       .finally(() => setLoading(false));
 
     fetchApi<Earnings>("/v1/stripe/earnings")
@@ -47,7 +49,12 @@ export function MyPackagesPage() {
   }, [addToast]);
 
   const handleArchive = async (pkg: PackageSummary) => {
-    if (!window.confirm(`Archive "${pkg.displayName}"? It will no longer appear in search.`)) return;
+    if (
+      !window.confirm(
+        `Archive "${pkg.displayName}"? It will no longer appear in search.`,
+      )
+    )
+      return;
     setArchiving(pkg.id);
     try {
       await fetchApi(`/v1/packages/${pkg.id}`, {
@@ -68,9 +75,9 @@ export function MyPackagesPage() {
   const totalInstalls = packages.reduce((s, p) => s + (p.installCount || 0), 0);
   const avgRating =
     packages.length > 0
-      ? packages.reduce((s, p) => s + Number(p.rating || 0), 0) / packages.length
+      ? packages.reduce((s, p) => s + Number(p.rating || 0), 0) /
+        packages.length
       : 0;
-
 
   return (
     <div className="app-container">
@@ -80,7 +87,9 @@ export function MyPackagesPage() {
         <div className="dashboard-header fade-in">
           <div className="header-titles">
             <h1>My Skills</h1>
-            <p className="subtitle">Manage and monitor your AI skill packages</p>
+            <p className="subtitle">
+              Manage and monitor your AI skill packages
+            </p>
           </div>
           <Link to="/publish" className="btn btn-primary">
             + Publish New Skill
@@ -92,7 +101,11 @@ export function MyPackagesPage() {
           <div className="stats-grid fade-in-up">
             {[
               { label: "Published Skills", value: packages.length, icon: "📦" },
-              { label: "Total Installs", value: totalInstalls.toLocaleString(), icon: "📥" },
+              {
+                label: "Total Installs",
+                value: totalInstalls.toLocaleString(),
+                icon: "📥",
+              },
               { label: "Avg Rating", value: avgRating.toFixed(1), icon: "⭐" },
               ...(earnings
                 ? [
@@ -129,7 +142,9 @@ export function MyPackagesPage() {
           <div className="empty-dashboard fade-in">
             <div className="empty-icon">📦</div>
             <h2>No skills published yet</h2>
-            <p>Ready to assetize your wisdom and earn from the agent economy?</p>
+            <p>
+              Ready to assetize your wisdom and earn from the agent economy?
+            </p>
             <Link to="/publish" className="btn btn-primary">
               Publish Your First Skill
             </Link>
@@ -159,11 +174,13 @@ export function MyPackagesPage() {
                   <div className="item-desc">{pkg.description}</div>
                   <div className="item-metrics">
                     <span className="metric">
-                      <strong>{pkg.installCount.toLocaleString()}</strong> installs
+                      <strong>{pkg.installCount.toLocaleString()}</strong>{" "}
+                      installs
                     </span>
                     {Number(pkg.rating) > 0 && (
                       <span className="metric">
-                        <strong>⭐ {Number(pkg.rating).toFixed(1)}</strong> ({pkg.reviewCount})
+                        <strong>⭐ {Number(pkg.rating).toFixed(1)}</strong> (
+                        {pkg.reviewCount})
                       </span>
                     )}
                     <span className="metric category">{pkg.category}</span>
@@ -171,10 +188,16 @@ export function MyPackagesPage() {
                 </div>
 
                 <div className="item-actions">
-                  <Link to={`/skill/${pkg.packageId}`} className="btn btn-outline btn-sm">
+                  <Link
+                    to={`/skill/${pkg.packageId}`}
+                    className="btn btn-outline btn-sm"
+                  >
                     View
                   </Link>
-                  <Link to={`/my-packages/${pkg.id}/edit`} className="btn btn-outline btn-sm">
+                  <Link
+                    to={`/my-packages/${pkg.id}/edit`}
+                    className="btn btn-outline btn-sm"
+                  >
                     Edit
                   </Link>
                   <Link

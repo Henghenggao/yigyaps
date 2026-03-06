@@ -63,10 +63,7 @@ export async function reviewsRoutes(fastify: FastifyInstance) {
           : await pkgDalTx.getByPackageId(body.packageId);
         if (!pkg) return { status: 404, error: "Package not found" };
 
-        const hasInstalled = await installDalTx.hasInstallation(
-          userId,
-          pkg.id,
-        );
+        const hasInstalled = await installDalTx.hasInstallation(userId, pkg.id);
 
         const id = `srev_${now}_${Math.random().toString(36).slice(2, 8)}`;
         const review = await reviewDalTx.create({
@@ -86,12 +83,7 @@ export async function reviewsRoutes(fastify: FastifyInstance) {
         const { avgRating, count } = await reviewDalTx.calculateAverageRating(
           pkg.id,
         );
-        await pkgDalTx.updateRatingStats(
-          pkg.id,
-          avgRating,
-          count,
-          count,
-        );
+        await pkgDalTx.updateRatingStats(pkg.id, avgRating, count, count);
 
         return { status: 201, review };
       },
@@ -121,11 +113,7 @@ export async function reviewsRoutes(fastify: FastifyInstance) {
       }
     }
 
-    const reviews = await reviewDAL.getByPackage(
-      internalId,
-      limit,
-      offset,
-    );
+    const reviews = await reviewDAL.getByPackage(internalId, limit, offset);
     return reply.send({ reviews });
   });
 }

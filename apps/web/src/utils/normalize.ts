@@ -5,9 +5,7 @@ import type { SkillPackage } from "@yigyaps/types";
  * PostgreSQL numeric/decimal types return strings in JS (e.g., "0.00" instead of 0).
  * This ensures .toFixed() and numeric comparisons work correctly.
  */
-export function normalizePackage(
-  pkg: Record<string, unknown>,
-): SkillPackage {
+export function normalizePackage(pkg: Record<string, unknown>): SkillPackage {
   return {
     ...pkg,
     rating: Number(pkg.rating || 0),
