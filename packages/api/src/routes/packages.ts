@@ -61,7 +61,20 @@ const createPackageSchema = z.object({
   description: z.string().min(10).max(500),
   readme: z.string().max(5000).optional(),
   authorName: z.string().min(1).max(100),
-  authorUrl: z.string().url().optional(),
+  // Prevent Stored XSS via javascript: URLs
+  authorUrl: z
+    .string()
+    .url()
+    .refine(
+      (url) => {
+        const lower = url.toLowerCase();
+        return lower.startsWith("http://") || lower.startsWith("https://");
+      },
+      {
+        message: "URL must start with http:// or https://",
+      },
+    )
+    .optional(),
   license: z
     .enum(["open-source", "free", "premium", "enterprise"])
     .default("open-source"),
@@ -94,10 +107,49 @@ const createPackageSchema = z.object({
   requiredTier: z.number().int().min(0).max(3).default(0),
   mcpTransport: z.enum(["stdio", "http", "sse"]).default("stdio"),
   mcpCommand: z.string().max(500).optional(),
-  mcpUrl: z.string().url().optional(),
+  // Prevent Stored XSS via javascript: URLs
+  mcpUrl: z
+    .string()
+    .url()
+    .refine(
+      (url) => {
+        const lower = url.toLowerCase();
+        return lower.startsWith("http://") || lower.startsWith("https://");
+      },
+      {
+        message: "URL must start with http:// or https://",
+      },
+    )
+    .optional(),
   icon: z.string().max(500).optional(),
-  repositoryUrl: z.string().url().optional(),
-  homepageUrl: z.string().url().optional(),
+  // Prevent Stored XSS via javascript: URLs
+  repositoryUrl: z
+    .string()
+    .url()
+    .refine(
+      (url) => {
+        const lower = url.toLowerCase();
+        return lower.startsWith("http://") || lower.startsWith("https://");
+      },
+      {
+        message: "URL must start with http:// or https://",
+      },
+    )
+    .optional(),
+  // Prevent Stored XSS via javascript: URLs
+  homepageUrl: z
+    .string()
+    .url()
+    .refine(
+      (url) => {
+        const lower = url.toLowerCase();
+        return lower.startsWith("http://") || lower.startsWith("https://");
+      },
+      {
+        message: "URL must start with http:// or https://",
+      },
+    )
+    .optional(),
   rules: z
     .array(
       z.object({
@@ -109,7 +161,7 @@ const createPackageSchema = z.object({
 });
 
 const updatePackageSchema = createPackageSchema.partial().extend({
-  status: z.enum(["active","archived","banned"]).optional(),
+  status: z.enum(["active", "archived", "banned"]).optional(),
   priceUsd: z
     .number()
     .min(0)
@@ -195,12 +247,10 @@ export async function packagesRoutes(fastify: FastifyInstance) {
 
     const existing = await packageDAL.getByPackageId(body.packageId);
     if (existing) {
-      return reply
-        .code(409)
-        .send({
-          error: "Package ID already exists",
-          packageId: body.packageId,
-        });
+      return reply.code(409).send({
+        error: "Package ID already exists",
+        packageId: body.packageId,
+      });
     }
 
     // Sanitize README to prevent XSS
@@ -269,16 +319,19 @@ export async function packagesRoutes(fastify: FastifyInstance) {
     "/",
     { config: { rateLimit: { max: 60, timeWindow: "1 minute" } } },
     async (request, reply) => {
-    const params = searchSchema.parse(request.query);
+      const params = searchSchema.parse(request.query);
 
-    // If author filter is provided, fetch by author first then apply other filters
-    if (params.author) {
-      const authorPackages = await packageDAL.getByAuthor(params.author);
-      return reply.send({ packages: authorPackages, total: authorPackages.length });
-    }
+      // If author filter is provided, fetch by author first then apply other filters
+      if (params.author) {
+        const authorPackages = await packageDAL.getByAuthor(params.author);
+        return reply.send({
+          packages: authorPackages,
+          total: authorPackages.length,
+        });
+      }
 
-    const result = await packageDAL.search(params);
-    return reply.send(result);
+      const result = await packageDAL.search(params);
+      return reply.send(result);
     },
   );
 
@@ -286,9 +339,9 @@ export async function packagesRoutes(fastify: FastifyInstance) {
     "/:id",
     { config: { rateLimit: { max: 60, timeWindow: "1 minute" } } },
     async (request, reply) => {
-    const pkg = await packageDAL.getById(request.params.id);
-    if (!pkg) return reply.code(404).send({ error: "Package not found" });
-    return reply.send(await withCreatorInfo(pkg, userDAL));
+      const pkg = await packageDAL.getById(request.params.id);
+      if (!pkg) return reply.code(404).send({ error: "Package not found" });
+      return reply.send(await withCreatorInfo(pkg, userDAL));
     },
   );
 
@@ -353,7 +406,12 @@ export async function packagesRoutes(fastify: FastifyInstance) {
       const updateData = { ...parsed.data };
       if (updateData.status && updateData.status !== "active") {
         if (updateData.status === "banned" && request.user?.role !== "admin") {
-          return reply.code(403).send({ error: "Forbidden", message: "Only admins can ban packages" });
+          return reply
+            .code(403)
+            .send({
+              error: "Forbidden",
+              message: "Only admins can ban packages",
+            });
         }
       }
       // Sanitize README if present in update
@@ -372,11 +430,22 @@ export async function packagesRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       const userId = request.user?.userId;
       if (!userId) return reply.code(401).send({ error: "Unauthorized" });
-      const pkg = await packageDAL.getById((request.params as {id:string}).id);
+      const pkg = await packageDAL.getById(
+        (request.params as { id: string }).id,
+      );
       if (!pkg) return reply.code(404).send({ error: "Package not found" });
-      if (pkg.author !== userId) return reply.code(403).send({ error: "Not authorized to archive this package" });
-      const updated = await packageDAL.update((request.params as {id:string}).id, { status: "archived" });
-      return reply.send({ ...updated, message: "Package archived successfully" });
+      if (pkg.author !== userId)
+        return reply
+          .code(403)
+          .send({ error: "Not authorized to archive this package" });
+      const updated = await packageDAL.update(
+        (request.params as { id: string }).id,
+        { status: "archived" },
+      );
+      return reply.send({
+        ...updated,
+        message: "Package archived successfully",
+      });
     },
   );
 
