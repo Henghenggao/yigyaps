@@ -32,7 +32,9 @@ describe("searchCommand", () => {
       offset: 0,
     };
     const mockClient = { search: vi.fn().mockResolvedValue(mockResult) };
-    vi.mocked(registry.createRegistryClient).mockReturnValue(mockClient as unknown as YigYapsRegistryClient);
+    vi.mocked(registry.createRegistryClient).mockReturnValue(
+      mockClient as unknown as YigYapsRegistryClient,
+    );
 
     await searchCommand("test", {});
 
@@ -44,7 +46,9 @@ describe("searchCommand", () => {
   it("should handle empty results", async () => {
     const mockResult = { packages: [], total: 0, limit: 10, offset: 0 };
     const mockClient = { search: vi.fn().mockResolvedValue(mockResult) };
-    vi.mocked(registry.createRegistryClient).mockReturnValue(mockClient as unknown as YigYapsRegistryClient);
+    vi.mocked(registry.createRegistryClient).mockReturnValue(
+      mockClient as unknown as YigYapsRegistryClient,
+    );
 
     await searchCommand("nonexistent", {});
 

@@ -15,14 +15,14 @@ apps/web              (depends on: client)
 
 ### Package Responsibilities
 
-| Package | Path | Description |
-|---------|------|-------------|
-| `@yigyaps/types` | `packages/types/` | Shared Zod schemas and TypeScript interfaces used across all packages |
-| `@yigyaps/db` | `packages/db/` | Drizzle ORM schema + Data Access Layer (DAL) modules. All DB queries go through typed DALs |
-| `@yigyaps/api` | `packages/api/` | Fastify HTTP server with 11 route modules, JWT auth, CSRF protection, and rate limiting |
-| `@yigyaps/client` | `packages/client/` | JavaScript/TypeScript SDK for interacting with the registry API |
-| `@yigyaps/cli` | `packages/cli/` | 17-command CLI for skill creators (`yigyaps publish`, `yigyaps mcp-bridge`, etc.) |
-| `web` | `apps/web/` | React 19 + Vite SPA — marketplace, publication wizard, admin dashboard |
+| Package           | Path               | Description                                                                                |
+| ----------------- | ------------------ | ------------------------------------------------------------------------------------------ |
+| `@yigyaps/types`  | `packages/types/`  | Shared Zod schemas and TypeScript interfaces used across all packages                      |
+| `@yigyaps/db`     | `packages/db/`     | Drizzle ORM schema + Data Access Layer (DAL) modules. All DB queries go through typed DALs |
+| `@yigyaps/api`    | `packages/api/`    | Fastify HTTP server with 11 route modules, JWT auth, CSRF protection, and rate limiting    |
+| `@yigyaps/client` | `packages/client/` | JavaScript/TypeScript SDK for interacting with the registry API                            |
+| `@yigyaps/cli`    | `packages/cli/`    | 17-command CLI for skill creators (`yigyaps publish`, `yigyaps mcp-bridge`, etc.)          |
+| `web`             | `apps/web/`        | React 19 + Vite SPA — marketplace, publication wizard, admin dashboard                     |
 
 ---
 
@@ -52,19 +52,19 @@ The CLI uses `packages/client` to talk to the same API.
 
 All routes live under `packages/api/src/routes/`:
 
-| File | Prefix | Description |
-|------|--------|-------------|
-| `auth.ts` | `/v1/auth` | GitHub OAuth, JWT issue/refresh, logout |
-| `packages.ts` | `/v1/packages` | CRUD for skill packages |
-| `installations.ts` | `/v1/installations` | Install/uninstall tracking |
-| `reviews.ts` | `/v1/reviews` | Community reviews |
-| `mints.ts` | `/v1/mints` | Limited-edition NFT-like skill mints |
-| `users.ts` | `/v1/users` | Profile, public user lookup |
-| `api-keys.ts` | `/v1/auth/api-keys` | API key CRUD (SHA-256 hashed) |
-| `security.ts` | `/v1/security` | Skill execution, invocation metering |
-| `admin.ts` | `/v1/admin` | Platform moderation (admin only) |
-| `export.ts` | `/v1/export` | SKILL.md format export |
-| `stripe.ts` | `/v1/stripe` | Stripe Connect onboarding + webhooks |
+| File               | Prefix              | Description                             |
+| ------------------ | ------------------- | --------------------------------------- |
+| `auth.ts`          | `/v1/auth`          | GitHub OAuth, JWT issue/refresh, logout |
+| `packages.ts`      | `/v1/packages`      | CRUD for skill packages                 |
+| `installations.ts` | `/v1/installations` | Install/uninstall tracking              |
+| `reviews.ts`       | `/v1/reviews`       | Community reviews                       |
+| `mints.ts`         | `/v1/mints`         | Limited-edition NFT-like skill mints    |
+| `users.ts`         | `/v1/users`         | Profile, public user lookup             |
+| `api-keys.ts`      | `/v1/auth/api-keys` | API key CRUD (SHA-256 hashed)           |
+| `security.ts`      | `/v1/security`      | Skill execution, invocation metering    |
+| `admin.ts`         | `/v1/admin`         | Platform moderation (admin only)        |
+| `export.ts`        | `/v1/export`        | SKILL.md format export                  |
+| `stripe.ts`        | `/v1/stripe`        | Stripe Connect onboarding + webhooks    |
 
 ---
 

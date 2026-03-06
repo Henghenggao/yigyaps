@@ -36,7 +36,9 @@ describe("infoCommand", () => {
       getByPackageId: vi.fn().mockResolvedValue(mockPkg),
       getById: vi.fn(),
     };
-    vi.mocked(registry.createRegistryClient).mockReturnValue(mockClient as unknown as YigYapsRegistryClient);
+    vi.mocked(registry.createRegistryClient).mockReturnValue(
+      mockClient as unknown as YigYapsRegistryClient,
+    );
 
     await infoCommand("test-skill", {});
 

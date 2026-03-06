@@ -140,7 +140,12 @@ export function HomePage() {
                 {error && (
                   <div className="error-state">
                     <p>{error}</p>
-                    <button className="auth-btn" onClick={() => window.location.reload()}>Retry</button>
+                    <button
+                      className="auth-btn"
+                      onClick={() => window.location.reload()}
+                    >
+                      Retry
+                    </button>
                   </div>
                 )}
 
@@ -174,7 +179,10 @@ export function HomePage() {
 
       <footer className="site-footer">
         <div className="container">
-          <p>&copy; {new Date().getFullYear()} YigYaps. Shared Wisdom for AI Agents.</p>
+          <p>
+            &copy; {new Date().getFullYear()} YigYaps. Shared Wisdom for AI
+            Agents.
+          </p>
         </div>
       </footer>
 

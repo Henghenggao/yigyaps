@@ -24,7 +24,10 @@ export const setConfig = <K extends keyof ConfigSchema>(
 };
 export const updateConfig = (patch: Partial<ConfigSchema>) => {
   for (const [key, value] of Object.entries(patch)) {
-    config.set(key as keyof ConfigSchema, value as ConfigSchema[keyof ConfigSchema]);
+    config.set(
+      key as keyof ConfigSchema,
+      value as ConfigSchema[keyof ConfigSchema],
+    );
   }
 };
 export const clearConfig = () => config.clear();

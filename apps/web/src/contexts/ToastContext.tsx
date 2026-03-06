@@ -16,7 +16,11 @@ export interface Toast {
 }
 
 interface ToastContextValue {
-  addToast: (opts: { message: string; type?: ToastType; duration?: number }) => void;
+  addToast: (opts: {
+    message: string;
+    type?: ToastType;
+    duration?: number;
+  }) => void;
   removeToast: (id: string) => void;
 }
 
@@ -89,7 +93,11 @@ export function ToastProvider({ children }: { children: ReactNode }) {
             }}
           >
             <span
-              style={{ fontSize: "0.9rem", color: "var(--color-text)", flex: 1 }}
+              style={{
+                fontSize: "0.9rem",
+                color: "var(--color-text)",
+                flex: 1,
+              }}
             >
               {toast.message}
             </span>

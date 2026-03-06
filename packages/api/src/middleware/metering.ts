@@ -77,8 +77,7 @@ export async function checkQuota(
   userId: string,
   tier: string,
 ): Promise<QuotaResult> {
-  const royalty = (usd: number) =>
-    parseFloat((usd * CREATOR_SHARE).toFixed(4));
+  const royalty = (usd: number) => parseFloat((usd * CREATOR_SHARE).toFixed(4));
 
   // Free tier — pay-per-call, no quota to exhaust
   if (tier === "free") {

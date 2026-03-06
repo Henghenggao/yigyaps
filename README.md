@@ -13,7 +13,8 @@
 ---
 
 ### 🧠 The YAP Philosophy: Augmented Intelligence
-The name **YAP** stands for **Yigbot Augmented Plugin**. It emphasizes that AI skills are not just static tools, but modular cognitive extensions. 
+
+The name **YAP** stands for **Yigbot Augmented Plugin**. It emphasizes that AI skills are not just static tools, but modular cognitive extensions.
 **Agent + Skill = Augmented Agent.** By assetizing human expertise into the YAP format, we enable a future where AI agents are powered by verified, specialized human wisdom.
 
 ---
@@ -35,15 +36,18 @@ YigYaps is built on the belief that **Human Expertise is the most valuable asset
 YigYaps is engineered for **Security-First IP Protection**. We solve the "Knowledge Theft" problem through rigorous engineering:
 
 ### 🛡️ Expert IP Defense (Envelope Encryption)
-*   **Data at Rest**: All sensitive expertise is protected via **AES-256-GCM Envelope Encryption**.
-*   **KMS Integration**: Master keys (KEK) are managed separately from the database, ensuring that even a database breach won't expose creator knowledge.
-*   **Ephemeral Decryption**: Rules are only decrypted in memory during active tool execution and are immediately zeroed out.
+
+- **Data at Rest**: All sensitive expertise is protected via **AES-256-GCM Envelope Encryption**.
+- **KMS Integration**: Master keys (KEK) are managed separately from the database, ensuring that even a database breach won't expose creator knowledge.
+- **Ephemeral Decryption**: Rules are only decrypted in memory during active tool execution and are immediately zeroed out.
 
 ### 💻 Developer Experience (Premium CLI)
+
 The `yigyaps` CLI provides a world-class workflow for skill creators:
-*   **Interactive Onboarding**: Guided setup using modern, beautiful terminal prompts.
-*   **Validation Suite**: Built-in logic to verify MCP compliance before publishing.
-*   **Doctor Mode**: Self-diagnostic tool to ensure your environment is configured correctly.
+
+- **Interactive Onboarding**: Guided setup using modern, beautiful terminal prompts.
+- **Validation Suite**: Built-in logic to verify MCP compliance before publishing.
+- **Doctor Mode**: Self-diagnostic tool to ensure your environment is configured correctly.
 
 ---
 
@@ -61,13 +65,13 @@ The `yigyaps` CLI provides a world-class workflow for skill creators:
 
 ### Prerequisites
 
-| Requirement | Version | Notes |
-|---|---|---|
-| Node.js | 20+ | Use `nvm use` — `.nvmrc` is included |
-| npm | 10+ | Bundled with Node 20 |
-| PostgreSQL | 14+ | Local install **or** Docker Compose |
-| Docker Desktop | Latest | **Required** to run the test suite |
-| GitHub OAuth App | — | [See setup guide](#github-oauth-setup) |
+| Requirement      | Version | Notes                                  |
+| ---------------- | ------- | -------------------------------------- |
+| Node.js          | 20+     | Use `nvm use` — `.nvmrc` is included   |
+| npm              | 10+     | Bundled with Node 20                   |
+| PostgreSQL       | 14+     | Local install **or** Docker Compose    |
+| Docker Desktop   | Latest  | **Required** to run the test suite     |
+| GitHub OAuth App | —       | [See setup guide](#github-oauth-setup) |
 
 ### Option A — Local PostgreSQL
 
@@ -141,19 +145,20 @@ npm run db:studio      # open Drizzle Studio (visual DB browser)
 
 ## 🏗️ Monorepo Architecture
 
-| Module | NPM Scope | Description |
-| :--- | :--- | :--- |
-| **[Types](./packages/types)** | `@yigyaps/types` | Shared Zod schemas & interfaces |
-| **[Database](./packages/db)** | `@yigyaps/db` | Drizzle Schema & Data Access Layer |
-| **[API](./packages/api)** | `@yigyaps/api` | Fastify secure backend |
-| **[CLI](./packages/cli)** | `@yigyaps/cli` | Developer toolkit & publisher |
-| **[Web](./apps/web)** | `web` | Multi-step publication wizard & marketplace |
+| Module                        | NPM Scope        | Description                                 |
+| :---------------------------- | :--------------- | :------------------------------------------ |
+| **[Types](./packages/types)** | `@yigyaps/types` | Shared Zod schemas & interfaces             |
+| **[Database](./packages/db)** | `@yigyaps/db`    | Drizzle Schema & Data Access Layer          |
+| **[API](./packages/api)**     | `@yigyaps/api`   | Fastify secure backend                      |
+| **[CLI](./packages/cli)**     | `@yigyaps/cli`   | Developer toolkit & publisher               |
+| **[Web](./apps/web)**         | `web`            | Multi-step publication wizard & marketplace |
 
 ---
 
 ## 🤝 The Independence Pledge
 
 YigYaps is an **Independent Registry**. Unlike platform-tied stores, we prioritize:
+
 - **Neutrality**: No preferential ranking for specific model providers.
 - **Portability**: Skills published here work across Claude, Cursor, Windsurf, and any future MCP client.
 - **Community Governance**: Rejection and removal decisions are public and auditable.
@@ -168,4 +173,5 @@ YigYaps is an **Independent Registry**. Unlike platform-tied stores, we prioriti
 - **Architecture**: [ARCHITECTURE.md](ARCHITECTURE.md)
 
 ---
+
 <p align="center">Built with ❤️ for the future of Human-AI Collaboration.</p>

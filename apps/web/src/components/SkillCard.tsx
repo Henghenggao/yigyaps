@@ -19,9 +19,7 @@ export function SkillCard({ skill, onClick }: SkillCardProps) {
         <div className="skill-icon-box">
           {skill.icon || displayName.charAt(0).toUpperCase()}
         </div>
-        <div className="maturity-badge">
-          {skill.maturity}
-        </div>
+        <div className="maturity-badge">{skill.maturity}</div>
       </div>
 
       <div className="card-body">
@@ -46,7 +44,9 @@ export function SkillCard({ skill, onClick }: SkillCardProps) {
           )}
         </div>
         <div className="skill-price">
-          {Number(skill.priceUsd || 0) === 0 ? 'Free' : `$${Number(skill.priceUsd).toFixed(2)}`}
+          {Number(skill.priceUsd || 0) === 0
+            ? "Free"
+            : `$${Number(skill.priceUsd).toFixed(2)}`}
         </div>
       </div>
 

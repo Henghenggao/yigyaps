@@ -22,10 +22,7 @@ interface ExportOptions {
   json?: boolean;
 }
 
-export async function exportCommand(
-  packageId: string,
-  options: ExportOptions,
-) {
+export async function exportCommand(packageId: string, options: ExportOptions) {
   const fmt = options.format ?? "skill-md";
 
   if (fmt !== "skill-md") {
@@ -58,7 +55,9 @@ export async function exportCommand(
   if (!response.ok) {
     const body = await response.text().catch(() => response.statusText);
     if (options.json) {
-      console.error(JSON.stringify({ error: `HTTP ${response.status}`, detail: body }));
+      console.error(
+        JSON.stringify({ error: `HTTP ${response.status}`, detail: body }),
+      );
     } else {
       p.log.error(`API error ${response.status}: ${body}`);
     }

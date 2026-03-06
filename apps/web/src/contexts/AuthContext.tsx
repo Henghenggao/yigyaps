@@ -11,7 +11,6 @@ import { createContext, useContext, useState, useEffect, useRef } from "react";
 import type { ReactNode } from "react";
 import { API_URL, fetchApi } from "../lib/api";
 
-
 // ─── Types ────────────────────────────────────────────────────────────────────
 
 export interface User {
@@ -64,7 +63,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
     const initAuth = async () => {
       try {
-        const userData = await fetchApi("/v1/auth/me") as User;
+        const userData = (await fetchApi("/v1/auth/me")) as User;
         setUser(userData);
       } catch (err) {
         setUser(null);
@@ -92,13 +91,12 @@ export function AuthProvider({ children }: AuthProviderProps) {
   // Fetch user profile securely with cookie
   const fetchUserProfile = async () => {
     try {
-      const userData = await fetchApi("/v1/auth/me") as User;
+      const userData = (await fetchApi("/v1/auth/me")) as User;
       setUser(userData);
     } catch (err) {
       console.error("Failed to refresh user profile:", err);
     }
   };
-
 
   // Initiate GitHub OAuth login
   const login = () => {

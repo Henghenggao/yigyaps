@@ -18,6 +18,7 @@ We take the security of YigYaps seriously. If you believe you have found a secur
 Instead, please send an email to security@yigyaps.com (mock address for now) or contact the maintainers directly through official channels.
 
 When reporting a vulnerability, please include:
+
 - A description of the issue.
 - Steps to reproduce the vulnerability (proof of concept).
 - Potential impact if exploited.

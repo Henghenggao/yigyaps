@@ -2,34 +2,34 @@
   /* Precise Editorial Minimalist Specs (Source: Yigstudio Alpha) */
 
   /* Colors */
-  --color-bg: #FAF9F5;
+  --color-bg: #faf9f5;
   /* Off-White Cream */
-  --color-surface: #FFFFFF;
+  --color-surface: #ffffff;
   /* Pure White */
-  --color-logo-bg: #0C2242;
+  --color-logo-bg: #0c2242;
   /* Midnight Blue */
-  --color-primary: #D4A394;
+  --color-primary: #d4a394;
   /* Terracotta/Coral */
-  --color-primary-hover: #C28D7D;
-  --color-dot: #F0B806;
+  --color-primary-hover: #c28d7d;
+  --color-dot: #f0b806;
   /* Deep Sun Yellow */
-  --color-text-main: #1A1A1A;
+  --color-text-main: #1a1a1a;
   /* Dark Charcoal */
-  --color-text-sub: #5F6368;
+  --color-text-sub: #5f6368;
   /* Muted Slate */
-  --color-border: #EFECE0;
+  --color-border: #efece0;
   /* Subtle Beige-Gray */
-  --color-accent-bg: #F2EFE8;
+  --color-accent-bg: #f2efe8;
   /* Soft Beige Accent */
 
   /* Aliases — used widely in inline styles across pages */
-  --color-card: #FFFFFF;
+  --color-card: #ffffff;
   /* Same as --color-surface */
-  --color-text: #1A1A1A;
+  --color-text: #1a1a1a;
   /* Same as --color-text-main */
-  --color-text-muted: #5F6368;
+  --color-text-muted: #5f6368;
   /* Same as --color-text-sub */
-  --color-input-bg: #FFFFFF;
+  --color-input-bg: #ffffff;
   /* Light bg for form inputs */
   --color-primary-rgb: 212, 163, 148;
   /* RGB of terracotta for rgba() */
@@ -46,8 +46,10 @@
   --radius-sm: 6px;
 
   /* Shadows */
-  --shadow-soft: 0 10px 15px -3px rgba(0, 0, 0, 0.04), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
-  --shadow-hover: 0 20px 25px -5px rgba(0, 0, 0, 0.06), 0 10px 10px -5px rgba(0, 0, 0, 0.03);
+  --shadow-soft:
+    0 10px 15px -3px rgba(0, 0, 0, 0.04), 0 4px 6px -2px rgba(0, 0, 0, 0.02);
+  --shadow-hover:
+    0 20px 25px -5px rgba(0, 0, 0, 0.06), 0 10px 10px -5px rgba(0, 0, 0, 0.03);
 
   /* Transitions */
   --transition: 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -276,7 +278,7 @@ button {
 
 .publish-input::placeholder,
 .publish-textarea::placeholder {
-  color: #A0AEC0;
+  color: #a0aec0;
 }
 
 /* ── Skeleton ─────────────────────────────────────────────── */
@@ -288,7 +290,12 @@ button {
 }
 
 .skeleton-line {
-  background: linear-gradient(90deg, var(--color-accent-bg) 25%, #ede9e0 50%, var(--color-accent-bg) 75%);
+  background: linear-gradient(
+    90deg,
+    var(--color-accent-bg) 25%,
+    #ede9e0 50%,
+    var(--color-accent-bg) 75%
+  );
   background-size: 200% 100%;
   animation: shimmer 1.5s infinite;
   border-radius: var(--radius-sm);
@@ -296,19 +303,35 @@ button {
 }
 
 @keyframes shimmer {
-  0% { background-position: 200% 0; }
-  100% { background-position: -200% 0; }
+  0% {
+    background-position: 200% 0;
+  }
+  100% {
+    background-position: -200% 0;
+  }
 }
 
 /* ── Animations ───────────────────────────────────────────── */
 @keyframes fadeInRight {
-  from { opacity: 0; transform: translateX(20px); }
-  to   { opacity: 1; transform: translateX(0); }
+  from {
+    opacity: 0;
+    transform: translateX(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
 }
 
 @keyframes fadeInUp {
-  from { opacity: 0; transform: translateY(16px); }
-  to   { opacity: 1; transform: translateY(0); }
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
 }
 
 .fade-in {
@@ -407,7 +430,9 @@ button {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .empty-dashboard {
@@ -502,15 +527,36 @@ button {
 }
 
 /* Maturity badge colors */
-.maturity-stable    { color: #16a34a; background: rgba(22, 163, 74, 0.08); }
-.maturity-beta      { color: #d97706; background: rgba(217, 119, 6, 0.08); }
-.maturity-experimental { color: #7c3aed; background: rgba(124, 58, 237, 0.08); }
-.maturity-deprecated   { color: #9ca3af; background: rgba(156, 163, 175, 0.08); }
+.maturity-stable {
+  color: #16a34a;
+  background: rgba(22, 163, 74, 0.08);
+}
+.maturity-beta {
+  color: #d97706;
+  background: rgba(217, 119, 6, 0.08);
+}
+.maturity-experimental {
+  color: #7c3aed;
+  background: rgba(124, 58, 237, 0.08);
+}
+.maturity-deprecated {
+  color: #9ca3af;
+  background: rgba(156, 163, 175, 0.08);
+}
 
 /* Status badge colors */
-.status-active   { color: #16a34a; background: rgba(22, 163, 74, 0.08); }
-.status-archived { color: #d97706; background: rgba(217, 119, 6, 0.08); }
-.status-banned   { color: #dc2626; background: rgba(220, 38, 38, 0.08); }
+.status-active {
+  color: #16a34a;
+  background: rgba(22, 163, 74, 0.08);
+}
+.status-archived {
+  color: #d97706;
+  background: rgba(217, 119, 6, 0.08);
+}
+.status-banned {
+  color: #dc2626;
+  background: rgba(220, 38, 38, 0.08);
+}
 
 .item-desc {
   font-size: 0.9rem;

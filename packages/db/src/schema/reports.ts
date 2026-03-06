@@ -14,9 +14,7 @@ export const reportsTable = pgTable(
   {
     id: text("id").primaryKey(),
     reporterId: text("reporter_id").notNull(),
-    targetType: text("target_type")
-      .$type<"skill_package" | "user">()
-      .notNull(),
+    targetType: text("target_type").$type<"skill_package" | "user">().notNull(),
     targetId: text("target_id").notNull(),
     reason: text("reason")
       .$type<

@@ -48,7 +48,11 @@ export function ProtectedRoute() {
             >
               You need to be signed in to access this page.
             </p>
-            <button className="btn btn-primary" style={{ width: "100%" }} onClick={login}>
+            <button
+              className="btn btn-primary"
+              style={{ width: "100%" }}
+              onClick={login}
+            >
               Sign in with GitHub
             </button>
           </div>

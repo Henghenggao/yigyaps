@@ -50,16 +50,10 @@ function App() {
           <Route element={<ProtectedRoute />}>
             <Route path="/publish" element={<PublishSkillPage />} />
             <Route path="/my-packages" element={<MyPackagesPage />} />
-            <Route
-              path="/my-packages/:id/edit"
-              element={<EditPackagePage />}
-            />
+            <Route path="/my-packages/:id/edit" element={<EditPackagePage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/admin" element={<AdminPage />} />
-            <Route
-              path="/lab/:packageId"
-              element={<EvolutionLabPage />}
-            />
+            <Route path="/lab/:packageId" element={<EvolutionLabPage />} />
           </Route>
 
           <Route path="/skill/:packageId" element={<SkillDetailPage />} />

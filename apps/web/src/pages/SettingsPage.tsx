@@ -41,7 +41,9 @@ export function SettingsPage() {
     setPayoutLoading(true);
     fetchApi<typeof payoutStatus>("/v1/stripe/connect/status")
       .then((data) => setPayoutStatus(data))
-      .catch(() => addToast({ message: "Failed to load payout status", type: "error" }))
+      .catch(() =>
+        addToast({ message: "Failed to load payout status", type: "error" }),
+      )
       .finally(() => setPayoutLoading(false));
   }, [tab]);
 
@@ -50,13 +52,18 @@ export function SettingsPage() {
     setLoading(true);
     fetchApi<{ keys: ApiKey[] }>("/v1/auth/api-keys")
       .then((data) => setApiKeys(data.keys ?? []))
-      .catch(() => addToast({ message: "Failed to load API keys", type: "error" }))
+      .catch(() =>
+        addToast({ message: "Failed to load API keys", type: "error" }),
+      )
       .finally(() => setLoading(false));
   }, [tab]);
 
   const handleGenerate = async () => {
     if (!newKeyName.trim()) {
-      addToast({ message: "Please enter a name for this key", type: "warning" });
+      addToast({
+        message: "Please enter a name for this key",
+        type: "warning",
+      });
       return;
     }
     setGenerating(true);
@@ -87,7 +94,8 @@ export function SettingsPage() {
   };
 
   const handleRevoke = async (key: ApiKey) => {
-    if (!window.confirm(`Revoke key "${key.name}"? This cannot be undone.`)) return;
+    if (!window.confirm(`Revoke key "${key.name}"? This cannot be undone.`))
+      return;
     setRevoking(key.id);
     try {
       await fetchApi(`/v1/auth/api-keys/${key.id}`, { method: "DELETE" });
@@ -109,8 +117,13 @@ export function SettingsPage() {
     <div className="app-container">
       <Header user={user} login={login} />
 
-      <main className="main-content" style={{ maxWidth: "800px", margin: "0 auto" }}>
-        <h1 style={{ fontSize: "1.75rem", marginBottom: "1.5rem" }}>Settings</h1>
+      <main
+        className="main-content"
+        style={{ maxWidth: "800px", margin: "0 auto" }}
+      >
+        <h1 style={{ fontSize: "1.75rem", marginBottom: "1.5rem" }}>
+          Settings
+        </h1>
 
         {/* Tabs */}
         <div
@@ -128,15 +141,25 @@ export function SettingsPage() {
               style={{
                 background: "none",
                 border: "none",
-                borderBottom: tab === t ? "2px solid var(--color-primary)" : "2px solid transparent",
+                borderBottom:
+                  tab === t
+                    ? "2px solid var(--color-primary)"
+                    : "2px solid transparent",
                 padding: "0.75rem 1.25rem",
                 cursor: "pointer",
-                color: tab === t ? "var(--color-primary)" : "var(--color-text-muted)",
+                color:
+                  tab === t
+                    ? "var(--color-primary)"
+                    : "var(--color-text-muted)",
                 fontWeight: tab === t ? 600 : 400,
                 fontSize: "0.95rem",
               }}
             >
-              {t === "api-keys" ? "API Keys" : t === "payout" ? "Payout" : "Profile"}
+              {t === "api-keys"
+                ? "API Keys"
+                : t === "payout"
+                  ? "Payout"
+                  : "Profile"}
             </button>
           ))}
         </div>
@@ -173,17 +196,34 @@ export function SettingsPage() {
                     padding: "0.75rem",
                   }}
                 >
-                  <code style={{ flex: 1, wordBreak: "break-all", fontSize: "0.85rem", color: "rgba(255,255,255,0.9)", fontFamily: "monospace" }}>
+                  <code
+                    style={{
+                      flex: 1,
+                      wordBreak: "break-all",
+                      fontSize: "0.85rem",
+                      color: "rgba(255,255,255,0.9)",
+                      fontFamily: "monospace",
+                    }}
+                  >
                     {generatedKey}
                   </code>
-                  <button className="btn btn-outline" onClick={handleCopy} style={{ flexShrink: 0 }}>
+                  <button
+                    className="btn btn-outline"
+                    onClick={handleCopy}
+                    style={{ flexShrink: 0 }}
+                  >
                     {copied ? "Copied!" : "Copy"}
                   </button>
                 </div>
                 <div
-                  style={{ fontSize: "0.8rem", color: "#2ecc71", marginTop: "0.75rem" }}
+                  style={{
+                    fontSize: "0.8rem",
+                    color: "#2ecc71",
+                    marginTop: "0.75rem",
+                  }}
                 >
-                  Use with CLI: <code>yigyaps login</code> — paste this key when prompted
+                  Use with CLI: <code>yigyaps login</code> — paste this key when
+                  prompted
                 </div>
                 <button
                   style={{
@@ -234,7 +274,13 @@ export function SettingsPage() {
                 }}
               >
                 <div style={{ flex: 1 }}>
-                  <label style={{ display: "block", marginBottom: "0.4rem", fontSize: "0.85rem" }}>
+                  <label
+                    style={{
+                      display: "block",
+                      marginBottom: "0.4rem",
+                      fontSize: "0.85rem",
+                    }}
+                  >
                     Key name (e.g. "My Laptop", "CI Pipeline")
                   </label>
                   <input
@@ -262,13 +308,21 @@ export function SettingsPage() {
               </div>
             )}
 
-            <p style={{ fontSize: "0.85rem", color: "var(--color-text-muted)", marginBottom: "1.25rem" }}>
-              API keys allow the CLI and external tools to authenticate on your behalf.
-              To use the CLI: <code>yigyaps login</code>
+            <p
+              style={{
+                fontSize: "0.85rem",
+                color: "var(--color-text-muted)",
+                marginBottom: "1.25rem",
+              }}
+            >
+              API keys allow the CLI and external tools to authenticate on your
+              behalf. To use the CLI: <code>yigyaps login</code>
             </p>
 
             {loading ? (
-              <div style={{ color: "var(--color-text-muted)", padding: "1rem 0" }}>
+              <div
+                style={{ color: "var(--color-text-muted)", padding: "1rem 0" }}
+              >
                 Loading keys...
               </div>
             ) : apiKeys.length === 0 ? (
@@ -281,12 +335,23 @@ export function SettingsPage() {
                   borderRadius: "10px",
                 }}
               >
-                <p style={{ color: "var(--color-text-muted)", marginBottom: "1rem" }}>
+                <p
+                  style={{
+                    color: "var(--color-text-muted)",
+                    marginBottom: "1rem",
+                  }}
+                >
                   No API keys yet. Generate one to use the CLI.
                 </p>
               </div>
             ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "0.75rem",
+                }}
+              >
                 {apiKeys.map((key) => (
                   <div
                     key={key.id}
@@ -344,8 +409,16 @@ export function SettingsPage() {
 
         {tab === "payout" && (
           <div>
-            <h2 style={{ margin: "0 0 0.5rem", fontSize: "1.1rem" }}>Payout Settings</h2>
-            <p style={{ fontSize: "0.85rem", color: "var(--color-text-muted)", marginBottom: "1.5rem" }}>
+            <h2 style={{ margin: "0 0 0.5rem", fontSize: "1.1rem" }}>
+              Payout Settings
+            </h2>
+            <p
+              style={{
+                fontSize: "0.85rem",
+                color: "var(--color-text-muted)",
+                marginBottom: "1.5rem",
+              }}
+            >
               Connect your Stripe account to receive your 70% creator royalties.
               Stripe handles all payouts — funds arrive T+2 business days.
             </p>
@@ -363,39 +436,73 @@ export function SettingsPage() {
               >
                 {payoutStatus?.connected ? (
                   <>
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1rem" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: "0.75rem",
+                        marginBottom: "1rem",
+                      }}
+                    >
                       <span style={{ fontSize: "1.5rem" }}>✅</span>
                       <div>
-                        <div style={{ fontWeight: 600 }}>Stripe account connected</div>
-                        <div style={{ fontSize: "0.8rem", color: "var(--color-text-muted)", fontFamily: "monospace" }}>
+                        <div style={{ fontWeight: 600 }}>
+                          Stripe account connected
+                        </div>
+                        <div
+                          style={{
+                            fontSize: "0.8rem",
+                            color: "var(--color-text-muted)",
+                            fontFamily: "monospace",
+                          }}
+                        >
                           {payoutStatus.stripeAccountId}
                         </div>
                       </div>
                     </div>
-                    <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginBottom: "1.25rem" }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        gap: "1rem",
+                        flexWrap: "wrap",
+                        marginBottom: "1.25rem",
+                      }}
+                    >
                       <span
                         style={{
                           padding: "0.3rem 0.75rem",
                           borderRadius: "20px",
                           fontSize: "0.8rem",
-                          background: payoutStatus.details_submitted ? "#1e3a2f" : "#3a1e1e",
-                          color: payoutStatus.details_submitted ? "#2ecc71" : "#e74c3c",
+                          background: payoutStatus.details_submitted
+                            ? "#1e3a2f"
+                            : "#3a1e1e",
+                          color: payoutStatus.details_submitted
+                            ? "#2ecc71"
+                            : "#e74c3c",
                           border: `1px solid ${payoutStatus.details_submitted ? "#2ecc71" : "#e74c3c"}`,
                         }}
                       >
-                        {payoutStatus.details_submitted ? "Details submitted" : "Details pending"}
+                        {payoutStatus.details_submitted
+                          ? "Details submitted"
+                          : "Details pending"}
                       </span>
                       <span
                         style={{
                           padding: "0.3rem 0.75rem",
                           borderRadius: "20px",
                           fontSize: "0.8rem",
-                          background: payoutStatus.payouts_enabled ? "#1e3a2f" : "#3a1e1e",
-                          color: payoutStatus.payouts_enabled ? "#2ecc71" : "#e74c3c",
+                          background: payoutStatus.payouts_enabled
+                            ? "#1e3a2f"
+                            : "#3a1e1e",
+                          color: payoutStatus.payouts_enabled
+                            ? "#2ecc71"
+                            : "#e74c3c",
                           border: `1px solid ${payoutStatus.payouts_enabled ? "#2ecc71" : "#e74c3c"}`,
                         }}
                       >
-                        {payoutStatus.payouts_enabled ? "Payouts enabled" : "Payouts not yet enabled"}
+                        {payoutStatus.payouts_enabled
+                          ? "Payouts enabled"
+                          : "Payouts not yet enabled"}
                       </span>
                     </div>
                     {!payoutStatus.payouts_enabled && (
@@ -410,8 +517,15 @@ export function SettingsPage() {
                   </>
                 ) : (
                   <>
-                    <p style={{ marginBottom: "1rem", color: "var(--color-text-muted)", fontSize: "0.9rem" }}>
-                      You haven't connected a Stripe account yet. Connect now to receive payouts when users subscribe to your skills.
+                    <p
+                      style={{
+                        marginBottom: "1rem",
+                        color: "var(--color-text-muted)",
+                        fontSize: "0.9rem",
+                      }}
+                    >
+                      You haven't connected a Stripe account yet. Connect now to
+                      receive payouts when users subscribe to your skills.
                     </p>
                     <a
                       href="/v1/stripe/connect/onboard"
@@ -429,7 +543,8 @@ export function SettingsPage() {
               style={{
                 marginTop: "1.5rem",
                 padding: "1rem 1.25rem",
-                background: "rgba(var(--color-primary-rgb, 99, 102, 241), 0.06)",
+                background:
+                  "rgba(var(--color-primary-rgb, 99, 102, 241), 0.06)",
                 border: "1px solid var(--color-border)",
                 borderRadius: "8px",
                 fontSize: "0.82rem",
@@ -437,7 +552,8 @@ export function SettingsPage() {
               }}
             >
               <strong>Revenue split:</strong> 70% to you · 30% platform fee.
-              Stripe settles T+2 business days. Monthly aggregation via Stripe Connect Standard.
+              Stripe settles T+2 business days. Monthly aggregation via Stripe
+              Connect Standard.
             </div>
           </div>
         )}
@@ -452,13 +568,23 @@ export function SettingsPage() {
             }}
           >
             <div
-              style={{ display: "flex", alignItems: "center", gap: "1.5rem", marginBottom: "2rem" }}
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: "1.5rem",
+                marginBottom: "2rem",
+              }}
             >
               {safeAvatar ? (
                 <img
                   src={safeAvatar}
                   alt={user.displayName}
-                  style={{ width: "80px", height: "80px", borderRadius: "50%", objectFit: "cover" }}
+                  style={{
+                    width: "80px",
+                    height: "80px",
+                    borderRadius: "50%",
+                    objectFit: "cover",
+                  }}
                 />
               ) : (
                 <div
@@ -478,8 +604,12 @@ export function SettingsPage() {
                 </div>
               )}
               <div>
-                <div style={{ fontWeight: 700, fontSize: "1.2rem" }}>{user.displayName}</div>
-                <div style={{ color: "var(--color-text-muted)" }}>@{user.githubUsername}</div>
+                <div style={{ fontWeight: 700, fontSize: "1.2rem" }}>
+                  {user.displayName}
+                </div>
+                <div style={{ color: "var(--color-text-muted)" }}>
+                  @{user.githubUsername}
+                </div>
                 <span
                   style={{
                     display: "inline-block",
@@ -497,9 +627,15 @@ export function SettingsPage() {
                 </span>
               </div>
             </div>
-            <p style={{ color: "var(--color-text-muted)", fontSize: "0.875rem" }}>
+            <p
+              style={{ color: "var(--color-text-muted)", fontSize: "0.875rem" }}
+            >
               Profile information is sourced from GitHub. Update your profile at{" "}
-              <a href="https://github.com/settings/profile" target="_blank" rel="noopener noreferrer">
+              <a
+                href="https://github.com/settings/profile"
+                target="_blank"
+                rel="noopener noreferrer"
+              >
                 github.com/settings/profile
               </a>
               .

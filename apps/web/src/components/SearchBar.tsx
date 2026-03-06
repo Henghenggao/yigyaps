@@ -50,6 +50,7 @@ export function SearchBar({
           type="text"
           className="search-field"
           placeholder={placeholder}
+          aria-label={placeholder}
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
         />

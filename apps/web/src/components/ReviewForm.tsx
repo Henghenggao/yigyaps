@@ -95,20 +95,23 @@ export function ReviewForm({ skill, onReviewSubmitted }: ReviewFormProps) {
         <label className="form-label">
           Rating <span className="required">*</span>
         </label>
-        <div className="star-selector">
+        <div className="star-selector" role="radiogroup" aria-label="Rating">
           {Array.from({ length: 5 }, (_, i) => i + 1).map((star) => (
             <button
               key={star}
               type="button"
+              role="radio"
+              aria-checked={rating === star}
+              aria-label={`${star} star${star > 1 ? "s" : ""}`}
               className={`star-btn ${star <= (hoveredRating || rating) ? "active" : ""}`}
               onClick={() => setRating(star)}
               onMouseEnter={() => setHoveredRating(star)}
               onMouseLeave={() => setHoveredRating(0)}
             >
-              ★
+              <span aria-hidden="true">★</span>
             </button>
           ))}
-          <span className="star-label">
+          <span className="star-label" aria-live="polite">
             {rating} star{rating > 1 ? "s" : ""}
           </span>
         </div>
@@ -163,7 +166,7 @@ export function ReviewForm({ skill, onReviewSubmitted }: ReviewFormProps) {
         type="submit"
         className="btn-primary"
         disabled={submitting || comment.trim().length < 10}
-        style={{ marginTop: '1rem' }}
+        style={{ marginTop: "1rem" }}
       >
         {submitting ? "Submitting..." : "Submit Review"}
       </button>

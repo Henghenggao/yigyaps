@@ -30,8 +30,12 @@ describe("ShamirManager", () => {
     });
 
     it("rejects non-64-char hex input", () => {
-      expect(() => ShamirManager.split("abcd")).toThrow("expected 64-char hex DEK");
-      expect(() => ShamirManager.split("ff".repeat(16))).toThrow("expected 64-char hex DEK");
+      expect(() => ShamirManager.split("abcd")).toThrow(
+        "expected 64-char hex DEK",
+      );
+      expect(() => ShamirManager.split("ff".repeat(16))).toThrow(
+        "expected 64-char hex DEK",
+      );
     });
   });
 
@@ -54,13 +58,21 @@ describe("ShamirManager", () => {
     });
 
     it("reconstructs from all 3 shares", () => {
-      const result = ShamirManager.reconstruct([shares[0], shares[1], shares[2]]);
+      const result = ShamirManager.reconstruct([
+        shares[0],
+        shares[1],
+        shares[2],
+      ]);
       expect(result).toBe(DEK_HEX);
     });
 
     it("rejects fewer than 2 shares", () => {
-      expect(() => ShamirManager.reconstruct([shares[0]])).toThrow("need at least 2 shares");
-      expect(() => ShamirManager.reconstruct([])).toThrow("need at least 2 shares");
+      expect(() => ShamirManager.reconstruct([shares[0]])).toThrow(
+        "need at least 2 shares",
+      );
+      expect(() => ShamirManager.reconstruct([])).toThrow(
+        "need at least 2 shares",
+      );
     });
   });
 
@@ -73,7 +85,9 @@ describe("ShamirManager", () => {
 
     it("returns false for valid shares + wrong DEK", () => {
       const wrongDek = crypto.randomBytes(32).toString("hex");
-      expect(ShamirManager.verify([shares[0], shares[1]], wrongDek)).toBe(false);
+      expect(ShamirManager.verify([shares[0], shares[1]], wrongDek)).toBe(
+        false,
+      );
     });
   });
 
@@ -86,11 +100,14 @@ describe("ShamirManager", () => {
       // Encrypt: split DEK
       const { shares } = ShamirManager.split(dekHex);
       const platformShare = shares[0]; // stored in DB
-      const expertShare = shares[1];   // returned to expert
+      const expertShare = shares[1]; // returned to expert
       // shares[2] = backup, stored separately
 
       // Invoke: expert provides their share
-      const reconstructed = ShamirManager.reconstruct([platformShare, expertShare]);
+      const reconstructed = ShamirManager.reconstruct([
+        platformShare,
+        expertShare,
+      ]);
       const reconstructedDek = Buffer.from(reconstructed, "hex");
 
       expect(reconstructedDek.equals(dek)).toBe(true);

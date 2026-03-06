@@ -81,7 +81,10 @@ async function buildServer() {
     },
   });
   await fastify.register(cors, {
-    origin: env.NODE_ENV === "development" ? true : (env.CORS_ORIGIN || "").split(",").filter(Boolean),
+    origin:
+      env.NODE_ENV === "development"
+        ? true
+        : (env.CORS_ORIGIN || "").split(",").filter(Boolean),
     credentials: true,
   });
   await fastify.register(rateLimit, {

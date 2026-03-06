@@ -42,9 +42,9 @@ interface ScoringDimension {
   id: string;
   name: string;
   weight: number;
-  highLabel: string;  // score 8-10
-  midLabel: string;   // score 5-7
-  lowLabel: string;   // score 1-4
+  highLabel: string; // score 8-10
+  midLabel: string; // score 5-7
+  lowLabel: string; // score 1-4
 }
 
 interface CaseEntry {
@@ -63,7 +63,12 @@ function decisionRulesToJson(rows: DecisionRule[]): string {
       id: r.id,
       dimension: r.dimension.trim(),
       condition: r.keywords.trim()
-        ? { keywords: r.keywords.split(",").map((k) => k.trim()).filter(Boolean) }
+        ? {
+            keywords: r.keywords
+              .split(",")
+              .map((k) => k.trim())
+              .filter(Boolean),
+          }
         : {},
       conclusion: r.conclusion.trim(),
       weight: Math.max(0, Math.min(1, r.weight)),
@@ -80,14 +85,24 @@ function scoringDimensionsToJson(dims: ScoringDimension[]): string {
       rules.push({
         id: `${d.id}-high`,
         dimension: d.name.trim(),
-        condition: { keywords: d.highLabel.split(",").map((k) => k.trim()).filter(Boolean) },
+        condition: {
+          keywords: d.highLabel
+            .split(",")
+            .map((k) => k.trim())
+            .filter(Boolean),
+        },
         conclusion: `high_${d.name.trim().replace(/\s+/g, "_").toLowerCase()}`,
         weight: d.weight,
       });
       rules.push({
         id: `${d.id}-mid`,
         dimension: d.name.trim(),
-        condition: { keywords: d.midLabel.split(",").map((k) => k.trim()).filter(Boolean) },
+        condition: {
+          keywords: d.midLabel
+            .split(",")
+            .map((k) => k.trim())
+            .filter(Boolean),
+        },
         conclusion: `mid_${d.name.trim().replace(/\s+/g, "_").toLowerCase()}`,
         weight: d.weight * 0.6,
       });
@@ -114,7 +129,10 @@ function caseEntriesToJson(cases: CaseEntry[]): string {
           .filter((w) => w.length > 3)
           .slice(0, 5),
       },
-      conclusion: c.expectedOutput.slice(0, 80).replace(/\s+/g, "_").toLowerCase(),
+      conclusion: c.expectedOutput
+        .slice(0, 80)
+        .replace(/\s+/g, "_")
+        .toLowerCase(),
       weight: 0.7,
     }));
   return JSON.stringify(rules, null, 2);
@@ -123,7 +141,8 @@ function caseEntriesToJson(cases: CaseEntry[]): string {
 // ── Tiny helpers ──────────────────────────────────────────────────────────────
 
 let _seq = 0;
-const uid = () => `r${Date.now().toString(36)}_${++_seq}_${Math.random().toString(36).slice(2, 6)}`;
+const uid = () =>
+  `r${Date.now().toString(36)}_${++_seq}_${Math.random().toString(36).slice(2, 6)}`;
 
 const inputStyle: React.CSSProperties = {
   background: "var(--color-card)",
@@ -144,9 +163,19 @@ const labelStyle: React.CSSProperties = {
 
 // ── Sub-editors ───────────────────────────────────────────────────────────────
 
-function DecisionTreeEditor({ onChange }: { onChange: (json: string) => void }) {
+function DecisionTreeEditor({
+  onChange,
+}: {
+  onChange: (json: string) => void;
+}) {
   const [rows, setRows] = useState<DecisionRule[]>([
-    { id: uid(), dimension: "market_fit", keywords: "B2B, enterprise", conclusion: "strong_market", weight: 0.8 },
+    {
+      id: uid(),
+      dimension: "market_fit",
+      keywords: "B2B, enterprise",
+      conclusion: "strong_market",
+      weight: 0.8,
+    },
   ]);
 
   const update = (updated: DecisionRule[]) => {
@@ -155,18 +184,31 @@ function DecisionTreeEditor({ onChange }: { onChange: (json: string) => void }) 
   };
 
   const addRow = () =>
-    update([...rows, { id: uid(), dimension: "", keywords: "", conclusion: "", weight: 0.5 }]);
+    update([
+      ...rows,
+      { id: uid(), dimension: "", keywords: "", conclusion: "", weight: 0.5 },
+    ]);
 
   const removeRow = (id: string) => update(rows.filter((r) => r.id !== id));
 
-  const setField = <K extends keyof DecisionRule>(id: string, key: K, val: DecisionRule[K]) =>
-    update(rows.map((r) => (r.id === id ? { ...r, [key]: val } : r)));
+  const setField = <K extends keyof DecisionRule>(
+    id: string,
+    key: K,
+    val: DecisionRule[K],
+  ) => update(rows.map((r) => (r.id === id ? { ...r, [key]: val } : r)));
 
   return (
     <div>
-      <p style={{ fontSize: "0.82rem", color: "var(--color-text-muted)", marginBottom: "1rem" }}>
-        Each row = one IF/THEN rule. <strong>Keywords</strong> are comma-separated triggers in the
-        user query. Leave keywords blank to always fire the rule.
+      <p
+        style={{
+          fontSize: "0.82rem",
+          color: "var(--color-text-muted)",
+          marginBottom: "1rem",
+        }}
+      >
+        Each row = one IF/THEN rule. <strong>Keywords</strong> are
+        comma-separated triggers in the user query. Leave keywords blank to
+        always fire the rule.
       </p>
 
       {/* Header */}
@@ -178,8 +220,16 @@ function DecisionTreeEditor({ onChange }: { onChange: (json: string) => void }) 
           marginBottom: "0.25rem",
         }}
       >
-        {["Dimension", "Trigger Keywords", "Conclusion Token", "Weight", ""].map((h) => (
-          <span key={h} style={labelStyle}>{h}</span>
+        {[
+          "Dimension",
+          "Trigger Keywords",
+          "Conclusion Token",
+          "Weight",
+          "",
+        ].map((h) => (
+          <span key={h} style={labelStyle}>
+            {h}
+          </span>
         ))}
       </div>
 
@@ -223,7 +273,9 @@ function DecisionTreeEditor({ onChange }: { onChange: (json: string) => void }) 
             max={1}
             step={0.1}
             aria-label={`Weight for rule ${row.id}`}
-            onChange={(e) => setField(row.id, "weight", parseFloat(e.target.value) || 0)}
+            onChange={(e) =>
+              setField(row.id, "weight", parseFloat(e.target.value) || 0)
+            }
           />
           <button
             type="button"
@@ -255,10 +307,28 @@ function DecisionTreeEditor({ onChange }: { onChange: (json: string) => void }) 
   );
 }
 
-function ScoringMatrixEditor({ onChange }: { onChange: (json: string) => void }) {
+function ScoringMatrixEditor({
+  onChange,
+}: {
+  onChange: (json: string) => void;
+}) {
   const [dims, setDims] = useState<ScoringDimension[]>([
-    { id: uid(), name: "Team Quality", weight: 0.8, highLabel: "experienced, founder, CEO", midLabel: "engineer, developer", lowLabel: "" },
-    { id: uid(), name: "Market Size", weight: 0.7, highLabel: "billion, TAM, global", midLabel: "million, regional", lowLabel: "" },
+    {
+      id: uid(),
+      name: "Team Quality",
+      weight: 0.8,
+      highLabel: "experienced, founder, CEO",
+      midLabel: "engineer, developer",
+      lowLabel: "",
+    },
+    {
+      id: uid(),
+      name: "Market Size",
+      weight: 0.7,
+      highLabel: "billion, TAM, global",
+      midLabel: "million, regional",
+      lowLabel: "",
+    },
   ]);
 
   const update = (updated: ScoringDimension[]) => {
@@ -267,18 +337,37 @@ function ScoringMatrixEditor({ onChange }: { onChange: (json: string) => void })
   };
 
   const addDim = () =>
-    update([...dims, { id: uid(), name: "", weight: 0.5, highLabel: "", midLabel: "", lowLabel: "" }]);
+    update([
+      ...dims,
+      {
+        id: uid(),
+        name: "",
+        weight: 0.5,
+        highLabel: "",
+        midLabel: "",
+        lowLabel: "",
+      },
+    ]);
 
   const removeDim = (id: string) => update(dims.filter((d) => d.id !== id));
 
-  const setField = <K extends keyof ScoringDimension>(id: string, key: K, val: ScoringDimension[K]) =>
-    update(dims.map((d) => (d.id === id ? { ...d, [key]: val } : d)));
+  const setField = <K extends keyof ScoringDimension>(
+    id: string,
+    key: K,
+    val: ScoringDimension[K],
+  ) => update(dims.map((d) => (d.id === id ? { ...d, [key]: val } : d)));
 
   return (
     <div>
-      <p style={{ fontSize: "0.82rem", color: "var(--color-text-muted)", marginBottom: "1rem" }}>
-        Define evaluation dimensions. For each level, enter comma-separated keywords that
-        indicate a high / medium / low signal in the user's query.
+      <p
+        style={{
+          fontSize: "0.82rem",
+          color: "var(--color-text-muted)",
+          marginBottom: "1rem",
+        }}
+      >
+        Define evaluation dimensions. For each level, enter comma-separated
+        keywords that indicate a high / medium / low signal in the user's query.
       </p>
 
       {dims.map((d) => (
@@ -302,7 +391,9 @@ function ScoringMatrixEditor({ onChange }: { onChange: (json: string) => void })
             }}
           >
             <div>
-              <label htmlFor={`dim-name-${d.id}`} style={labelStyle}>Dimension Name</label>
+              <label htmlFor={`dim-name-${d.id}`} style={labelStyle}>
+                Dimension Name
+              </label>
               <input
                 id={`dim-name-${d.id}`}
                 style={inputStyle}
@@ -312,7 +403,9 @@ function ScoringMatrixEditor({ onChange }: { onChange: (json: string) => void })
               />
             </div>
             <div>
-              <label htmlFor={`dim-weight-${d.id}`} style={labelStyle}>Weight (0-1)</label>
+              <label htmlFor={`dim-weight-${d.id}`} style={labelStyle}>
+                Weight (0-1)
+              </label>
               <input
                 id={`dim-weight-${d.id}`}
                 type="number"
@@ -321,7 +414,9 @@ function ScoringMatrixEditor({ onChange }: { onChange: (json: string) => void })
                 min={0}
                 max={1}
                 step={0.1}
-                onChange={(e) => setField(d.id, "weight", parseFloat(e.target.value) || 0)}
+                onChange={(e) =>
+                  setField(d.id, "weight", parseFloat(e.target.value) || 0)
+                }
               />
             </div>
             <button
@@ -341,9 +436,20 @@ function ScoringMatrixEditor({ onChange }: { onChange: (json: string) => void })
               ×
             </button>
           </div>
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr 1fr", gap: "0.5rem" }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr 1fr",
+              gap: "0.5rem",
+            }}
+          >
             <div>
-              <label htmlFor={`dim-high-${d.id}`} style={{ ...labelStyle, color: "#2ecc71" }}>High signal keywords (8-10)</label>
+              <label
+                htmlFor={`dim-high-${d.id}`}
+                style={{ ...labelStyle, color: "#2ecc71" }}
+              >
+                High signal keywords (8-10)
+              </label>
               <input
                 id={`dim-high-${d.id}`}
                 style={inputStyle}
@@ -353,7 +459,12 @@ function ScoringMatrixEditor({ onChange }: { onChange: (json: string) => void })
               />
             </div>
             <div>
-              <label htmlFor={`dim-mid-${d.id}`} style={{ ...labelStyle, color: "#f39c12" }}>Mid signal keywords (5-7)</label>
+              <label
+                htmlFor={`dim-mid-${d.id}`}
+                style={{ ...labelStyle, color: "#f39c12" }}
+              >
+                Mid signal keywords (5-7)
+              </label>
               <input
                 id={`dim-mid-${d.id}`}
                 style={inputStyle}
@@ -363,7 +474,12 @@ function ScoringMatrixEditor({ onChange }: { onChange: (json: string) => void })
               />
             </div>
             <div>
-              <label htmlFor={`dim-low-${d.id}`} style={{ ...labelStyle, color: "#e74c3c" }}>Low signal keywords (1-4)</label>
+              <label
+                htmlFor={`dim-low-${d.id}`}
+                style={{ ...labelStyle, color: "#e74c3c" }}
+              >
+                Low signal keywords (1-4)
+              </label>
               <input
                 id={`dim-low-${d.id}`}
                 style={inputStyle}
@@ -399,18 +515,30 @@ function CaseLibraryEditor({ onChange }: { onChange: (json: string) => void }) {
   };
 
   const addCase = () =>
-    update([...cases, { id: uid(), scenario: "", expectedOutput: "", dimension: "general" }]);
+    update([
+      ...cases,
+      { id: uid(), scenario: "", expectedOutput: "", dimension: "general" },
+    ]);
 
   const removeCase = (id: string) => update(cases.filter((c) => c.id !== id));
 
-  const setField = <K extends keyof CaseEntry>(id: string, key: K, val: CaseEntry[K]) =>
-    update(cases.map((c) => (c.id === id ? { ...c, [key]: val } : c)));
+  const setField = <K extends keyof CaseEntry>(
+    id: string,
+    key: K,
+    val: CaseEntry[K],
+  ) => update(cases.map((c) => (c.id === id ? { ...c, [key]: val } : c)));
 
   return (
     <div>
-      <p style={{ fontSize: "0.82rem", color: "var(--color-text-muted)", marginBottom: "1rem" }}>
-        Describe real scenarios you've handled and the ideal response. These become
-        pattern-matching examples for the rule engine.
+      <p
+        style={{
+          fontSize: "0.82rem",
+          color: "var(--color-text-muted)",
+          marginBottom: "1rem",
+        }}
+      >
+        Describe real scenarios you've handled and the ideal response. These
+        become pattern-matching examples for the rule engine.
       </p>
 
       {cases.map((c, i) => (
@@ -432,7 +560,9 @@ function CaseLibraryEditor({ onChange }: { onChange: (json: string) => void }) {
               marginBottom: "0.75rem",
             }}
           >
-            <span style={{ fontSize: "0.8rem", color: "var(--color-text-muted)" }}>
+            <span
+              style={{ fontSize: "0.8rem", color: "var(--color-text-muted)" }}
+            >
               Case #{i + 1}
             </span>
             <button
@@ -451,9 +581,17 @@ function CaseLibraryEditor({ onChange }: { onChange: (json: string) => void }) {
             </button>
           </div>
 
-          <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+          <div
+            style={{
+              display: "grid",
+              gridTemplateColumns: "1fr 1fr",
+              gap: "0.75rem",
+            }}
+          >
             <div>
-              <label htmlFor={`case-scenario-${c.id}`} style={labelStyle}>Scenario / Input</label>
+              <label htmlFor={`case-scenario-${c.id}`} style={labelStyle}>
+                Scenario / Input
+              </label>
               <textarea
                 id={`case-scenario-${c.id}`}
                 style={{ ...inputStyle, height: "80px", resize: "vertical" }}
@@ -463,19 +601,25 @@ function CaseLibraryEditor({ onChange }: { onChange: (json: string) => void }) {
               />
             </div>
             <div>
-              <label htmlFor={`case-output-${c.id}`} style={labelStyle}>Expected Output / Response Direction</label>
+              <label htmlFor={`case-output-${c.id}`} style={labelStyle}>
+                Expected Output / Response Direction
+              </label>
               <textarea
                 id={`case-output-${c.id}`}
                 style={{ ...inputStyle, height: "80px", resize: "vertical" }}
                 value={c.expectedOutput}
                 placeholder="What should the skill conclude or recommend?"
-                onChange={(e) => setField(c.id, "expectedOutput", e.target.value)}
+                onChange={(e) =>
+                  setField(c.id, "expectedOutput", e.target.value)
+                }
               />
             </div>
           </div>
 
           <div style={{ marginTop: "0.5rem" }}>
-            <label htmlFor={`case-dim-${c.id}`} style={labelStyle}>Evaluation Dimension</label>
+            <label htmlFor={`case-dim-${c.id}`} style={labelStyle}>
+              Evaluation Dimension
+            </label>
             <input
               id={`case-dim-${c.id}`}
               style={{ ...inputStyle, maxWidth: "240px" }}
@@ -500,7 +644,11 @@ function CaseLibraryEditor({ onChange }: { onChange: (json: string) => void }) {
 
 // ── Main TemplateEditor export ─────────────────────────────────────────────────
 
-type TemplateMode = "freeform" | "decision-tree" | "scoring-matrix" | "case-library";
+type TemplateMode =
+  | "freeform"
+  | "decision-tree"
+  | "scoring-matrix"
+  | "case-library";
 
 interface TemplateEditorProps {
   value: string;
@@ -509,9 +657,21 @@ interface TemplateEditorProps {
 
 const MODES: { key: TemplateMode; label: string; hint: string }[] = [
   { key: "freeform", label: "Free-form", hint: "Plain text or Markdown" },
-  { key: "decision-tree", label: "Decision Tree", hint: "IF / THEN rules with weights" },
-  { key: "scoring-matrix", label: "Scoring Matrix", hint: "Dimension × signal keywords" },
-  { key: "case-library", label: "Case Library", hint: "Example scenarios → conclusions" },
+  {
+    key: "decision-tree",
+    label: "Decision Tree",
+    hint: "IF / THEN rules with weights",
+  },
+  {
+    key: "scoring-matrix",
+    label: "Scoring Matrix",
+    hint: "Dimension × signal keywords",
+  },
+  {
+    key: "case-library",
+    label: "Case Library",
+    hint: "Example scenarios → conclusions",
+  },
 ];
 
 export function TemplateEditor({ value, onChange }: TemplateEditorProps) {
@@ -550,7 +710,10 @@ export function TemplateEditor({ value, onChange }: TemplateEditorProps) {
                 mode === m.key
                   ? "rgba(var(--color-primary-rgb, 99,102,241), 0.15)"
                   : "none",
-              color: mode === m.key ? "var(--color-primary)" : "var(--color-text-muted)",
+              color:
+                mode === m.key
+                  ? "var(--color-primary)"
+                  : "var(--color-text-muted)",
               cursor: "pointer",
               fontSize: "0.82rem",
               fontWeight: mode === m.key ? 600 : 400,

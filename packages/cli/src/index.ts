@@ -175,7 +175,10 @@ program
   )
   .argument("<skillId>", "Package ID (e.g. expert/investment-eval)")
   .option("--api-key <key>", "YigYaps API key (defaults to stored key)")
-  .option("--api-url <url>", "YigYaps API URL (defaults to https://api.yigyaps.com)")
+  .option(
+    "--api-url <url>",
+    "YigYaps API URL (defaults to https://api.yigyaps.com)",
+  )
   .action(mcpBridgeCommand);
 
 // ─── Ecosystem Commands ───────────────────────────────────────────────────────

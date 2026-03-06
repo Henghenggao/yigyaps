@@ -199,11 +199,13 @@ export function EvolutionLabPage() {
               width: "90%",
             }}
           >
-            <div style={{ fontSize: "2rem", marginBottom: "0.75rem" }}>
-              ⚠️
-            </div>
+            <div style={{ fontSize: "2rem", marginBottom: "0.75rem" }}>⚠️</div>
             <h2
-              style={{ fontSize: "1.2rem", margin: "0 0 1rem", color: "#e67e22" }}
+              style={{
+                fontSize: "1.2rem",
+                margin: "0 0 1rem",
+                color: "#e67e22",
+              }}
             >
               Lab Preview — Data Notice
             </h2>
@@ -349,9 +351,9 @@ export function EvolutionLabPage() {
           <div style={{ flex: 1, fontSize: "0.85rem", lineHeight: 1.6 }}>
             <strong style={{ color: "#e67e22" }}>Lab Preview Mode</strong>
             {" — "}
-            Inference sends your plaintext rules to an external LLM provider (Anthropic).
-            This is a <em>testing-only</em> environment. Production agent invocations
-            will use a TEE-isolated proxy.{" "}
+            Inference sends your plaintext rules to an external LLM provider
+            (Anthropic). This is a <em>testing-only</em> environment. Production
+            agent invocations will use a TEE-isolated proxy.{" "}
             <button
               style={{
                 background: "none",
@@ -403,7 +405,11 @@ export function EvolutionLabPage() {
                 value={keyDraft}
                 onChange={(e) => setKeyDraft(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && saveLabApiKey()}
-                style={{ flex: 1, fontFamily: "monospace", fontSize: "0.85rem" }}
+                style={{
+                  flex: 1,
+                  fontFamily: "monospace",
+                  fontSize: "0.85rem",
+                }}
               />
               <button
                 className="btn btn-primary"
@@ -416,7 +422,11 @@ export function EvolutionLabPage() {
                 <button
                   className="btn btn-outline"
                   onClick={clearLabApiKey}
-                  style={{ whiteSpace: "nowrap", color: "#e74c3c", borderColor: "#e74c3c" }}
+                  style={{
+                    whiteSpace: "nowrap",
+                    color: "#e74c3c",
+                    borderColor: "#e74c3c",
+                  }}
                 >
                   Clear
                 </button>
@@ -691,18 +701,20 @@ export function EvolutionLabPage() {
                           {msg.content}
                         </div>
                       </div>
-                      {msg.role === "assistant" && msg.mode && modeLabel[msg.mode] && (
-                        <div
-                          style={{
-                            fontSize: "0.7rem",
-                            color: modeLabel[msg.mode].color,
-                            marginTop: "0.25rem",
-                            paddingLeft: "0.25rem",
-                          }}
-                        >
-                          ● {modeLabel[msg.mode].text}
-                        </div>
-                      )}
+                      {msg.role === "assistant" &&
+                        msg.mode &&
+                        modeLabel[msg.mode] && (
+                          <div
+                            style={{
+                              fontSize: "0.7rem",
+                              color: modeLabel[msg.mode].color,
+                              marginTop: "0.25rem",
+                              paddingLeft: "0.25rem",
+                            }}
+                          >
+                            ● {modeLabel[msg.mode].text}
+                          </div>
+                        )}
                     </div>
                   ))
                 )}
@@ -745,7 +757,9 @@ export function EvolutionLabPage() {
                     }
                   }}
                   placeholder={
-                    consented ? "Enter a test query…" : "Enter a query (you'll see a data notice first)…"
+                    consented
+                      ? "Enter a test query…"
+                      : "Enter a query (you'll see a data notice first)…"
                   }
                   disabled={testing}
                   style={{ flex: 1 }}

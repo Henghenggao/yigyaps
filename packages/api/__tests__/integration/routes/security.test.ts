@@ -241,9 +241,7 @@ describe("Security Routes", () => {
       );
       expect(ipRows.rows.length).toBeGreaterThanOrEqual(1);
       // blockchain_tx should be sha256:... (HMAC fallback since no GitHub token)
-      expect(String(ipRows.rows[0].blockchain_tx)).toMatch(
-        /^sha256:|^github:/,
-      );
+      expect(String(ipRows.rows[0].blockchain_tx)).toMatch(/^sha256:|^github:/);
     });
 
     it("soft-archives previous version on re-upload", async () => {
@@ -275,7 +273,9 @@ describe("Security Routes", () => {
 
       // Should have 2 records: 1 active, 1 archived
       const allRecords = await testDb.execute(
-        sql.raw(`SELECT is_active FROM yy_encrypted_knowledge ORDER BY created_at`),
+        sql.raw(
+          `SELECT is_active FROM yy_encrypted_knowledge ORDER BY created_at`,
+        ),
       );
       expect(allRecords.rows.length).toBe(2);
       expect(allRecords.rows[0].is_active).toBe(false); // old version archived
