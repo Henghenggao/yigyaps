@@ -23,9 +23,15 @@ export const usersTable = pgTable(
   "yy_users",
   {
     id: text("id").primaryKey(),
-    githubId: text("github_id").notNull().unique(),
-    githubUsername: text("github_username").notNull(),
-    email: text("email"),
+    githubId: text("github_id").unique(),
+    githubUsername: text("github_username"),
+    googleId: text("google_id").unique(),
+    googleUsername: text("google_username"),
+    email: text("email").unique(),
+    passwordHash: text("password_hash"),
+    emailVerified: boolean("email_verified").notNull().default(false),
+    verificationToken: text("verification_token"),
+    verificationTokenExpiresAt: bigint("verification_token_expires_at", { mode: "number" }),
     displayName: text("display_name").notNull(),
     avatarUrl: text("avatar_url"),
     tier: text("tier")
@@ -48,7 +54,9 @@ export const usersTable = pgTable(
   },
   (table) => [
     index("idx_yy_users_github_id").on(table.githubId),
+    index("idx_yy_users_google_id").on(table.googleId),
     index("idx_yy_users_github_username").on(table.githubUsername),
+    index("idx_yy_users_google_username").on(table.googleUsername),
     index("idx_yy_users_email").on(table.email),
   ],
 );

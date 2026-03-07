@@ -69,6 +69,14 @@ const envSchema = z.object({
   STRIPE_SECRET_KEY: z.string().optional(),
   STRIPE_WEBHOOK_SECRET: z.string().optional(),
   STRIPE_CONNECT_CLIENT_ID: z.string().optional(),
+
+  // Google OAuth
+  GOOGLE_CLIENT_ID: z.string().optional(),
+  GOOGLE_CLIENT_SECRET: z.string().optional(),
+  GOOGLE_CALLBACK_URL: z.string().url().optional(),
+
+  // Resend
+  RESEND_API_KEY: z.string().optional(),
 });
 
 const parsed = envSchema.safeParse(process.env);

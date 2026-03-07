@@ -3,7 +3,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { Link } from "react-router-dom";
 
 export function PrivacyPage() {
-  const { user, login } = useAuth();
+  const { user } = useAuth();
 
   const sectionStyle = { marginBottom: "2rem" };
   const headingStyle = { fontSize: "1.1rem", fontWeight: 600, marginBottom: "0.75rem" };
@@ -11,7 +11,7 @@ export function PrivacyPage() {
 
   return (
     <div className="app-container">
-      <Header user={user} login={login} />
+      <Header user={user} />
 
       <main className="main-content" style={{ maxWidth: "760px", margin: "0 auto", paddingBottom: "4rem" }}>
         <h1 style={{ fontSize: "2rem", marginBottom: "0.5rem" }}>Privacy Policy</h1>

@@ -28,7 +28,7 @@ interface Earnings {
 }
 
 export function MyPackagesPage() {
-  const { user, login } = useAuth();
+  const { user } = useAuth();
   const { addToast } = useToast();
   const [packages, setPackages] = useState<PackageSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,7 +74,7 @@ export function MyPackagesPage() {
 
   return (
     <div className="app-container">
-      <Header user={user} login={login} />
+      <Header user={user} />
 
       <main className="main-content dashboard-container">
         <div className="dashboard-header fade-in">

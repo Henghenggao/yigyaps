@@ -68,7 +68,7 @@ type FormData = Step1Data & Step2Data & Step3Data;
 const STEPS = ["Basic Info", "Details & README", "Knowledge Rules"];
 
 export function PublishSkillPage() {
-  const { user, login } = useAuth();
+  const { user, openAuthModal } = useAuth();
   const { addToast } = useToast();
   const navigate = useNavigate();
 
@@ -100,11 +100,11 @@ export function PublishSkillPage() {
   if (!user) {
     return (
       <div className="app-container">
-        <Header user={user} login={login} />
+        <Header user={user} />
         <main className="main-content auth-required-panel">
           <h2>Authentication Required</h2>
           <p>You must be signed in to publish a new secure skill.</p>
-          <button className="btn btn-primary" onClick={login} style={{ marginTop: "2rem" }}>
+          <button className="btn btn-primary" onClick={openAuthModal} style={{ marginTop: "2rem" }}>
             Sign In Now
           </button>
         </main>
@@ -247,7 +247,7 @@ export function PublishSkillPage() {
 
   return (
     <div className="app-container">
-      <Header user={user} login={login} />
+      <Header user={user} />
 
       <main className="main-content" style={{ maxWidth: "720px", margin: "0 auto" }}>
         <h1 style={{ fontSize: "1.75rem", marginBottom: "0.5rem" }}>Publish Skill</h1>

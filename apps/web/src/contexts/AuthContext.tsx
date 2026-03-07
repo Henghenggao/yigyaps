@@ -36,8 +36,14 @@ export interface AuthContextType {
   loading: boolean;
   error: string | null;
   login: () => void;
+  loginWithGoogle: () => void;
+  registerWithEmail: (email: string, password: string, displayName: string) => Promise<void>;
+  loginWithEmail: (email: string, password: string) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
+  isAuthModalOpen: boolean;
+  openAuthModal: () => void;
+  closeAuthModal: () => void;
 }
 
 // ─── Context ──────────────────────────────────────────────────────────────────
@@ -55,6 +61,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
 
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const initRef = useRef(false);
 
   // Initialize auth state (with guard against React Strict Mode double-mount)
@@ -105,6 +112,29 @@ export function AuthProvider({ children }: AuthProviderProps) {
     window.location.href = `${API_URL}/v1/auth/github`;
   };
 
+  // Initiate Google OAuth login
+  const loginWithGoogle = () => {
+    window.location.href = `${API_URL}/v1/auth/google`;
+  };
+
+  // Register with Email
+  const registerWithEmail = async (email: string, password: string, displayName: string) => {
+    await fetchApi("/v1/auth/email/register", {
+      method: "POST",
+      body: JSON.stringify({ email, password, displayName }),
+    });
+  };
+
+  // Login with Email
+  const loginWithEmail = async (email: string, password: string) => {
+    await fetchApi("/v1/auth/email/login", {
+      method: "POST",
+      body: JSON.stringify({ email, password }),
+    });
+    // Immediately refresh the user info since cookies are set
+    await fetchUserProfile();
+  };
+
   // Logout user
   const logout = async () => {
     try {
@@ -122,13 +152,22 @@ export function AuthProvider({ children }: AuthProviderProps) {
     await fetchUserProfile();
   };
 
+  const openAuthModal = () => setIsAuthModalOpen(true);
+  const closeAuthModal = () => setIsAuthModalOpen(false);
+
   const value: AuthContextType = {
     user,
     loading,
     error,
     login,
+    loginWithGoogle,
+    registerWithEmail,
+    loginWithEmail,
     logout,
     refreshUser,
+    isAuthModalOpen,
+    openAuthModal,
+    closeAuthModal,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

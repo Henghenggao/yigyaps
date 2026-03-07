@@ -50,13 +50,13 @@ export function SkillDetailPage() {
   const { packageId } = useParams<{ packageId: string }>();
   const { skillDetail, reviews, loading, error, refreshReviews } =
     useSkillDetail(packageId!);
-  const { user, login } = useAuth();
+  const { user } = useAuth();
   const [showQuickStart, setShowQuickStart] = useState(false);
 
   if (loading) {
     return (
       <div className="detail-layout">
-        <Header user={user} login={login} />
+        <Header user={user} />
         <main className="container">
           <div className="skeleton-loading">
             <div className="skeleton-line" style={{ width: '40%', height: '3rem' }} />
@@ -70,7 +70,7 @@ export function SkillDetailPage() {
   if (error || !skillDetail) {
     return (
       <div className="detail-layout">
-        <Header user={user} login={login} />
+        <Header user={user} />
         <main className="container error-page">
           <h2>{error || "Skill not found"}</h2>
           <Link to="/" className="clear-link">Back to Marketplace</Link>
@@ -84,7 +84,7 @@ export function SkillDetailPage() {
 
   return (
     <div className="detail-layout">
-      <Header user={user} login={login} />
+      <Header user={user} />
 
       <main className="detail-main">
         {/* Header Section */}
@@ -147,7 +147,7 @@ export function SkillDetailPage() {
                 <span className="badge-secure">EVR Secure</span>
               </div>
               <p className="section-desc">Test how an external AI sees when invoking this secure skill.</p>
-              <SimulationSandbox packageId={packageId!} user={user} login={login} skill={skillDetail} />
+              <SimulationSandbox packageId={packageId!} user={user} skill={skillDetail} />
             </section>
 
             {/* Reviews */}
@@ -403,14 +403,13 @@ interface SimulationResult {
 function SimulationSandbox({
   packageId,
   user,
-  login,
   skill,
 }: {
   packageId: string;
   user: User | null;
-  login: () => void;
   skill: SkillPackage;
 }) {
+  const { openAuthModal } = useAuth();
   const smartQuery = getSmartQuery(skill);
   const [query, setQuery] = useState(smartQuery);
   const [loading, setLoading] = useState(false);
@@ -420,7 +419,7 @@ function SimulationSandbox({
   if (!user) {
     return (
       <div className="sandbox-box">
-        <button onClick={login} className="btn-primary" style={{ width: "auto", minWidth: "220px" }}>
+        <button onClick={openAuthModal} className="btn-primary" style={{ width: "auto", minWidth: "220px" }}>
           Sign In to Simulate
         </button>
         <p style={{ marginTop: "0.75rem", color: "var(--color-text-sub)", fontSize: "0.9rem" }}>

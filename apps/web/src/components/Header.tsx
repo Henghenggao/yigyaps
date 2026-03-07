@@ -1,19 +1,11 @@
 import { Link } from "react-router-dom";
 import { UserMenu } from "./UserMenu";
 import { API_URL } from "../lib/api";
+import { useAuth } from "../contexts/AuthContext";
 
-interface HeaderProps {
-  user: {
-    id: string;
-    displayName: string;
-    githubUsername: string;
-    avatarUrl?: string;
-    tier: string;
-  } | null;
-  login: () => void;
-}
+export function Header({ user }: { user: any }) {
+  const { openAuthModal } = useAuth();
 
-export function Header({ user, login }: HeaderProps) {
   return (
     <header className="site-header">
       <div className="header-container">
@@ -36,7 +28,7 @@ export function Header({ user, login }: HeaderProps) {
           {user ? (
             <UserMenu />
           ) : (
-            <button className="auth-btn" onClick={login}>
+            <button className="auth-btn" onClick={openAuthModal}>
               Sign In
             </button>
           )}

@@ -3,11 +3,11 @@ import { useAuth } from "../contexts/AuthContext";
 import { Link } from "react-router-dom";
 
 export function BlogPage() {
-    const { user, login } = useAuth();
+    const { user } = useAuth();
 
     return (
         <div className="blog-layout">
-            <Header user={user} login={login} />
+            <Header user={user} />
             <main className="blog-main">
                 <div className="container">
                     <article className="blog-post animate-fade-in">

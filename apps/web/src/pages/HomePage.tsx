@@ -18,7 +18,7 @@ const ITEMS_PER_PAGE = 20;
 
 export function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const { user, login } = useAuth();
+  const { user } = useAuth();
 
   const query = searchParams.get("q") || "";
   const category = searchParams.get("category") as SkillPackageCategory | null;
@@ -93,7 +93,7 @@ export function HomePage() {
 
   return (
     <div className="home-layout">
-      <Header user={user} login={login} />
+      <Header user={user} />
 
       <main className="home-main">
         <section className="hero-section animate-fade-in">

@@ -61,7 +61,7 @@ interface Package {
 
 export function EditPackagePage() {
   const { id } = useParams<{ id: string }>();
-  const { user, login } = useAuth();
+  const { user } = useAuth();
   const { addToast } = useToast();
   const navigate = useNavigate();
 
@@ -205,7 +205,7 @@ export function EditPackagePage() {
 
   return (
     <div className="app-container">
-      <Header user={user} login={login} />
+      <Header user={user} />
 
       <main className="main-content" style={{ maxWidth: "760px", margin: "0 auto" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>

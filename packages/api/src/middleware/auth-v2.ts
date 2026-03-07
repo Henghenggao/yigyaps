@@ -18,7 +18,9 @@ import { AUTH_COOKIE_NAME } from "../lib/constants.js";
 export interface UserContext {
   userId: string;
   userName: string;
-  githubUsername?: string;
+  githubUsername?: string | null;
+  googleUsername?: string | null;
+  email?: string | null;
   tier: "free" | "pro" | "epic" | "legendary";
   role: "user" | "admin";
   authMethod: "jwt" | "apikey";
@@ -43,6 +45,8 @@ async function validateJWT(token: string): Promise<UserContext | null> {
       userId: payload.userId,
       userName: payload.userName,
       githubUsername: payload.githubUsername,
+      googleUsername: payload.googleUsername,
+      email: payload.email,
       tier: payload.tier,
       role: payload.role,
       authMethod: "jwt",

@@ -16,7 +16,7 @@ const SESSION_KEY = "yigyaps_lab_api_key";
 
 export function EvolutionLabPage() {
   const { packageId } = useParams<{ packageId: string }>();
-  const { user, login } = useAuth();
+  const { user } = useAuth();
   const { addToast } = useToast();
 
   const [rules, setRules] = useState("");
@@ -174,7 +174,7 @@ export function EvolutionLabPage() {
 
   return (
     <div className="app-container">
-      <Header user={user} login={login} />
+      <Header user={user} />
 
       {/* ── Consent Modal ── */}
       {showConsentModal && (

@@ -48,7 +48,7 @@ interface Report {
 }
 
 export function AdminPage() {
-  const { user, login } = useAuth();
+  const { user } = useAuth();
   const { addToast } = useToast();
   const [tab, setTab] = useState<AdminTab>("overview");
   const [stats, setStats] = useState<Stats | null>(null);
@@ -154,7 +154,7 @@ export function AdminPage() {
 
   return (
     <div className="app-container">
-      <Header user={user} login={login} />
+      <Header user={user} />
 
       <main className="main-content" style={{ maxWidth: "960px", margin: "0 auto" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1.5rem" }}>

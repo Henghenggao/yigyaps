@@ -15,7 +15,9 @@ import { env } from "./env.js";
 export interface JWTPayload {
   userId: string;
   userName: string;
-  githubUsername: string;
+  githubUsername?: string | null;
+  googleUsername?: string | null;
+  email?: string | null;
   tier: "free" | "pro" | "epic" | "legendary";
   role: "user" | "admin";
   iat?: number; // Issued at

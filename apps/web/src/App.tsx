@@ -8,6 +8,7 @@ import { PublishSkillPage } from "./pages/PublishSkillPage";
 import { NotFoundPage } from "./pages/NotFoundPage";
 import { ErrorBoundary } from "./components/ErrorBoundary";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { AuthModal } from "./components/AuthModal";
 import { BlogPage } from "./pages/BlogPage";
 import "./App.css";
 
@@ -40,6 +41,7 @@ const EvolutionLabPage = lazy(() =>
 function App() {
   return (
     <ErrorBoundary>
+      <AuthModal />
       <Suspense fallback={null}>
         <Routes>
           <Route path="/" element={<LandingPage />} />

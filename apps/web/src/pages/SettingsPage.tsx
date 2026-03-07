@@ -17,7 +17,7 @@ interface ApiKey {
 }
 
 export function SettingsPage() {
-  const { user, login } = useAuth();
+  const { user } = useAuth();
   const { addToast } = useToast();
   const [tab, setTab] = useState<"api-keys" | "profile" | "payout">("api-keys");
   const [payoutStatus, setPayoutStatus] = useState<{
@@ -107,7 +107,7 @@ export function SettingsPage() {
 
   return (
     <div className="app-container">
-      <Header user={user} login={login} />
+      <Header user={user} />
 
       <main className="main-content" style={{ maxWidth: "800px", margin: "0 auto" }}>
         <h1 style={{ fontSize: "1.75rem", marginBottom: "1.5rem" }}>Settings</h1>

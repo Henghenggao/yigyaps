@@ -3,7 +3,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { Header } from "./Header";
 
 export function ProtectedRoute() {
-  const { user, loading, login } = useAuth();
+  const { user, loading, openAuthModal } = useAuth();
 
   if (loading) {
     return (
@@ -22,7 +22,7 @@ export function ProtectedRoute() {
   if (!user) {
     return (
       <div className="app-container">
-        <Header user={null} login={login} />
+        <Header user={null} />
         <main className="main-content">
           <div
             style={{
@@ -48,8 +48,8 @@ export function ProtectedRoute() {
             >
               You need to be signed in to access this page.
             </p>
-            <button className="btn btn-primary" style={{ width: "100%" }} onClick={login}>
-              Sign in with GitHub
+            <button className="btn btn-primary" style={{ width: "100%" }} onClick={openAuthModal}>
+              Sign in to YigYaps
             </button>
           </div>
         </main>

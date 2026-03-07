@@ -25,14 +25,14 @@ type InstallStatus =
   | "error";
 
 export function InstallButton({ skill, onInstallSuccess }: InstallButtonProps) {
-  const { user, login } = useAuth();
+  const { user, openAuthModal } = useAuth();
   const [status, setStatus] = useState<InstallStatus>("idle");
   const [error, setError] = useState<string | null>(null);
 
   // Check if user is not logged in
   if (!user) {
     return (
-      <button className="btn btn-primary btn-large" onClick={login}>
+      <button className="btn btn-primary btn-large" onClick={openAuthModal}>
         Sign In to Install
       </button>
     );

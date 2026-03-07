@@ -24,7 +24,7 @@ import { dbOperation } from "./error-utils.js";
 // ─── User DAL ─────────────────────────────────────────────────────────────────
 
 export class UserDAL {
-  constructor(private db: NodePgDatabase<typeof schema>) {}
+  constructor(private db: NodePgDatabase<typeof schema>) { }
 
   async create(user: UserInsert): Promise<UserRow> {
     return dbOperation(
@@ -64,6 +64,34 @@ export class UserDAL {
         return rows[0] ?? null;
       },
       { method: "getByGithubId", entity: "user", id: githubId },
+    );
+  }
+
+  async getByGoogleId(googleId: string): Promise<UserRow | null> {
+    return dbOperation(
+      async () => {
+        const rows = await this.db
+          .select()
+          .from(usersTable)
+          .where(eq(usersTable.googleId, googleId))
+          .limit(1);
+        return rows[0] ?? null;
+      },
+      { method: "getByGoogleId", entity: "user", id: googleId },
+    );
+  }
+
+  async getByEmail(email: string): Promise<UserRow | null> {
+    return dbOperation(
+      async () => {
+        const rows = await this.db
+          .select()
+          .from(usersTable)
+          .where(eq(usersTable.email, email))
+          .limit(1);
+        return rows[0] ?? null;
+      },
+      { method: "getByEmail", entity: "user", id: email },
     );
   }
 
@@ -128,7 +156,7 @@ export class UserDAL {
 // ─── API Key DAL ──────────────────────────────────────────────────────────────
 
 export class ApiKeyDAL {
-  constructor(private db: NodePgDatabase<typeof schema>) {}
+  constructor(private db: NodePgDatabase<typeof schema>) { }
 
   async create(apiKey: ApiKeyInsert): Promise<ApiKeyRow> {
     return dbOperation(
@@ -236,7 +264,7 @@ export class ApiKeyDAL {
 // ─── Session DAL ──────────────────────────────────────────────────────────────
 
 export class SessionDAL {
-  constructor(private db: NodePgDatabase<typeof schema>) {}
+  constructor(private db: NodePgDatabase<typeof schema>) { }
 
   async create(session: SessionInsert): Promise<SessionRow> {
     return dbOperation(

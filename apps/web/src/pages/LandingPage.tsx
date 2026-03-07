@@ -3,11 +3,11 @@ import { useAuth } from "../contexts/AuthContext";
 import { Header } from "../components/Header";
 
 export function LandingPage() {
-  const { user, login } = useAuth();
+  const { user, openAuthModal } = useAuth();
 
   return (
     <div className="landing-layout">
-      <Header user={user} login={login} />
+      <Header user={user} />
 
       <main>
         {/* ── Hero ────────────────────────────────────────── */}
@@ -142,8 +142,8 @@ export function LandingPage() {
                   Start Creating Skills
                 </Link>
               ) : (
-                <button className="btn-primary btn-lg" onClick={login}>
-                  Sign in with GitHub
+                <button className="btn-primary btn-lg" onClick={openAuthModal}>
+                  Sign in to YigYaps
                 </button>
               )}
             </div>

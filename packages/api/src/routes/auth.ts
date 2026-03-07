@@ -8,11 +8,21 @@
 
 import type { FastifyPluginAsync } from "fastify";
 import { UserDAL, SessionDAL } from "@yigyaps/db";
+import { type UserRow } from "@yigyaps/db";
 import { signJWT, verifyJWT } from "../lib/jwt.js";
 import { requireAuth } from "../middleware/auth-v2.js";
 import { customAlphabet } from "nanoid";
 import { env } from "../lib/env.js";
 import { AUTH_COOKIE_NAME } from "../lib/constants.js";
+import crypto from "node:crypto";
+import { Resend } from "resend";
+
+const resend = new Resend(env.RESEND_API_KEY || "dummy_key");
+
+// Password hashing utility using scrypt
+export function hashPassword(password: string, salt: string): string {
+  return crypto.scryptSync(password, salt, 64).toString("hex");
+}
 
 const nanoid = customAlphabet("0123456789abcdefghijklmnopqrstuvwxyz", 8);
 
@@ -302,4 +312,210 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     reply.setCookie(AUTH_COOKIE_NAME, newJwt, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", maxAge: 7 * 24 * 60 * 60, path: "/" });
     return reply.send({ refreshed: true, user: { id: user.id, githubUsername: user.githubUsername, displayName: user.displayName, email: user.email, avatarUrl: user.avatarUrl, tier: user.tier, role: user.role } });
   });
+
+  // ─── Google OAuth ─────────────────────────────────────────────────────────────
+
+  const GOOGLE_CLIENT_ID = env.GOOGLE_CLIENT_ID;
+  const GOOGLE_CLIENT_SECRET = env.GOOGLE_CLIENT_SECRET;
+  const GOOGLE_CALLBACK_URL = env.GOOGLE_CALLBACK_URL ?? "http://localhost:3100/v1/auth/google/callback";
+  const isGoogleConfigured = GOOGLE_CLIENT_ID && GOOGLE_CLIENT_SECRET;
+
+  fastify.get("/google", async (request, reply) => {
+    if (!isGoogleConfigured) {
+      return reply.status(500).send({ error: "Server misconfiguration", message: "Google OAuth is not configured" });
+    }
+    const state = customAlphabet("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz", 32)();
+    reply.setCookie("oauth_state", state, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", maxAge: 600, path: "/" });
+    const authUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+    authUrl.searchParams.set("client_id", GOOGLE_CLIENT_ID);
+    authUrl.searchParams.set("redirect_uri", GOOGLE_CALLBACK_URL);
+    authUrl.searchParams.set("response_type", "code");
+    authUrl.searchParams.set("scope", "openid email profile");
+    authUrl.searchParams.set("state", state);
+    return reply.redirect(authUrl.toString());
+  });
+
+  fastify.get<{ Querystring: { code?: string; state?: string; error?: string } }>("/google/callback", async (request, reply) => {
+    const { code, state, error } = request.query;
+    if (error) return reply.redirect(`${FRONTEND_URL}/auth/error?error=${error}`);
+    if (!code || !state) return reply.status(400).send({ error: "Bad request", message: "Missing code or state" });
+    const storedState = request.cookies.oauth_state;
+    if (!storedState || storedState !== state) return reply.status(403).send({ error: "Forbidden", message: "Invalid state" });
+    reply.clearCookie("oauth_state");
+    if (!isGoogleConfigured) return reply.status(500).send({ error: "Server misconfiguration", message: "Google OAuth is not configured" });
+
+    try {
+      const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+        method: "POST",
+        headers: { "Content-Type": "application/x-www-form-urlencoded" },
+        body: new URLSearchParams({
+          code, client_id: GOOGLE_CLIENT_ID, client_secret: GOOGLE_CLIENT_SECRET, redirect_uri: GOOGLE_CALLBACK_URL, grant_type: "authorization_code"
+        }),
+      });
+      const tokenData = (await tokenResponse.json()) as { access_token?: string; error?: string };
+      if (!tokenData.access_token) throw new Error(tokenData.error ?? "Failed to get access token");
+
+      const userResponse = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
+        headers: { Authorization: `Bearer ${tokenData.access_token}` },
+      });
+      const googleUser = (await userResponse.json()) as { id: string; email?: string; verified_email?: boolean; name?: string; given_name?: string; picture?: string };
+
+      const userDAL = new UserDAL(fastify.db);
+      let user = await userDAL.getByGoogleId(String(googleUser.id));
+      if (!user && googleUser.email) {
+        // Try linking by email if Google user didn't exist
+        const existingEmailUser = await userDAL.getByEmail(googleUser.email);
+        if (existingEmailUser) {
+          user = await userDAL.updateProfile(existingEmailUser.id, { googleId: String(googleUser.id) } as Partial<Omit<UserRow, "id" | "createdAt">>); // cast to Partial UserRow
+        }
+      }
+
+      const now = Date.now();
+      if (!user) {
+        user = await userDAL.create({
+          id: `usr_${now}_${nanoid()}`,
+          googleId: String(googleUser.id),
+          email: googleUser.email,
+          emailVerified: !!googleUser.verified_email,
+          displayName: googleUser.name ?? googleUser.given_name ?? "User",
+          avatarUrl: googleUser.picture,
+          tier: "free",
+          role: "user",
+          isVerifiedCreator: false,
+          totalPackages: 0,
+          totalEarningsUsd: "0",
+          createdAt: now,
+          updatedAt: now,
+          lastLoginAt: now,
+        });
+      } else {
+        await userDAL.updateLastLogin(user.id);
+      }
+
+      const sessionDAL = new SessionDAL(fastify.db);
+      const session = await sessionDAL.create({
+        id: `sess_${now}_${nanoid()}`,
+        userId: user.id,
+        sessionToken: customAlphabet("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz", 64)(),
+        expiresAt: now + 7 * 24 * 60 * 60 * 1000,
+        createdAt: now,
+        lastActiveAt: now,
+      });
+
+      const jwt = signJWT({ userId: user.id, userName: user.displayName, email: user.email, googleUsername: googleUser.email, tier: user.tier as "free" | "pro" | "epic" | "legendary", role: user.role as "user" | "admin" });
+      reply.setCookie("session_token", session.sessionToken, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", maxAge: 7 * 24 * 60 * 60, path: "/" });
+      reply.setCookie(AUTH_COOKIE_NAME, jwt, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", maxAge: 7 * 24 * 60 * 60, path: "/" });
+      return reply.redirect(`${FRONTEND_URL}/auth/success`);
+    } catch (error) {
+      request.log.error({ error }, "Google OAuth callback failed");
+      return reply.redirect(`${FRONTEND_URL}/auth/error?error=oauth_failed`);
+    }
+  });
+
+  // ─── Email & Password Auth ──────────────────────────────────────────────────
+
+  fastify.post<{ Body: { email?: string; password?: string; displayName?: string } }>("/email/register", async (request, reply) => {
+    const { email, password, displayName } = request.body;
+    if (!email || !password || !displayName) return reply.status(400).send({ error: "Missing fields" });
+
+    const userDAL = new UserDAL(fastify.db);
+    const existing = await userDAL.getByEmail(email);
+    if (existing) return reply.status(409).send({ error: "Email already registered" });
+
+    const salt = crypto.randomBytes(16).toString("hex");
+    const hashed = hashPassword(password, salt);
+    const passwordHash = `${salt}:${hashed}`;
+
+    const verificationToken = customAlphabet("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz", 32)();
+    const now = Date.now();
+
+    await userDAL.create({
+      id: `usr_${now}_${nanoid()}`,
+      email,
+      passwordHash,
+      displayName,
+      emailVerified: false,
+      verificationToken,
+      verificationTokenExpiresAt: now + 24 * 60 * 60 * 1000, // 24 hours
+      tier: "free",
+      role: "user",
+      createdAt: now,
+      updatedAt: now,
+      lastLoginAt: now,
+    });
+
+    if (env.RESEND_API_KEY) {
+      try {
+        await resend.emails.send({
+          from: "YigYaps <noreply@yigyaps.com>",
+          to: email,
+          subject: "Verify your YigYaps Account",
+          text: `Click the link to verify: ${env.YIGYAPS_API_URL || "http://localhost:3100"}/v1/auth/email/verify?token=${verificationToken}`,
+        });
+      } catch (err) {
+        request.log.error({ err }, "Failed to send verification email");
+      }
+    }
+
+    return reply.send({ success: true, message: "Registration successful. Please check your email to verify." });
+  });
+
+  fastify.post<{ Body: { email?: string; password?: string } }>("/email/login", async (request, reply) => {
+    const { email, password } = request.body;
+    if (!email || !password) return reply.status(400).send({ error: "Missing fields" });
+
+    const userDAL = new UserDAL(fastify.db);
+    const user = await userDAL.getByEmail(email);
+    if (!user || !user.passwordHash) return reply.status(401).send({ error: "Invalid credentials" });
+
+    const [salt, hash] = user.passwordHash.split(":");
+    if (!salt || !hash) return reply.status(401).send({ error: "Invalid credentials" });
+
+    const attemptHash = hashPassword(password, salt);
+    if (attemptHash !== hash) return reply.status(401).send({ error: "Invalid credentials" });
+    if (!user.emailVerified) return reply.status(403).send({ error: "Email not verified" });
+
+    await userDAL.updateLastLogin(user.id);
+
+    const now = Date.now();
+    const sessionDAL = new SessionDAL(fastify.db);
+    const sessionToken = customAlphabet("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz", 64)();
+    await sessionDAL.create({
+      id: `sess_${now}_${nanoid()}`,
+      userId: user.id,
+      sessionToken,
+      expiresAt: now + 7 * 24 * 60 * 60 * 1000,
+      createdAt: now,
+      lastActiveAt: now,
+    });
+
+    const jwt = signJWT({ userId: user.id, userName: user.displayName, email: user.email, tier: user.tier as "free" | "pro" | "epic" | "legendary", role: user.role as "user" | "admin" });
+    reply.setCookie("session_token", sessionToken, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", maxAge: 7 * 24 * 60 * 60, path: "/" });
+    reply.setCookie(AUTH_COOKIE_NAME, jwt, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", maxAge: 7 * 24 * 60 * 60, path: "/" });
+
+    return reply.send({ success: true, user: { id: user.id, displayName: user.displayName, email: user.email } });
+  });
+
+  fastify.get<{ Querystring: { token?: string } }>("/email/verify", async (request, reply) => {
+    const { token } = request.query;
+    if (!token) return reply.status(400).send({ error: "Missing token" });
+
+    // Find user with this token
+    const db = fastify.db;
+    const { usersTable } = await import("@yigyaps/db");
+    const { eq } = await import("drizzle-orm");
+    const users = await db.select().from(usersTable).where(eq(usersTable.verificationToken, token)).limit(1);
+    const user = users[0];
+
+    if (!user) return reply.status(404).send({ error: "Invalid or expired token" });
+    if (user.verificationTokenExpiresAt && user.verificationTokenExpiresAt < Date.now()) {
+      return reply.status(400).send({ error: "Token expired" });
+    }
+
+    // Mark as verified
+    await db.update(usersTable).set({ emailVerified: true, verificationToken: null, verificationTokenExpiresAt: null }).where(eq(usersTable.id, user.id));
+
+    return reply.redirect(`${FRONTEND_URL}/auth/login?verified=true`);
+  });
+
 };
