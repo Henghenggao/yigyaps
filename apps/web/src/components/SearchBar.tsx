@@ -42,6 +42,7 @@ export function SearchBar({
           strokeWidth="2.5"
           strokeLinecap="round"
           strokeLinejoin="round"
+          aria-hidden="true"
         >
           <circle cx="11" cy="11" r="8"></circle>
           <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
@@ -52,6 +53,7 @@ export function SearchBar({
           placeholder={placeholder}
           value={inputValue}
           onChange={(e) => setInputValue(e.target.value)}
+          aria-label={placeholder}
         />
         {inputValue && (
           <button
@@ -130,6 +132,10 @@ export function SearchBar({
         .search-clear-btn:hover {
           background: var(--color-accent-bg);
           color: var(--color-text-main);
+        }
+        .search-clear-btn:focus-visible {
+          outline: 2px solid var(--color-primary);
+          outline-offset: 2px;
         }
       `}</style>
     </div>
