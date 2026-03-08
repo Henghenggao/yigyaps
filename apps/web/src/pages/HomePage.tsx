@@ -1,3 +1,4 @@
+import { useCallback, useMemo } from "react";
 import { useSearchParams } from "react-router-dom";
 import { useSkills } from "../hooks/useSkills";
 import { useAuth } from "../contexts/AuthContext";
@@ -31,65 +32,79 @@ export function HomePage() {
     "popularity") as SkillPackageSearchQuery["sortBy"];
   const page = parseInt(searchParams.get("page") || "1", 10);
 
-  const searchQuery: SkillPackageSearchQuery = {
-    query: query || undefined,
-    category: category || undefined,
-    license: license || undefined,
-    maturity: maturity || undefined,
-    maxPriceUsd,
-    sortBy,
-    limit: ITEMS_PER_PAGE,
-    offset: (page - 1) * ITEMS_PER_PAGE,
-  };
+  // ⚡ Bolt: Memoize search query to ensure stable reference for children like FilterPanel
+  const searchQuery: SkillPackageSearchQuery = useMemo(
+    () => ({
+      query: query || undefined,
+      category: category || undefined,
+      license: license || undefined,
+      maturity: maturity || undefined,
+      maxPriceUsd,
+      sortBy,
+      limit: ITEMS_PER_PAGE,
+      offset: (page - 1) * ITEMS_PER_PAGE,
+    }),
+    [query, category, license, maturity, maxPriceUsd, sortBy, page],
+  );
 
   const { skills, total, loading, error } = useSkills(searchQuery);
 
-  const handleSearchChange = (newQuery: string) => {
-    setSearchParams((prev) => {
-      const params = new URLSearchParams(prev);
-      if (newQuery) {
-        params.set("q", newQuery);
-      } else {
-        params.delete("q");
-      }
-      params.set("page", "1");
-      return params;
-    });
-  };
+  // ⚡ Bolt: Memoize handlers to prevent SearchBar from resetting its debounce timer unnecessarily
+  const handleSearchChange = useCallback(
+    (newQuery: string) => {
+      setSearchParams((prev) => {
+        const params = new URLSearchParams(prev);
+        if (newQuery) {
+          params.set("q", newQuery);
+        } else {
+          params.delete("q");
+        }
+        params.set("page", "1");
+        return params;
+      });
+    },
+    [setSearchParams],
+  );
 
-  const handleFilterChange = (filters: Partial<SkillPackageSearchQuery>) => {
-    setSearchParams((prev) => {
-      const params = new URLSearchParams(prev);
-      if (filters.category !== undefined) {
-        if (filters.category) params.set("category", filters.category);
-        else params.delete("category");
-      }
-      if (filters.license !== undefined) {
-        if (filters.license) params.set("license", filters.license);
-        else params.delete("license");
-      }
-      if (filters.maturity !== undefined) {
-        if (filters.maturity) params.set("maturity", filters.maturity);
-        else params.delete("maturity");
-      }
-      if (filters.maxPriceUsd !== undefined && filters.maxPriceUsd !== null) {
-        params.set("maxPrice", filters.maxPriceUsd.toString());
-      }
-      if (filters.sortBy !== undefined) {
-        params.set("sort", filters.sortBy);
-      }
-      params.set("page", "1");
-      return params;
-    });
-  };
+  const handleFilterChange = useCallback(
+    (filters: Partial<SkillPackageSearchQuery>) => {
+      setSearchParams((prev) => {
+        const params = new URLSearchParams(prev);
+        if (filters.category !== undefined) {
+          if (filters.category) params.set("category", filters.category);
+          else params.delete("category");
+        }
+        if (filters.license !== undefined) {
+          if (filters.license) params.set("license", filters.license);
+          else params.delete("license");
+        }
+        if (filters.maturity !== undefined) {
+          if (filters.maturity) params.set("maturity", filters.maturity);
+          else params.delete("maturity");
+        }
+        if (filters.maxPriceUsd !== undefined && filters.maxPriceUsd !== null) {
+          params.set("maxPrice", filters.maxPriceUsd.toString());
+        }
+        if (filters.sortBy !== undefined) {
+          params.set("sort", filters.sortBy);
+        }
+        params.set("page", "1");
+        return params;
+      });
+    },
+    [setSearchParams],
+  );
 
-  const handlePageChange = (newPage: number) => {
-    setSearchParams((prev) => {
-      const params = new URLSearchParams(prev);
-      params.set("page", newPage.toString());
-      return params;
-    });
-  };
+  const handlePageChange = useCallback(
+    (newPage: number) => {
+      setSearchParams((prev) => {
+        const params = new URLSearchParams(prev);
+        params.set("page", newPage.toString());
+        return params;
+      });
+    },
+    [setSearchParams],
+  );
 
   return (
     <div className="home-layout">
@@ -140,7 +155,12 @@ export function HomePage() {
                 {error && (
                   <div className="error-state">
                     <p>{error}</p>
-                    <button className="auth-btn" onClick={() => window.location.reload()}>Retry</button>
+                    <button
+                      className="auth-btn"
+                      onClick={() => window.location.reload()}
+                    >
+                      Retry
+                    </button>
                   </div>
                 )}
 
@@ -174,7 +194,10 @@ export function HomePage() {
 
       <footer className="site-footer">
         <div className="container">
-          <p>&copy; {new Date().getFullYear()} YigYaps. Shared Wisdom for AI Agents.</p>
+          <p>
+            &copy; {new Date().getFullYear()} YigYaps. Shared Wisdom for AI
+            Agents.
+          </p>
         </div>
       </footer>
 

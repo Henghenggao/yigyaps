@@ -4,6 +4,12 @@ import type { SkillPackage, SkillPackageSearchQuery } from "@yigyaps/types";
 import { API_URL } from "../lib/api";
 import { normalizePackage } from "../utils/normalize";
 
+// ⚡ Bolt: Initialize client once outside the hook to prevent unnecessary object
+// creation on every render/fetch, reducing memory churn.
+const client = new YigYapsRegistryClient({
+  baseUrl: API_URL,
+});
+
 export function useSkills(searchParams?: SkillPackageSearchQuery) {
   const [skills, setSkills] = useState<SkillPackage[]>([]);
   const [total, setTotal] = useState(0);
@@ -14,10 +20,6 @@ export function useSkills(searchParams?: SkillPackageSearchQuery) {
     const fetchSkills = async () => {
       try {
         setLoading(true);
-        // Use VITE_API_URL from .env or fallback to localhost
-        const client = new YigYapsRegistryClient({
-          baseUrl: API_URL,
-        });
 
         // Search API returns SkillPackageSearchResult with packages array
         const response = await client.search(
