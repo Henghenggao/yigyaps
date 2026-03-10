@@ -66,6 +66,7 @@ export function MarkdownEditor({
             key={btn.title}
             type="button"
             title={btn.title}
+            aria-label={btn.title}
             onClick={() => insertAt(btn.before, btn.after)}
             style={{
               background: "none",
@@ -138,7 +139,9 @@ export function MarkdownEditor({
           {value ? (
             <ReactMarkdown remarkPlugins={[remarkGfm]}>{value}</ReactMarkdown>
           ) : (
-            <p style={{ color: "var(--color-text-muted)", fontStyle: "italic" }}>
+            <p
+              style={{ color: "var(--color-text-muted)", fontStyle: "italic" }}
+            >
               Preview will appear here...
             </p>
           )}
