@@ -122,7 +122,7 @@ describe("Packages Routes", () => {
         license: "open-source",
         category: "development",
       });
-      expect(body.id).toMatch(/^spkg_\d+_[a-z0-9]{6}$/);
+      expect(body.id).toMatch(/^spkg_\d+_[a-z0-9]{8}$/);
     });
 
     it("should return 409 for duplicate packageId", async () => {

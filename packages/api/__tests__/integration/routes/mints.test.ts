@@ -125,7 +125,7 @@ describe("Mints Routes", () => {
         creatorRoyaltyPercent: "70.00",
         origin: "manual",
       });
-      expect(body.id).toMatch(/^smint_\d+_[a-z0-9]{6}$/);
+      expect(body.id).toMatch(/^smint_\d+_[a-z0-9]{8}$/);
     });
 
     it("should create a rare mint with graduation certificate", async () => {
