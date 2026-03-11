@@ -31,6 +31,11 @@ const envSchema = z.object({
     .string()
     .min(1)
     .default("UNCONFIGURED_GITHUB_CLIENT_SECRET"),
+  GOOGLE_CLIENT_ID: z.string().min(1).default("UNCONFIGURED_GOOGLE_CLIENT_ID"),
+  GOOGLE_CLIENT_SECRET: z
+    .string()
+    .min(1)
+    .default("UNCONFIGURED_GOOGLE_CLIENT_SECRET"),
 
   // Optional with defaults
   PORT: z.coerce.number().default(3100),
@@ -46,6 +51,7 @@ const envSchema = z.object({
   CORS_ORIGIN: z.string().default(""),
   YIGYAPS_API_URL: z.string().url().optional(),
   GITHUB_CALLBACK_URL: z.string().url().optional(),
+  GOOGLE_CALLBACK_URL: z.string().url().optional(),
   FRONTEND_URL: z.string().url().default("http://localhost:3000"),
 
   // DB Pool
@@ -98,6 +104,8 @@ export const env = parsed.data || {
   JWT_SECRET: process.env.JWT_SECRET || crypto.randomBytes(32).toString("hex"),
   GITHUB_CLIENT_ID: "UNCONFIGURED_GITHUB_CLIENT_ID",
   GITHUB_CLIENT_SECRET: "UNCONFIGURED_GITHUB_CLIENT_SECRET",
+  GOOGLE_CLIENT_ID: "UNCONFIGURED_GOOGLE_CLIENT_ID",
+  GOOGLE_CLIENT_SECRET: "UNCONFIGURED_GOOGLE_CLIENT_SECRET",
   PORT: 3100,
   HOST: "0.0.0.0",
   LOG_LEVEL: "info" as const,
@@ -105,6 +113,7 @@ export const env = parsed.data || {
   CORS_ORIGIN: "",
   YIGYAPS_API_URL: undefined,
   GITHUB_CALLBACK_URL: undefined,
+  GOOGLE_CALLBACK_URL: undefined,
   FRONTEND_URL: "http://localhost:3000",
   DB_POOL_MAX: 20,
   DB_POOL_IDLE_TIMEOUT: 30000,

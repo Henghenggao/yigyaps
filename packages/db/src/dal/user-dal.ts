@@ -67,6 +67,20 @@ export class UserDAL {
     );
   }
 
+  async getByGoogleId(googleId: string): Promise<UserRow | null> {
+    return dbOperation(
+      async () => {
+        const rows = await this.db
+          .select()
+          .from(usersTable)
+          .where(eq(usersTable.googleId, googleId))
+          .limit(1);
+        return rows[0] ?? null;
+      },
+      { method: "getByGoogleId", entity: "user", id: googleId },
+    );
+  }
+
   async getByGithubUsername(username: string): Promise<UserRow | null> {
     return dbOperation(
       async () => {
@@ -83,7 +97,7 @@ export class UserDAL {
 
   async updateProfile(
     id: string,
-    updates: Partial<Omit<UserRow, "id" | "githubId" | "createdAt">>,
+    updates: Partial<Omit<UserRow, "id" | "githubId" | "googleId" | "createdAt">>,
   ): Promise<UserRow> {
     return dbOperation(
       async () => {

@@ -23,8 +23,9 @@ export const usersTable = pgTable(
   "yy_users",
   {
     id: text("id").primaryKey(),
-    githubId: text("github_id").notNull().unique(),
-    githubUsername: text("github_username").notNull(),
+    githubId: text("github_id").unique(),
+    githubUsername: text("github_username"),
+    googleId: text("google_id").unique(),
     email: text("email"),
     displayName: text("display_name").notNull(),
     avatarUrl: text("avatar_url"),
@@ -49,6 +50,7 @@ export const usersTable = pgTable(
   (table) => [
     index("idx_yy_users_github_id").on(table.githubId),
     index("idx_yy_users_github_username").on(table.githubUsername),
+    index("idx_yy_users_google_id").on(table.googleId),
     index("idx_yy_users_email").on(table.email),
   ],
 );
