@@ -1,3 +1,4 @@
+import { memo } from "react";
 import { Link } from "react-router-dom";
 import type { SkillPackage } from "@yigyaps/types";
 
@@ -6,7 +7,11 @@ interface SkillCardProps {
   onClick?: () => void;
 }
 
-export function SkillCard({ skill, onClick }: SkillCardProps) {
+// ⚡ Bolt: Memoize SkillCard to prevent unnecessary re-renders in large lists
+export const SkillCard = memo(function SkillCard({
+  skill,
+  onClick,
+}: SkillCardProps) {
   const displayName = skill.displayName || skill.packageId;
 
   return (
@@ -19,9 +24,7 @@ export function SkillCard({ skill, onClick }: SkillCardProps) {
         <div className="skill-icon-box">
           {skill.icon || displayName.charAt(0).toUpperCase()}
         </div>
-        <div className="maturity-badge">
-          {skill.maturity}
-        </div>
+        <div className="maturity-badge">{skill.maturity}</div>
       </div>
 
       <div className="card-body">
@@ -46,7 +49,9 @@ export function SkillCard({ skill, onClick }: SkillCardProps) {
           )}
         </div>
         <div className="skill-price">
-          {Number(skill.priceUsd || 0) === 0 ? 'Free' : `$${Number(skill.priceUsd).toFixed(2)}`}
+          {Number(skill.priceUsd || 0) === 0
+            ? "Free"
+            : `$${Number(skill.priceUsd).toFixed(2)}`}
         </div>
       </div>
 
@@ -143,4 +148,4 @@ export function SkillCard({ skill, onClick }: SkillCardProps) {
       `}</style>
     </Link>
   );
-}
+});
