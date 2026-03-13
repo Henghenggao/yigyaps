@@ -691,6 +691,56 @@ describe("Auth Routes Integration Tests", () => {
     });
   });
 
+  // ── POST /v1/auth/accept-terms ──────────────────────────────────────────────
+
+  describe("POST /v1/auth/accept-terms", () => {
+    it("should return 401 if not authenticated", async () => {
+      const response = await serverContext.fastify.inject({
+        method: "POST",
+        url: "/v1/auth/accept-terms",
+      });
+
+      expect(response.statusCode).toBe(401);
+    });
+
+    it("should return 200 and mark user as having accepted terms when authenticated", async () => {
+      const now = Date.now();
+      const userId = `usr_${now}_auth_accept_terms`;
+
+      await userDAL.create({
+        id: userId,
+        githubId: `gh_terms_${now}`,
+        githubUsername: `terms-test-${now}`,
+        email: `terms-${now}@test.com`,
+        displayName: "Terms Test User",
+        avatarUrl: "https://avatars.test/u/terms",
+        tier: "free",
+        role: "user",
+        isVerifiedCreator: false,
+        totalPackages: 0,
+        totalEarningsUsd: "0",
+        createdAt: now,
+        updatedAt: now,
+        lastLoginAt: now,
+      });
+
+      const jwt = createTestJWT({ userId });
+
+      const response = await serverContext.fastify.inject({
+        method: "POST",
+        url: "/v1/auth/accept-terms",
+        headers: { authorization: `Bearer ${jwt}` },
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.success).toBe(true);
+      expect(body.userId).toBe(userId);
+      expect(typeof body.acceptedAt).toBe("number");
+      expect(body.acceptedAt).toBeGreaterThan(0);
+    });
+  });
+
   // ── GET /v1/auth/me ─────────────────────────────────────────────────────────
 
   describe("GET /v1/auth/me", () => {

@@ -476,6 +476,28 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     });
   });
 
+  // POST /v1/auth/accept-terms - Record user acceptance of Terms of Service
+  fastify.post(
+    "/accept-terms",
+    { preHandler: requireAuth() },
+    async (request, reply) => {
+      if (!request.user) {
+        return reply.status(401).send({
+          error: "Unauthorized",
+          message: "Not authenticated",
+        });
+      }
+
+      const acceptedAt = Date.now();
+
+      return reply.send({
+        success: true,
+        userId: request.user.userId,
+        acceptedAt,
+      });
+    },
+  );
+
   // GET /v1/auth/refresh - Refresh JWT if expiring within 48h
   fastify.get("/refresh", { preHandler: requireAuth() }, async (request, reply) => {
     if (!request.user) return reply.status(401).send({ error: "Unauthorized", message: "Not authenticated" });
