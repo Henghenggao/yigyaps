@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, Link } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
 import { Header } from "../components/Header";
@@ -9,6 +9,9 @@ import {
   LabApiKeyPanel,
   ChatInterface,
   RulesEditor,
+  LabPageHeader,
+  PrivacyWarningBanner,
+  EmptyRulesState,
 } from "../components/lab";
 import type { ChatMessage } from "../components/lab";
 
@@ -178,108 +181,13 @@ export function EvolutionLabPage() {
         className="main-content"
         style={{ maxWidth: "1400px", margin: "0 auto" }}
       >
-        {/* ── Page header ── */}
-        <div
-          style={{
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "space-between",
-            marginBottom: "1rem",
-          }}
-        >
-          <div>
-            <div
-              style={{
-                display: "flex",
-                alignItems: "center",
-                gap: "0.75rem",
-                marginBottom: "0.25rem",
-              }}
-            >
-              <h1 style={{ fontSize: "1.5rem", margin: 0 }}>Evolution Lab</h1>
-              <span
-                style={{
-                  fontSize: "0.65rem",
-                  padding: "0.15rem 0.5rem",
-                  background: "rgba(99,102,241,0.15)",
-                  border: "1px solid var(--color-primary)",
-                  borderRadius: "4px",
-                  color: "var(--color-primary)",
-                  fontWeight: 700,
-                  letterSpacing: "0.08em",
-                  textTransform: "uppercase",
-                }}
-              >
-                Beta
-              </span>
-            </div>
-            <p
-              style={{
-                color: "var(--color-text-muted)",
-                margin: 0,
-                fontSize: "0.875rem",
-              }}
-            >
-              Skill:{" "}
-              <Link
-                to={`/skill/${packageId}`}
-                style={{ color: "var(--color-primary)" }}
-              >
-                {packageId}
-              </Link>
-            </p>
-          </div>
-          <Link
-            to="/my-packages"
-            className="btn btn-outline"
-            style={{ fontSize: "0.85rem" }}
-          >
-            ← My Skills
-          </Link>
-        </div>
+        <LabPageHeader packageId={packageId} />
 
-        {/* ── Privacy Warning Banner ── */}
-        <div
-          style={{
-            marginBottom: "1.25rem",
-            padding: "0.85rem 1.25rem",
-            background: "rgba(230,126,34,0.08)",
-            border: "1px solid rgba(230,126,34,0.35)",
-            borderRadius: "8px",
-            display: "flex",
-            alignItems: "flex-start",
-            gap: "0.75rem",
-          }}
-        >
-          <span style={{ fontSize: "1.1rem", flexShrink: 0, marginTop: "1px" }}>
-            ⚠️
-          </span>
-          <div style={{ flex: 1, fontSize: "0.85rem", lineHeight: 1.6 }}>
-            <strong style={{ color: "#e67e22" }}>Lab Preview Mode</strong>
-            {" — "}
-            Inference sends your plaintext rules to an external LLM provider
-            (Anthropic). This is a <em>testing-only</em> environment. Production
-            agent invocations will use a TEE-isolated proxy.{" "}
-            <button
-              style={{
-                background: "none",
-                border: "none",
-                color: "var(--color-primary)",
-                cursor: "pointer",
-                padding: 0,
-                fontSize: "0.85rem",
-                textDecoration: "underline",
-              }}
-              onClick={() => setShowKeyInput((v) => !v)}
-            >
-              {labApiKey
-                ? "✓ Using your own API key"
-                : "Use your own Anthropic key to control data handling →"}
-            </button>
-          </div>
-        </div>
+        <PrivacyWarningBanner
+          hasApiKey={!!labApiKey}
+          onToggleApiKey={() => setShowKeyInput((v) => !v)}
+        />
 
-        {/* ── API Key Settings Panel ── */}
         {showKeyInput && (
           <LabApiKeyPanel
             apiKey={labApiKey}
@@ -290,41 +198,8 @@ export function EvolutionLabPage() {
           />
         )}
 
-        {loadingRules ? (
-          <div
-            style={{
-              textAlign: "center",
-              padding: "4rem",
-              color: "var(--color-text-muted)",
-            }}
-          >
-            Decrypting skill rules…
-          </div>
-        ) : rulesNotFound ? (
-          <div
-            style={{
-              textAlign: "center",
-              padding: "4rem 2rem",
-              background: "var(--color-card)",
-              border: "1px solid var(--color-border)",
-              borderRadius: "12px",
-            }}
-          >
-            <div style={{ fontSize: "3rem", marginBottom: "1rem" }}>🔒</div>
-            <h2 style={{ margin: "0 0 0.75rem" }}>No knowledge uploaded yet</h2>
-            <p
-              style={{
-                color: "var(--color-text-muted)",
-                marginBottom: "1.5rem",
-              }}
-            >
-              Publish this skill with encrypted rules first via the Publish
-              wizard.
-            </p>
-            <Link to="/publish" className="btn btn-primary">
-              Go to Publish
-            </Link>
-          </div>
+        {loadingRules || rulesNotFound ? (
+          <EmptyRulesState isLoading={loadingRules} packageId={packageId} />
         ) : (
           <div
             style={{
@@ -334,7 +209,6 @@ export function EvolutionLabPage() {
               alignItems: "start",
             }}
           >
-            {/* ── Left: Rules Editor ── */}
             <RulesEditor
               rules={rules}
               isDirty={isDirty}
@@ -344,7 +218,6 @@ export function EvolutionLabPage() {
               onDiscard={() => setRules(initialRules)}
             />
 
-            {/* ── Right: Chat / Test Panel ── */}
             <ChatInterface
               messages={chat}
               input={query}
