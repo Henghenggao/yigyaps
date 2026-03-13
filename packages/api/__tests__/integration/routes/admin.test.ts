@@ -34,6 +34,11 @@ import * as schema from "@yigyaps/db";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+/** Typed wrapper for drizzle's execute() result which returns `{ rows: ... }` */
+interface DrizzleQueryResult {
+  rows: Record<string, unknown>[];
+}
+
 // ── Resolve database URL ───────────────────────────────────────────────────────
 
 const DB_URL =
@@ -106,7 +111,7 @@ async function insertReport(
       `SELECT column_name FROM information_schema.columns WHERE table_name = 'yy_reports'`,
     ),
   );
-  const cols = new Set((colResult as any).rows.map((r: any) => r.column_name as string));
+  const cols = new Set((colResult as DrizzleQueryResult).rows.map((r) => r.column_name as string));
 
   const hasUpdatedAt = cols.has("updated_at");
   const hasDescription = cols.has("description");
@@ -165,8 +170,8 @@ describe("Admin Routes", () => {
     try {
       const migrationsPath = path.resolve(__dirname, "../../../../db/migrations");
       await migrate(testDb, { migrationsFolder: migrationsPath });
-    } catch (err: any) {
-      if (!err?.message?.includes("already exists")) throw err;
+    } catch (err: unknown) {
+      if (!(err instanceof Error && err.message.includes("already exists"))) throw err;
     }
 
     // Ensure columns added by recent migrations exist on shared DBs
@@ -186,7 +191,7 @@ describe("Admin Routes", () => {
           `SELECT column_name FROM information_schema.columns WHERE table_name = 'yy_reports'`,
         ),
       );
-      const cols = new Set((colResult as any).rows.map((r: any) => r.column_name as string));
+      const cols = new Set((colResult as DrizzleQueryResult).rows.map((r) => r.column_name as string));
       if (!cols.has("description") || !cols.has("admin_note")) {
         reportsSchemaOk = false;
         console.warn(
@@ -287,7 +292,7 @@ describe("Admin Routes", () => {
 
       expect(res.statusCode).toBe(200);
       const body = JSON.parse(res.body);
-      expect(body.packages.every((p: any) => p.status === "active")).toBe(true);
+      expect(body.packages.every((p: { status: string }) => p.status === "active")).toBe(true);
     });
 
     it("returns 403 for non-admin", async () => {
@@ -432,7 +437,7 @@ describe("Admin Routes", () => {
 
       expect(res.statusCode).toBe(200);
       const body = JSON.parse(res.body);
-      expect(body.users.some((u: any) => u.id === "usr_admintest_search_xyz")).toBe(true);
+      expect(body.users.some((u: { id: string }) => u.id === "usr_admintest_search_xyz")).toBe(true);
     });
 
     it("returns 403 for non-admin", async () => {
@@ -561,7 +566,7 @@ describe("Admin Routes", () => {
       const body = JSON.parse(res.body);
       expect(Array.isArray(body.reports)).toBe(true);
       expect(body.reports.length).toBeGreaterThanOrEqual(1);
-      expect(body.reports.every((r: any) => r.status === "pending")).toBe(true);
+      expect(body.reports.every((r: { status: string }) => r.status === "pending")).toBe(true);
     });
 
     it("can filter reports by status=resolved", async () => {
@@ -581,7 +586,7 @@ describe("Admin Routes", () => {
       expect(res.statusCode).toBe(200);
       const body = JSON.parse(res.body);
       // All returned reports should be resolved
-      expect(body.reports.every((r: any) => r.status === "resolved")).toBe(true);
+      expect(body.reports.every((r: { status: string }) => r.status === "resolved")).toBe(true);
     });
 
     it("returns all reports when status=all", async () => {
@@ -601,7 +606,7 @@ describe("Admin Routes", () => {
 
       expect(res.statusCode).toBe(200);
       const body = JSON.parse(res.body);
-      const ids = body.reports.map((r: any) => r.id);
+      const ids = body.reports.map((r: { id: string }) => r.id);
       expect(ids).toContain("rpt_admintest_003a");
       expect(ids).toContain("rpt_admintest_003b");
     });

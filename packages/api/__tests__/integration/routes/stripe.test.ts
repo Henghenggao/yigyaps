@@ -50,7 +50,7 @@ const AUTHOR_JWT = createTestJWT({
   githubUsername: "stripeauthor",
 });
 
-async function clearStripeTables(db: any) {
+async function clearStripeTables(db: ReturnType<typeof drizzle>) {
   const tables = [
     "yy_usage_ledger",
     "yy_subscriptions",

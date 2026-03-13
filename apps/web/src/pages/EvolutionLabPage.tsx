@@ -57,7 +57,7 @@ export function EvolutionLabPage() {
         else addToast({ message: "Failed to load skill rules", type: "error" });
       })
       .finally(() => setLoadingRules(false));
-  }, [packageId]);
+  }, [packageId, addToast]);
 
   const saveLabApiKey = () => {
     const trimmed = keyDraft.trim();

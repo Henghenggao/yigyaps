@@ -30,7 +30,7 @@ import { sql } from "drizzle-orm";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Local database cleanup function for integration tests
-async function clearDatabase(db: any) {
+async function clearDatabase(db: ReturnType<typeof drizzle>) {
   const tables = [
     "yy_royalty_ledger",
     "yy_skill_package_reviews",
@@ -228,7 +228,7 @@ describe("Packages Routes", () => {
       const body = JSON.parse(response.body);
       expect(body.packages).toHaveLength(2);
       expect(
-        body.packages.every((pkg: any) => pkg.category === "development"),
+        body.packages.every((pkg: { category: string }) => pkg.category === "development"),
       ).toBe(true);
     });
 
@@ -266,7 +266,7 @@ describe("Packages Routes", () => {
       const body = JSON.parse(response.body);
       expect(body.packages).toHaveLength(2); // Only free packages (0.00 <= 5)
       expect(
-        body.packages.every((pkg: any) => parseFloat(pkg.priceUsd) <= 5),
+        body.packages.every((pkg: { priceUsd: string }) => parseFloat(pkg.priceUsd) <= 5),
       ).toBe(true);
     });
 
@@ -304,7 +304,7 @@ describe("Packages Routes", () => {
       const body = JSON.parse(response.body);
       expect(body.packages).toHaveLength(3);
       // Names should be in alphabetical order
-      const names = body.packages.map((pkg: any) => pkg.displayName);
+      const names = body.packages.map((pkg: { displayName: string }) => pkg.displayName);
       expect(names).toEqual([...names].sort());
     });
   });

@@ -30,7 +30,7 @@ import { sql } from "drizzle-orm";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Local database cleanup function for integration tests
-async function clearDatabase(db: any) {
+async function clearDatabase(db: ReturnType<typeof drizzle>) {
   const tables = [
     "yy_royalty_ledger",
     "yy_skill_package_reviews",
@@ -482,7 +482,7 @@ describe("Mints Routes", () => {
         }),
       );
 
-      const mint = await mintDAL.create({
+      await mintDAL.create({
         id: `smint_${Date.now()}_test`,
         skillPackageId: pkg.id,
         rarity: "common",
@@ -548,7 +548,7 @@ describe("Mints Routes", () => {
         }),
       );
 
-      const mint = await mintDAL.create({
+      await mintDAL.create({
         id: `smint_${Date.now()}_test`,
         skillPackageId: pkg.id,
         rarity: "common",

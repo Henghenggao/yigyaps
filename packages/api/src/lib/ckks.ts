@@ -52,6 +52,7 @@ export class CKKSPoC {
     if (!taggedCiphertext.startsWith("CKKS_")) return "0";
 
     const hex = taggedCiphertext.replace("CKKS_", "");
+    // eslint-disable-next-line @typescript-eslint/no-unused-vars -- PoC placeholder; key not used in simulation
     const key = crypto.createHash("sha256").update("poc-ckks-key").digest();
 
     // In a real PoC, we'd need to track IVs. For simulation, we'll just mock the result.

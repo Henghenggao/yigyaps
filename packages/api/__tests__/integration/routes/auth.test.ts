@@ -118,9 +118,9 @@ describe("Auth Routes Integration Tests", () => {
     try {
       const migrationsPath = path.resolve(__dirname, "../../../../db/migrations");
       await migrate(testDb, { migrationsFolder: migrationsPath });
-    } catch (err: any) {
+    } catch (err: unknown) {
       // "already exists" errors are expected when running against a shared/pre-seeded DB
-      if (!err?.message?.includes("already exists")) {
+      if (!(err instanceof Error && err.message.includes("already exists"))) {
         throw err;
       }
     }

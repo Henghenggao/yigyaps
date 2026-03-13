@@ -67,13 +67,10 @@ export function AdminPage() {
       .then(setStats)
       .catch(() => addToast({ message: "Failed to load stats", type: "error" }))
       .finally(() => setLoadingStats(false));
-    // addToast is stable from context; intentional mount-only fetch
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [addToast]);
 
   useEffect(() => {
     if (tab === "overview") return;
-    // eslint-disable-next-line react-hooks/set-state-in-effect
     setLoadingTab(true);
     if (tab === "packages") {
       const q = pkgStatusFilter !== "all" ? `?status=${pkgStatusFilter}` : "";

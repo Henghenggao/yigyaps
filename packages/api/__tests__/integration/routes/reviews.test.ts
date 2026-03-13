@@ -24,12 +24,10 @@ import {
 } from "../helpers/test-server.js";
 import {
   SkillPackageDAL,
-  SkillReviewDAL,
   SkillInstallationDAL,
 } from "@yigyaps/db";
 import { SkillPackageFactory } from "../../../../db/__tests__/helpers/factories.js";
 import {
-  createAdminJWT,
   createTestJWT,
 } from "../../unit/helpers/jwt-helpers.js";
 import { sql } from "drizzle-orm";
@@ -37,7 +35,7 @@ import { sql } from "drizzle-orm";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Local database cleanup function for integration tests
-async function clearDatabase(db: any) {
+async function clearDatabase(db: ReturnType<typeof drizzle>) {
   const tables = [
     "yy_royalty_ledger",
     "yy_skill_package_reviews",
@@ -59,7 +57,6 @@ describe("Reviews Routes Integration Tests", () => {
   let testDb: ReturnType<typeof drizzle>;
   let serverContext: TestServerContext;
   let packageDAL: SkillPackageDAL;
-  let reviewDAL: SkillReviewDAL;
   let installDAL: SkillInstallationDAL;
 
   beforeAll(async () => {
@@ -87,7 +84,6 @@ describe("Reviews Routes Integration Tests", () => {
 
     // Initialize DAL
     packageDAL = new SkillPackageDAL(testDb);
-    reviewDAL = new SkillReviewDAL(testDb);
     installDAL = new SkillInstallationDAL(testDb);
   }, 120000);
 

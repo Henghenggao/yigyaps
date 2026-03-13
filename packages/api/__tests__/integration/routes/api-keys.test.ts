@@ -122,8 +122,8 @@ describe("API Keys Routes", () => {
         "../../../../db/migrations",
       );
       await migrate(testDb, { migrationsFolder: migrationsPath });
-    } catch (err: any) {
-      if (!err?.message?.includes("already exists")) throw err;
+    } catch (err: unknown) {
+      if (!(err instanceof Error && err.message.includes("already exists"))) throw err;
     }
 
     // Ensure optional columns added by recent migrations exist on shared DBs
@@ -360,7 +360,7 @@ describe("API Keys Routes", () => {
       expect(res.statusCode).toBe(200);
       const body = JSON.parse(res.body);
       expect(body.apiKeys.length).toBeGreaterThanOrEqual(1);
-      const found = body.apiKeys.find((k: any) => k.id === createdId);
+      const found = body.apiKeys.find((k: { id: string }) => k.id === createdId);
       expect(found).toBeDefined();
     });
 
@@ -407,7 +407,7 @@ describe("API Keys Routes", () => {
 
       expect(res.statusCode).toBe(200);
       const body = JSON.parse(res.body);
-      const userBKey = body.apiKeys.find((k: any) => k.name === "user-b-key");
+      const userBKey = body.apiKeys.find((k: { name: string }) => k.name === "user-b-key");
       expect(userBKey).toBeUndefined();
     });
   });

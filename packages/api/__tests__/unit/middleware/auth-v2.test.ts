@@ -19,7 +19,6 @@ import {
   createExpiredJWT,
 } from "../helpers/jwt-helpers.js";
 import type { FastifyRequest, FastifyReply, FastifyBaseLogger } from "fastify";
-import crypto from "crypto";
 
 // ─── Mock Helpers ─────────────────────────────────────────────────────────────
 
@@ -28,12 +27,12 @@ interface MockRequest extends Partial<FastifyRequest> {
   user?: UserContext;
   cookies: Record<string, string | undefined>;
   log: FastifyBaseLogger;
-  server: any; // Allow any for mock server to bypass FastifyInstance strict requirements
+  server: unknown; // mock server — bypasses FastifyInstance strict requirements
 }
 
 interface MockReply extends Partial<FastifyReply> {
   statusCode?: number;
-  sentPayload?: any;
+  sentPayload?: unknown;
 }
 
 function createMockRequest(authHeader?: string): MockRequest {
@@ -48,7 +47,7 @@ function createMockRequest(authHeader?: string): MockRequest {
       fatal: () => {},
       trace: () => {},
       silent: () => {},
-      child: () => ({}) as any,
+      child: () => ({}) as unknown as FastifyBaseLogger,
       level: "info",
     } as unknown as FastifyBaseLogger,
     server: {
@@ -66,12 +65,12 @@ function createMockReply(): MockReply {
   reply.status = function (this: MockReply, code: number) {
     this.statusCode = code;
     return this as FastifyReply;
-  } as any;
+  } as unknown as FastifyReply["status"];
 
-  reply.send = function (this: MockReply, payload: any) {
+  reply.send = function (this: MockReply, payload: unknown) {
     this.sentPayload = payload;
     return this as FastifyReply;
-  } as any;
+  } as unknown as FastifyReply["send"];
 
   return reply;
 }
@@ -88,7 +87,7 @@ describe("optionalAuth", () => {
     const mockRequest = createMockRequest();
     const mockReply = createMockReply();
 
-    await optionalAuth(mockRequest as any, mockReply as any);
+    await optionalAuth(mockRequest as unknown as FastifyRequest, mockReply as unknown as FastifyReply);
 
     expect(mockRequest.user).toBeUndefined();
   });
@@ -105,7 +104,7 @@ describe("optionalAuth", () => {
     const mockRequest = createMockRequest(`Bearer ${token}`);
     const mockReply = createMockReply();
 
-    await optionalAuth(mockRequest as any, mockReply as any);
+    await optionalAuth(mockRequest as unknown as FastifyRequest, mockReply as unknown as FastifyReply);
 
     expect(mockRequest.user).toMatchObject({
       userId: "usr_123",
@@ -122,7 +121,7 @@ describe("optionalAuth", () => {
     const mockRequest = createMockRequest(`Bearer ${token}`);
     const mockReply = createMockReply();
 
-    await optionalAuth(mockRequest as any, mockReply as any);
+    await optionalAuth(mockRequest as unknown as FastifyRequest, mockReply as unknown as FastifyReply);
 
     expect(mockRequest.user).toMatchObject({
       userId: "usr_admin_001",
@@ -141,7 +140,7 @@ describe("optionalAuth", () => {
     const mockRequest = createMockRequest(`Bearer ${token}`);
     const mockReply = createMockReply();
 
-    await optionalAuth(mockRequest as any, mockReply as any);
+    await optionalAuth(mockRequest as unknown as FastifyRequest, mockReply as unknown as FastifyReply);
 
     expect(mockRequest.user).toBeUndefined();
   });
@@ -150,7 +149,7 @@ describe("optionalAuth", () => {
     const mockRequest = createMockRequest("Bearer invalid.token.here");
     const mockReply = createMockReply();
 
-    await optionalAuth(mockRequest as any, mockReply as any);
+    await optionalAuth(mockRequest as unknown as FastifyRequest, mockReply as unknown as FastifyReply);
 
     expect(mockRequest.user).toBeUndefined();
   });
@@ -159,7 +158,7 @@ describe("optionalAuth", () => {
     const mockRequest = createMockRequest("InvalidFormat token123");
     const mockReply = createMockReply();
 
-    await optionalAuth(mockRequest as any, mockReply as any);
+    await optionalAuth(mockRequest as unknown as FastifyRequest, mockReply as unknown as FastifyReply);
 
     expect(mockRequest.user).toBeUndefined();
   });
@@ -168,7 +167,7 @@ describe("optionalAuth", () => {
     const mockRequest = createMockRequest("Bearer ");
     const mockReply = createMockReply();
 
-    await optionalAuth(mockRequest as any, mockReply as any);
+    await optionalAuth(mockRequest as unknown as FastifyRequest, mockReply as unknown as FastifyReply);
 
     expect(mockRequest.user).toBeUndefined();
   });
@@ -186,7 +185,7 @@ describe("requireAuth", () => {
     const mockReply = createMockReply();
 
     const middleware = requireAuth();
-    await middleware(mockRequest as any, mockReply as any);
+    await middleware(mockRequest as unknown as FastifyRequest, mockReply as unknown as FastifyReply);
 
     expect(mockReply.statusCode).toBe(401);
     expect(mockReply.sentPayload).toMatchObject({
@@ -200,7 +199,7 @@ describe("requireAuth", () => {
     const mockReply = createMockReply();
 
     const middleware = requireAuth();
-    await middleware(mockRequest as any, mockReply as any);
+    await middleware(mockRequest as unknown as FastifyRequest, mockReply as unknown as FastifyReply);
 
     expect(mockReply.statusCode).toBe(401);
     expect(mockReply.sentPayload).toMatchObject({
@@ -214,7 +213,7 @@ describe("requireAuth", () => {
     const mockReply = createMockReply();
 
     const middleware = requireAuth();
-    await middleware(mockRequest as any, mockReply as any);
+    await middleware(mockRequest as unknown as FastifyRequest, mockReply as unknown as FastifyReply);
 
     expect(mockReply.statusCode).toBe(401);
   });
@@ -231,7 +230,7 @@ describe("requireAuth", () => {
     const mockReply = createMockReply();
 
     const middleware = requireAuth();
-    await middleware(mockRequest as any, mockReply as any);
+    await middleware(mockRequest as unknown as FastifyRequest, mockReply as unknown as FastifyReply);
 
     expect(mockRequest.user).toMatchObject({
       userId: "usr_456",
@@ -253,7 +252,7 @@ describe("requireAuth", () => {
     const mockReply = createMockReply();
 
     const middleware = requireAuth();
-    await middleware(mockRequest as any, mockReply as any);
+    await middleware(mockRequest as unknown as FastifyRequest, mockReply as unknown as FastifyReply);
 
     expect(mockReply.statusCode).toBe(403);
     expect(mockReply.sentPayload).toMatchObject({
@@ -267,7 +266,7 @@ describe("requireAuth", () => {
     const mockReply = createMockReply();
 
     const middleware = requireAuth();
-    await middleware(mockRequest as any, mockReply as any);
+    await middleware(mockRequest as unknown as FastifyRequest, mockReply as unknown as FastifyReply);
 
     expect(mockReply.statusCode).toBe(403);
     expect(mockReply.sentPayload).toMatchObject({
@@ -295,7 +294,7 @@ describe("requireAuth", () => {
       const mockReply = createMockReply();
 
       const middleware = requireAuth();
-      await middleware(mockRequest as any, mockReply as any);
+      await middleware(mockRequest as unknown as FastifyRequest, mockReply as unknown as FastifyReply);
 
       expect(mockRequest.user?.tier).toBe(tier);
     }
