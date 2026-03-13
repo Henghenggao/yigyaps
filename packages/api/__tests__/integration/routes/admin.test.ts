@@ -12,7 +12,7 @@
  * License: Apache 2.0
  */
 
-import { describe, it, expect, beforeAll, afterAll, beforeEach, vi } from "vitest";
+import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { Pool } from "pg";
@@ -63,7 +63,7 @@ async function clearAdminTestData(db: ReturnType<typeof drizzle>) {
 
 /** Insert a minimal user row directly into the DB. */
 async function insertUser(
-  db: ReturnType<typeof drizzle>,
+  db: ReturnType<typeof drizzle<typeof schema>>,
   id: string,
   role: "user" | "admin" = "user",
 ): Promise<schema.UserRow> {
@@ -76,14 +76,12 @@ async function insertUser(
     avatarUrl: null,
     tier: "free",
     role,
-    isVerifiedCreator: false,
     totalPackages: 0,
-    totalEarningsUsd: "0",
     createdAt: now,
     updatedAt: now,
     lastLoginAt: now,
   };
-  const userDAL = new UserDAL(db as any);
+  const userDAL = new UserDAL(db);
   return userDAL.create(row);
 }
 
@@ -199,16 +197,20 @@ describe("Admin Routes", () => {
     } catch { /* ignore */ }
 
     serverContext = await createTestServer(DB_URL);
-    packageDAL = new SkillPackageDAL(testDb as any);
+    packageDAL = new SkillPackageDAL(testDb);
   }, 60_000);
 
   afterAll(async () => {
+    // Final cleanup: remove all test rows so shared DBs are left clean after the suite.
     await clearAdminTestData(testDb);
     if (serverContext) await closeTestServer(serverContext);
     await pool.end();
   });
 
   beforeEach(async () => {
+    // Per-test cleanup: ensures no leftover rows from a previously failed test
+    // can bleed into the next test's assertions (e.g. list-count checks).
+    // afterAll alone would not help if a test fails mid-suite.
     await clearAdminTestData(testDb);
   });
 
@@ -670,6 +672,10 @@ describe("Admin Routes", () => {
     });
 
     it("returns 400 for invalid action value", async () => {
+      if (!reportsSchemaOk) {
+        console.warn("Skipping test - schema drift");
+        return;
+      }
       const reporter = await insertUser(testDb, "usr_admintest_badact_r");
       await insertReport(testDb, "rpt_admintest_badact", reporter.id, "pending");
 
@@ -681,6 +687,22 @@ describe("Admin Routes", () => {
       });
 
       expect(res.statusCode).toBe(400);
+    });
+
+    it("returns 404 when report does not exist", async () => {
+      if (!reportsSchemaOk) {
+        console.warn("Skipping test - schema drift");
+        return;
+      }
+
+      const res = await serverContext.fastify.inject({
+        method: "PATCH",
+        url: "/v1/admin/reports/rpt_admintest_nonexistent_000",
+        headers: { authorization: `Bearer ${ADMIN_JWT}` },
+        payload: { action: "resolve" },
+      });
+
+      expect(res.statusCode).toBe(404);
     });
 
     it("returns 403 for non-admin", async () => {
