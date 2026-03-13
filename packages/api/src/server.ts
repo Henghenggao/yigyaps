@@ -98,18 +98,31 @@ async function buildServer() {
   });
 
   // ── Database ──────────────────────────────────────────────────────────────
+  // In production, Railway embeds SSL parameters in DATABASE_URL (e.g. ?sslmode=require).
+  // We let pg honour those URL params by not overriding ssl when the URL already
+  // contains sslmode. In development/test we disable SSL so local Postgres works
+  // without a certificate setup.
+  const dbUrlHasSsl = env.DATABASE_URL.includes("sslmode=");
+  const sslConfig: pg.PoolConfig["ssl"] =
+    env.NODE_ENV === "production"
+      ? dbUrlHasSsl
+        ? undefined // pg will parse sslmode from the URL; rejectUnauthorized defaults to true
+        : { rejectUnauthorized: true } // explicit SSL with proper cert verification
+      : false; // development / test — no SSL needed
+
   const pool = new Pool({
     connectionString: env.DATABASE_URL,
     max: env.DB_POOL_MAX,
     idleTimeoutMillis: env.DB_POOL_IDLE_TIMEOUT,
     connectionTimeoutMillis: env.DB_POOL_CONN_TIMEOUT,
-    ssl: env.NODE_ENV === "production" ? { rejectUnauthorized: false } : false,
+    ssl: sslConfig,
   });
 
   fastify.log.info(
     {
       db: env.DATABASE_URL.replace(/:[^:@]+@/, ":****@"),
-      ssl: !!(env.NODE_ENV === "production"),
+      ssl: env.NODE_ENV === "production",
+      sslMode: dbUrlHasSsl ? "url-embedded" : env.NODE_ENV === "production" ? "required" : "disabled",
     },
     "Initializing database connection pool",
   );
