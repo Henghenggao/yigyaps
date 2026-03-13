@@ -92,6 +92,13 @@
       "when": 1773263165690,
       "tag": "0012_chief_shape",
       "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1773900000000,
+      "tag": "0013_users_terms_accepted",
+      "breakpoints": true
     }
   ]
 }

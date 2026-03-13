@@ -46,6 +46,12 @@ export const usersTable = pgTable(
     createdAt: bigint("created_at", { mode: "number" }).notNull(),
     updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
     lastLoginAt: bigint("last_login_at", { mode: "number" }).notNull(),
+    /**
+     * Timestamp when the user accepted the platform Terms of Service.
+     * NULL = user has not yet accepted, or accepted before this column was added.
+     * Non-null = ToS accepted at this Unix ms timestamp.
+     */
+    termsAcceptedAt: bigint("terms_accepted_at", { mode: "number" }),
   },
   (table) => [
     index("idx_yy_users_github_id").on(table.githubId),

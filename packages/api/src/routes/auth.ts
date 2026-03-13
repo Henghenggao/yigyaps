@@ -490,6 +490,12 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
 
       const acceptedAt = Date.now();
 
+      // Persist acceptance timestamp to yy_users
+      const userDAL = new UserDAL(fastify.db);
+      await userDAL.updateProfile(request.user.userId, {
+        termsAcceptedAt: acceptedAt,
+      });
+
       return reply.send({
         success: true,
         userId: request.user.userId,

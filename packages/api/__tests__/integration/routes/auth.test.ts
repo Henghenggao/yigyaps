@@ -51,20 +51,6 @@ const DB_URL =
 
 // ── Database cleanup ──────────────────────────────────────────────────────────
 
-async function clearAuthTables(db: ReturnType<typeof drizzle>) {
-  // Order matters: sessions reference users; api_keys reference users.
-  const tables = ["yy_sessions", "yy_api_keys", "yy_users"];
-  for (const table of tables) {
-    try {
-      await db.execute(
-        sql.raw(`DELETE FROM ${table} WHERE id LIKE 'usr_auth_test_%' OR id LIKE 'sess_auth_test_%' OR user_id LIKE 'usr_auth_test_%'`),
-      );
-    } catch {
-      // Table may not exist yet; skip silently
-    }
-  }
-}
-
 // Broader cleanup keyed on test-specific ID prefixes for safety on shared DBs
 async function clearTestUsers(db: ReturnType<typeof drizzle>) {
   try {
@@ -137,6 +123,18 @@ describe("Auth Routes Integration Tests", () => {
       if (!err?.message?.includes("already exists")) {
         throw err;
       }
+    }
+
+    // Belt-and-suspenders: ensure columns added by recent migrations exist even
+    // when the migrator skips them (e.g. running against a shared/pre-seeded DB).
+    try {
+      await testDb.execute(
+        sql.raw(
+          `ALTER TABLE yy_users ADD COLUMN IF NOT EXISTS terms_accepted_at bigint`,
+        ),
+      );
+    } catch {
+      // ignore — column already exists or table not yet created
     }
 
     serverContext = await createTestServer(DB_URL);
@@ -493,7 +491,27 @@ describe("Auth Routes Integration Tests", () => {
     });
 
     it("should return 200 and clear auth cookie for authenticated user", async () => {
-      const jwt = createTestJWT({ userId: "usr_logout_test_001" });
+      const now = Date.now();
+      const userId = `usr_${now}_auth_logout_cookie`;
+
+      await userDAL.create({
+        id: userId,
+        githubId: `gh_logout_cookie_${now}`,
+        githubUsername: `logout-cookie-${now}`,
+        email: `logout-cookie-${now}@test.com`,
+        displayName: "Logout Cookie Test User",
+        avatarUrl: "https://avatars.test/u/logout-cookie",
+        tier: "free",
+        role: "user",
+        isVerifiedCreator: false,
+        totalPackages: 0,
+        totalEarningsUsd: "0",
+        createdAt: now,
+        updatedAt: now,
+        lastLoginAt: now,
+      });
+
+      const jwt = createTestJWT({ userId });
 
       const response = await serverContext.fastify.inject({
         method: "POST",
@@ -558,6 +576,10 @@ describe("Auth Routes Integration Tests", () => {
 
       expect(response.statusCode).toBe(200);
       expect(JSON.parse(response.body).success).toBe(true);
+
+      // Verify session was actually deleted from the database
+      const deletedSession = await sessionDAL.getByToken(sessionToken);
+      expect(deletedSession).toBeNull();
     });
   });
 
@@ -738,6 +760,13 @@ describe("Auth Routes Integration Tests", () => {
       expect(body.userId).toBe(userId);
       expect(typeof body.acceptedAt).toBe("number");
       expect(body.acceptedAt).toBeGreaterThan(0);
+
+      // Verify acceptance was persisted to yy_users
+      const updatedUser = await userDAL.getById(userId);
+      expect(updatedUser).not.toBeNull();
+      expect(updatedUser?.termsAcceptedAt).not.toBeNull();
+      expect(updatedUser?.termsAcceptedAt).toBeGreaterThan(0);
+      expect(updatedUser?.termsAcceptedAt).toBe(body.acceptedAt);
     });
   });
 
