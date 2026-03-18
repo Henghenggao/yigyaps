@@ -12,6 +12,7 @@
 
 import type { FastifyInstance } from "fastify";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
+import crypto from "crypto";
 import { z } from "zod";
 import sanitizeHtml from "sanitize-html";
 import * as schema from "@yigyaps/db";
@@ -218,7 +219,7 @@ export async function packagesRoutes(fastify: FastifyInstance) {
       ? sanitizeHtml(body.readme, sanitizeOptions)
       : null;
 
-    const id = `spkg_${now}_${Math.random().toString(36).slice(2, 8)}`;
+    const id = `spkg_${now}_${crypto.randomBytes(4).toString("hex")}`;
     const pkg = await db.transaction(
       async (tx: NodePgDatabase<typeof schema>) => {
         const pkgDalTx = new SkillPackageDAL(tx);
@@ -258,7 +259,7 @@ export async function packagesRoutes(fastify: FastifyInstance) {
         if (body.rules && body.rules.length > 0) {
           for (const rule of body.rules) {
             await ruleDalTx.create({
-              id: `rule_${now}_${Math.random().toString(36).slice(2, 8)}`,
+              id: `rule_${now}_${crypto.randomBytes(4).toString("hex")}`,
               packageId: createdPkg.id,
               path: rule.path,
               content: rule.content,

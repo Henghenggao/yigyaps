@@ -33,7 +33,7 @@ import { sql } from "drizzle-orm";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // Local database cleanup function for integration tests
-async function clearDatabase(db: any) {
+async function clearDatabase(db: ReturnType<typeof drizzle>) {
   const tables = [
     "yy_royalty_ledger",
     "yy_skill_package_reviews",
@@ -325,7 +325,7 @@ describe("POST /v1/installations", () => {
         SkillPackageFactory.create({ requiredTier: 0 }),
       );
 
-      const mint = await mintDAL.create(
+      await mintDAL.create(
         SkillMintFactory.create(pkg.id, {
           rarity: "rare",
           maxEditions: 1000,

@@ -1,5 +1,9 @@
 {
+<<<<<<< HEAD
   "id": "6082457b-c2db-4804-9e53-d48ea4ab32e6",
+=======
+  "id": "8f996815-d076-4e20-838f-fc3dae951223",
+>>>>>>> feature/google-oauth
   "prevId": "c4a2ecbc-3828-474a-947e-3a0a3bb10c8b",
   "version": "7",
   "dialect": "postgresql",
@@ -1302,18 +1306,22 @@
           "primaryKey": false,
           "notNull": false
         },
+<<<<<<< HEAD
         "google_username": {
           "name": "google_username",
           "type": "text",
           "primaryKey": false,
           "notNull": false
         },
+=======
+>>>>>>> feature/google-oauth
         "email": {
           "name": "email",
           "type": "text",
           "primaryKey": false,
           "notNull": false
         },
+<<<<<<< HEAD
         "password_hash": {
           "name": "password_hash",
           "type": "text",
@@ -1339,6 +1347,8 @@
           "primaryKey": false,
           "notNull": false
         },
+=======
+>>>>>>> feature/google-oauth
         "display_name": {
           "name": "display_name",
           "type": "text",
@@ -1439,6 +1449,7 @@
           "method": "btree",
           "with": {}
         },
+<<<<<<< HEAD
         "idx_yy_users_google_id": {
           "name": "idx_yy_users_google_id",
           "columns": [
@@ -1454,6 +1465,8 @@
           "method": "btree",
           "with": {}
         },
+=======
+>>>>>>> feature/google-oauth
         "idx_yy_users_github_username": {
           "name": "idx_yy_users_github_username",
           "columns": [
@@ -1469,11 +1482,19 @@
           "method": "btree",
           "with": {}
         },
+<<<<<<< HEAD
         "idx_yy_users_google_username": {
           "name": "idx_yy_users_google_username",
           "columns": [
             {
               "expression": "google_username",
+=======
+        "idx_yy_users_google_id": {
+          "name": "idx_yy_users_google_id",
+          "columns": [
+            {
+              "expression": "google_id",
+>>>>>>> feature/google-oauth
               "isExpression": false,
               "asc": true,
               "nulls": "last"
@@ -1516,6 +1537,7 @@
           "columns": [
             "google_id"
           ]
+<<<<<<< HEAD
         },
         "yy_users_email_unique": {
           "name": "yy_users_email_unique",
@@ -1523,6 +1545,8 @@
           "columns": [
             "email"
           ]
+=======
+>>>>>>> feature/google-oauth
         }
       },
       "policies": {},

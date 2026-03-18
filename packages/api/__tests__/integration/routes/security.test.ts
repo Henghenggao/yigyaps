@@ -39,7 +39,7 @@ const TEST_KEK = crypto.randomBytes(32).toString("hex");
 
 // ── Database cleanup ─────────────────────────────────────────────────────────
 
-async function clearSecurityTables(db: any) {
+async function clearSecurityTables(db: ReturnType<typeof drizzle>) {
   const tables = [
     "yy_shamir_shares",
     "yy_ip_registrations",

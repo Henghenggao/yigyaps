@@ -118,7 +118,7 @@ export function EditPackagePage() {
       })
       .catch(() => addToast({ message: "Failed to load package", type: "error" }))
       .finally(() => setLoading(false));
-  }, [id]);
+  }, [id, addToast]);
 
   const set = <K extends keyof typeof formData>(key: K, value: (typeof formData)[K]) =>
     setFormData((prev) => ({ ...prev, [key]: value }));

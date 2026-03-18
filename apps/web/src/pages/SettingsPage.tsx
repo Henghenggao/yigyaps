@@ -43,7 +43,7 @@ export function SettingsPage() {
       .then((data) => setPayoutStatus(data))
       .catch(() => addToast({ message: "Failed to load payout status", type: "error" }))
       .finally(() => setPayoutLoading(false));
-  }, [tab]);
+  }, [tab, addToast]);
 
   useEffect(() => {
     if (tab !== "api-keys") return;
@@ -52,7 +52,7 @@ export function SettingsPage() {
       .then((data) => setApiKeys(data.keys ?? []))
       .catch(() => addToast({ message: "Failed to load API keys", type: "error" }))
       .finally(() => setLoading(false));
-  }, [tab]);
+  }, [tab, addToast]);
 
   const handleGenerate = async () => {
     if (!newKeyName.trim()) {

@@ -8,6 +8,7 @@
  */
 
 import type { FastifyInstance } from "fastify";
+import crypto from "crypto";
 import { z } from "zod";
 import {
   SkillPackageDAL,
@@ -68,7 +69,7 @@ export async function reviewsRoutes(fastify: FastifyInstance) {
           pkg.id,
         );
 
-        const id = `srev_${now}_${Math.random().toString(36).slice(2, 8)}`;
+        const id = `srev_${now}_${crypto.randomBytes(4).toString("hex")}`;
         const review = await reviewDalTx.create({
           id,
           packageId: pkg.id,

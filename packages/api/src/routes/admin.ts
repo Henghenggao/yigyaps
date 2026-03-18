@@ -258,7 +258,7 @@ export async function adminRoutes(fastify: FastifyInstance) {
       const newStatus =
         parsed.data.action === "resolve" ? "resolved" : "dismissed";
 
-      await fastify.db
+      const updated = await fastify.db
         .update(reportsTable)
         .set({
           status: newStatus,
@@ -266,7 +266,12 @@ export async function adminRoutes(fastify: FastifyInstance) {
           resolvedBy: request.user?.userId ?? null,
           adminNote: parsed.data.note ?? null,
         })
-        .where(eq(reportsTable.id, request.params.id));
+        .where(eq(reportsTable.id, request.params.id))
+        .returning({ id: reportsTable.id });
+
+      if (updated.length === 0) {
+        return reply.code(404).send({ error: "Report not found" });
+      }
 
       return reply.send({ success: true, status: newStatus });
     },

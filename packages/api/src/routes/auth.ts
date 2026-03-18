@@ -50,6 +50,26 @@ interface GitHubUser {
   blog: string | null;
 }
 
+// ─── Google OAuth Configuration ───────────────────────────────────────────────
+
+const GOOGLE_CLIENT_ID = env.GOOGLE_CLIENT_ID;
+const GOOGLE_CLIENT_SECRET = env.GOOGLE_CLIENT_SECRET;
+const isGoogleConfigured =
+  GOOGLE_CLIENT_ID !== "UNCONFIGURED_GOOGLE_CLIENT_ID" &&
+  GOOGLE_CLIENT_SECRET !== "UNCONFIGURED_GOOGLE_CLIENT_SECRET";
+
+const GOOGLE_CALLBACK_URL =
+  env.GOOGLE_CALLBACK_URL ?? "http://localhost:3100/v1/auth/google/callback";
+
+// ─── Google API Types ─────────────────────────────────────────────────────────
+
+interface GoogleUser {
+  id: string;
+  email: string;
+  name: string;
+  picture: string;
+}
+
 // ─── Authentication Routes ────────────────────────────────────────────────────
 
 export const authRoutes: FastifyPluginAsync = async (fastify) => {
@@ -81,6 +101,38 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     authUrl.searchParams.set("client_id", GITHUB_CLIENT_ID);
     authUrl.searchParams.set("redirect_uri", GITHUB_CALLBACK_URL);
     authUrl.searchParams.set("scope", "read:user user:email");
+    authUrl.searchParams.set("state", state);
+
+    return reply.redirect(authUrl.toString());
+  });
+
+  // GET /v1/auth/google - Redirect to Google OAuth
+  fastify.get("/google", async (request, reply) => {
+    if (!isGoogleConfigured) {
+      return reply.status(500).send({
+        error: "Server misconfiguration",
+        message: "Google OAuth is not configured",
+      });
+    }
+
+    const state = customAlphabet(
+      "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+      32,
+    )();
+
+    reply.setCookie("oauth_state", state, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      maxAge: 600,
+      path: "/",
+    });
+
+    const authUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
+    authUrl.searchParams.set("client_id", GOOGLE_CLIENT_ID);
+    authUrl.searchParams.set("redirect_uri", GOOGLE_CALLBACK_URL);
+    authUrl.searchParams.set("response_type", "code");
+    authUrl.searchParams.set("scope", "email profile");
     authUrl.searchParams.set("state", state);
 
     return reply.redirect(authUrl.toString());
@@ -210,7 +262,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       const jwt = signJWT({
         userId: user.id,
         userName: user.displayName,
-        githubUsername: user.githubUsername,
+        githubUsername: user.githubUsername ?? "",
         tier: user.tier as "free" | "pro" | "epic" | "legendary",
         role: user.role as "user" | "admin",
       });
@@ -237,6 +289,143 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       return reply.redirect(`${FRONTEND_URL}/auth/success`);
     } catch (error) {
       request.log.error({ error }, "GitHub OAuth callback failed");
+      return reply.redirect(`${FRONTEND_URL}/auth/error?error=oauth_failed`);
+    }
+  });
+
+  // GET /v1/auth/google/callback - Handle Google OAuth callback
+  fastify.get<{
+    Querystring: { code?: string; state?: string; error?: string };
+  }>("/google/callback", async (request, reply) => {
+    const { code, state, error } = request.query;
+
+    if (error) {
+      return reply.redirect(`${FRONTEND_URL}/auth/error?error=${error}`);
+    }
+
+    if (!code || !state) {
+      return reply.status(400).send({
+        error: "Bad request",
+        message: "Missing code or state parameter",
+      });
+    }
+
+    const storedState = request.cookies.oauth_state;
+    if (!storedState || storedState !== state) {
+      return reply.status(403).send({
+        error: "Forbidden",
+        message: "Invalid state parameter",
+      });
+    }
+
+    reply.clearCookie("oauth_state");
+
+    if (!isGoogleConfigured) {
+      return reply.status(500).send({
+        error: "Server misconfiguration",
+        message: "Google OAuth is not configured",
+      });
+    }
+
+    try {
+      const tokenResponse = await fetch("https://oauth2.googleapis.com/token", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: new URLSearchParams({
+          client_id: GOOGLE_CLIENT_ID,
+          client_secret: GOOGLE_CLIENT_SECRET,
+          code,
+          redirect_uri: GOOGLE_CALLBACK_URL,
+          grant_type: "authorization_code",
+        }),
+      });
+
+      const tokenData = (await tokenResponse.json()) as {
+        access_token?: string;
+        error?: string;
+      };
+
+      if (!tokenData.access_token) {
+        throw new Error(tokenData.error ?? "Failed to get access token");
+      }
+
+      const userResponse = await fetch("https://www.googleapis.com/oauth2/v2/userinfo", {
+        headers: {
+          Authorization: `Bearer ${tokenData.access_token}`,
+        },
+      });
+
+      const googleUser = (await userResponse.json()) as GoogleUser;
+
+      const userDAL = new UserDAL(fastify.db);
+      let user = await userDAL.getByGoogleId(googleUser.id);
+
+      const now = Date.now();
+      if (!user) {
+        user = await userDAL.create({
+          id: `usr_${now}_${nanoid()}`,
+          googleId: googleUser.id,
+          githubUsername: null, // Note: not fully relying on Github
+          email: googleUser.email,
+          displayName: googleUser.name || googleUser.email.split("@")[0],
+          avatarUrl: googleUser.picture,
+          tier: "free",
+          role: "user",
+          isVerifiedCreator: false,
+          totalPackages: 0,
+          totalEarningsUsd: "0",
+          createdAt: now,
+          updatedAt: now,
+          lastLoginAt: now,
+        });
+      } else {
+        await userDAL.updateLastLogin(user.id);
+      }
+
+      const sessionDAL = new SessionDAL(fastify.db);
+      const session = await sessionDAL.create({
+        id: `sess_${now}_${nanoid()}`,
+        userId: user.id,
+        sessionToken: customAlphabet(
+          "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz",
+          64,
+        )(),
+        expiresAt: now + 7 * 24 * 60 * 60 * 1000,
+        createdAt: now,
+        lastActiveAt: now,
+        ipAddress: request.headers["x-forwarded-for"]?.toString() ?? request.ip,
+        userAgent: request.headers["user-agent"],
+      });
+
+      const jwt = signJWT({
+        userId: user.id,
+        userName: user.displayName,
+        githubUsername: user.githubUsername ?? "",
+        tier: user.tier as "free" | "pro" | "epic" | "legendary",
+        role: user.role as "user" | "admin",
+      });
+
+      reply.setCookie("session_token", session.sessionToken, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 7 * 24 * 60 * 60,
+        path: "/",
+      });
+
+      reply.setCookie(AUTH_COOKIE_NAME, jwt, {
+        httpOnly: true,
+        secure: process.env.NODE_ENV === "production",
+        sameSite: "lax",
+        maxAge: 7 * 24 * 60 * 60,
+        path: "/",
+      });
+
+      return reply.redirect(`${FRONTEND_URL}/auth/success`);
+    } catch (error) {
+      request.log.error({ error }, "Google OAuth callback failed");
       return reply.redirect(`${FRONTEND_URL}/auth/error?error=oauth_failed`);
     }
   });
@@ -297,6 +486,34 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     });
   });
 
+  // POST /v1/auth/accept-terms - Record user acceptance of Terms of Service
+  fastify.post(
+    "/accept-terms",
+    { preHandler: requireAuth() },
+    async (request, reply) => {
+      if (!request.user) {
+        return reply.status(401).send({
+          error: "Unauthorized",
+          message: "Not authenticated",
+        });
+      }
+
+      const acceptedAt = Date.now();
+
+      // Persist acceptance timestamp to yy_users
+      const userDAL = new UserDAL(fastify.db);
+      await userDAL.updateProfile(request.user.userId, {
+        termsAcceptedAt: acceptedAt,
+      });
+
+      return reply.send({
+        success: true,
+        userId: request.user.userId,
+        acceptedAt,
+      });
+    },
+  );
+
   // GET /v1/auth/refresh - Refresh JWT if expiring within 48h
   fastify.get("/refresh", { preHandler: requireAuth() }, async (request, reply) => {
     if (!request.user) return reply.status(401).send({ error: "Unauthorized", message: "Not authenticated" });
@@ -308,7 +525,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     const userDAL = new UserDAL(fastify.db);
     const user = await userDAL.getById(request.user.userId);
     if (!user) return reply.status(404).send({ error: "Not found", message: "User not found" });
-    const newJwt = signJWT({ userId: user.id, userName: user.displayName, githubUsername: user.githubUsername, tier: user.tier as "free" | "pro" | "epic" | "legendary", role: user.role as "user" | "admin" });
+    const newJwt = signJWT({ userId: user.id, userName: user.displayName, githubUsername: user.githubUsername ?? "", tier: user.tier as "free" | "pro" | "epic" | "legendary", role: user.role as "user" | "admin" });
     reply.setCookie(AUTH_COOKIE_NAME, newJwt, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", maxAge: 7 * 24 * 60 * 60, path: "/" });
     return reply.send({ refreshed: true, user: { id: user.id, githubUsername: user.githubUsername, displayName: user.displayName, email: user.email, avatarUrl: user.avatarUrl, tier: user.tier, role: user.role } });
   });

@@ -13,6 +13,7 @@
  */
 
 import type { FastifyInstance } from "fastify";
+import crypto from "crypto";
 import { z } from "zod";
 import {
   SkillPackageDAL,
@@ -117,7 +118,7 @@ export async function installationsRoutes(fastify: FastifyInstance) {
           };
         }
 
-        const id = `sinst_${now}_${Math.random().toString(36).slice(2, 8)}`;
+        const id = `sinst_${now}_${crypto.randomBytes(4).toString("hex")}`;
         const installation = await installDalTx.install({
           id,
           packageId: pkg.id,
@@ -156,7 +157,7 @@ export async function installationsRoutes(fastify: FastifyInstance) {
           const gross = Number(pkg.priceUsd);
           const royalty = +((gross * royaltyPct) / 100).toFixed(4);
           await rlDALTx.create({
-            id: `rlgr_${now}_${Math.random().toString(36).slice(2, 8)}`,
+            id: `rlgr_${now}_${crypto.randomBytes(4).toString("hex")}`,
             skillPackageId: pkg.id,
             creatorId: mint.creatorId,
             buyerId: userId,

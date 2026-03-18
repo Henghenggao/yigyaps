@@ -111,7 +111,7 @@ export class UserDAL {
 
   async updateProfile(
     id: string,
-    updates: Partial<Omit<UserRow, "id" | "githubId" | "createdAt">>,
+    updates: Partial<Omit<UserRow, "id" | "githubId" | "googleId" | "createdAt">>,
   ): Promise<UserRow> {
     return dbOperation(
       async () => {
