@@ -1,6 +1,6 @@
 {
-  "id": "6082457b-c2db-4804-9e53-d48ea4ab32e6",
-  "prevId": "c4a2ecbc-3828-474a-947e-3a0a3bb10c8b",
+  "id": "67647583-0614-4aca-a461-c569f4b0f9cf",
+  "prevId": "6082457b-c2db-4804-9e53-d48ea4ab32e6",
   "version": "7",
   "dialect": "postgresql",
   "tables": {
@@ -1421,6 +1421,12 @@
           "type": "bigint",
           "primaryKey": false,
           "notNull": true
+        },
+        "terms_accepted_at": {
+          "name": "terms_accepted_at",
+          "type": "bigint",
+          "primaryKey": false,
+          "notNull": false
         }
       },
       "indexes": {
