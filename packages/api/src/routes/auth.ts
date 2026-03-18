@@ -23,16 +23,18 @@ export function hashPassword(password: string, salt: string): string {
 const nanoid = customAlphabet("0123456789abcdefghijklmnopqrstuvwxyz", 8);
 
 // ─── GitHub OAuth Configuration ───────────────────────────────────────────────
+// Read lazily from process.env so tests can override via beforeAll()
 
-const GITHUB_CLIENT_ID = env.GITHUB_CLIENT_ID;
-const GITHUB_CLIENT_SECRET = env.GITHUB_CLIENT_SECRET;
-const isGithubConfigured =
-  GITHUB_CLIENT_ID !== "UNCONFIGURED_GITHUB_CLIENT_ID" &&
-  GITHUB_CLIENT_SECRET !== "UNCONFIGURED_GITHUB_CLIENT_SECRET";
-
-const GITHUB_CALLBACK_URL =
-  env.GITHUB_CALLBACK_URL ?? "http://localhost:3100/v1/auth/github/callback";
-const FRONTEND_URL = env.FRONTEND_URL;
+const getGithubClientId = () => process.env.GITHUB_CLIENT_ID ?? env.GITHUB_CLIENT_ID;
+const getGithubClientSecret = () => process.env.GITHUB_CLIENT_SECRET ?? env.GITHUB_CLIENT_SECRET;
+const isGithubConfigured = () => {
+  const id = getGithubClientId();
+  const secret = getGithubClientSecret();
+  return id !== "UNCONFIGURED_GITHUB_CLIENT_ID" && secret !== "UNCONFIGURED_GITHUB_CLIENT_SECRET";
+};
+const getGithubCallbackUrl = () =>
+  process.env.GITHUB_CALLBACK_URL ?? env.GITHUB_CALLBACK_URL ?? "http://localhost:3100/v1/auth/github/callback";
+const getFrontendUrl = () => process.env.FRONTEND_URL ?? env.FRONTEND_URL;
 
 // ─── GitHub API Types ─────────────────────────────────────────────────────────
 
@@ -48,14 +50,15 @@ interface GitHubUser {
 
 // ─── Google OAuth Configuration ───────────────────────────────────────────────
 
-const GOOGLE_CLIENT_ID = env.GOOGLE_CLIENT_ID;
-const GOOGLE_CLIENT_SECRET = env.GOOGLE_CLIENT_SECRET;
-const isGoogleConfigured =
-  GOOGLE_CLIENT_ID !== "UNCONFIGURED_GOOGLE_CLIENT_ID" &&
-  GOOGLE_CLIENT_SECRET !== "UNCONFIGURED_GOOGLE_CLIENT_SECRET";
-
-const GOOGLE_CALLBACK_URL =
-  env.GOOGLE_CALLBACK_URL ?? "http://localhost:3100/v1/auth/google/callback";
+const getGoogleClientId = () => process.env.GOOGLE_CLIENT_ID ?? env.GOOGLE_CLIENT_ID;
+const getGoogleClientSecret = () => process.env.GOOGLE_CLIENT_SECRET ?? env.GOOGLE_CLIENT_SECRET;
+const isGoogleConfigured = () => {
+  const id = getGoogleClientId();
+  const secret = getGoogleClientSecret();
+  return id !== "UNCONFIGURED_GOOGLE_CLIENT_ID" && secret !== "UNCONFIGURED_GOOGLE_CLIENT_SECRET";
+};
+const getGoogleCallbackUrl = () =>
+  process.env.GOOGLE_CALLBACK_URL ?? env.GOOGLE_CALLBACK_URL ?? "http://localhost:3100/v1/auth/google/callback";
 
 // ─── Google API Types ─────────────────────────────────────────────────────────
 
@@ -71,7 +74,7 @@ interface GoogleUser {
 export const authRoutes: FastifyPluginAsync = async (fastify) => {
   // GET /v1/auth/github - Redirect to GitHub OAuth
   fastify.get("/github", async (request, reply) => {
-    if (!isGithubConfigured) {
+    if (!isGithubConfigured()) {
       return reply.status(500).send({
         error: "Server misconfiguration",
         message: "GitHub OAuth is not configured",
@@ -94,8 +97,8 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     });
 
     const authUrl = new URL("https://github.com/login/oauth/authorize");
-    authUrl.searchParams.set("client_id", GITHUB_CLIENT_ID);
-    authUrl.searchParams.set("redirect_uri", GITHUB_CALLBACK_URL);
+    authUrl.searchParams.set("client_id", getGithubClientId());
+    authUrl.searchParams.set("redirect_uri", getGithubCallbackUrl());
     authUrl.searchParams.set("scope", "read:user user:email");
     authUrl.searchParams.set("state", state);
 
@@ -104,7 +107,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
 
   // GET /v1/auth/google - Redirect to Google OAuth
   fastify.get("/google", async (request, reply) => {
-    if (!isGoogleConfigured) {
+    if (!isGoogleConfigured()) {
       return reply.status(500).send({
         error: "Server misconfiguration",
         message: "Google OAuth is not configured",
@@ -125,8 +128,8 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     });
 
     const authUrl = new URL("https://accounts.google.com/o/oauth2/v2/auth");
-    authUrl.searchParams.set("client_id", GOOGLE_CLIENT_ID);
-    authUrl.searchParams.set("redirect_uri", GOOGLE_CALLBACK_URL);
+    authUrl.searchParams.set("client_id", getGoogleClientId());
+    authUrl.searchParams.set("redirect_uri", getGoogleCallbackUrl());
     authUrl.searchParams.set("response_type", "code");
     authUrl.searchParams.set("scope", "email profile");
     authUrl.searchParams.set("state", state);
@@ -141,7 +144,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     const { code, state, error } = request.query;
 
     if (error) {
-      return reply.redirect(`${FRONTEND_URL}/auth/error?error=${error}`);
+      return reply.redirect(`${getFrontendUrl()}/auth/error?error=${error}`);
     }
 
     if (!code || !state) {
@@ -163,7 +166,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     // Clear state cookie
     reply.clearCookie("oauth_state");
 
-    if (!isGithubConfigured) {
+    if (!isGithubConfigured()) {
       return reply.status(500).send({
         error: "Server misconfiguration",
         message: "GitHub OAuth is not configured",
@@ -181,10 +184,10 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
             Accept: "application/json",
           },
           body: JSON.stringify({
-            client_id: GITHUB_CLIENT_ID,
-            client_secret: GITHUB_CLIENT_SECRET,
+            client_id: getGithubClientId(),
+            client_secret: getGithubClientSecret(),
             code,
-            redirect_uri: GITHUB_CALLBACK_URL,
+            redirect_uri: getGithubCallbackUrl(),
           }),
         },
       );
@@ -282,10 +285,10 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       });
 
       // Redirect to frontend with JWT (no token in URL)
-      return reply.redirect(`${FRONTEND_URL}/auth/success`);
+      return reply.redirect(`${getFrontendUrl()}/auth/success`);
     } catch (error) {
       request.log.error({ error }, "GitHub OAuth callback failed");
-      return reply.redirect(`${FRONTEND_URL}/auth/error?error=oauth_failed`);
+      return reply.redirect(`${getFrontendUrl()}/auth/error?error=oauth_failed`);
     }
   });
 
@@ -296,7 +299,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     const { code, state, error } = request.query;
 
     if (error) {
-      return reply.redirect(`${FRONTEND_URL}/auth/error?error=${error}`);
+      return reply.redirect(`${getFrontendUrl()}/auth/error?error=${error}`);
     }
 
     if (!code || !state) {
@@ -316,7 +319,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
 
     reply.clearCookie("oauth_state");
 
-    if (!isGoogleConfigured) {
+    if (!isGoogleConfigured()) {
       return reply.status(500).send({
         error: "Server misconfiguration",
         message: "Google OAuth is not configured",
@@ -330,10 +333,10 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
           "Content-Type": "application/x-www-form-urlencoded",
         },
         body: new URLSearchParams({
-          client_id: GOOGLE_CLIENT_ID,
-          client_secret: GOOGLE_CLIENT_SECRET,
+          client_id: getGoogleClientId(),
+          client_secret: getGoogleClientSecret(),
           code,
-          redirect_uri: GOOGLE_CALLBACK_URL,
+          redirect_uri: getGoogleCallbackUrl(),
           grant_type: "authorization_code",
         }),
       });
@@ -363,7 +366,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
         user = await userDAL.create({
           id: `usr_${now}_${nanoid()}`,
           googleId: googleUser.id,
-          githubUsername: null, // Note: not fully relying on Github
+          githubUsername: null,
           email: googleUser.email,
           displayName: googleUser.name || googleUser.email.split("@")[0],
           avatarUrl: googleUser.picture,
@@ -419,10 +422,10 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
         path: "/",
       });
 
-      return reply.redirect(`${FRONTEND_URL}/auth/success`);
+      return reply.redirect(`${getFrontendUrl()}/auth/success`);
     } catch (error) {
       request.log.error({ error }, "Google OAuth callback failed");
-      return reply.redirect(`${FRONTEND_URL}/auth/error?error=oauth_failed`);
+      return reply.redirect(`${getFrontendUrl()}/auth/error?error=oauth_failed`);
     }
   });
 
@@ -526,4 +529,3 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     return reply.send({ refreshed: true, user: { id: user.id, githubUsername: user.githubUsername, displayName: user.displayName, email: user.email, avatarUrl: user.avatarUrl, tier: user.tier, role: user.role } });
   });
 };
-
