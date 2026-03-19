@@ -104,7 +104,8 @@ async function validateApiKey(
       role: user.role as "user" | "admin",
       authMethod: "apikey",
     };
-  } catch {
+  } catch (err) {
+    request.log.error({ err, keyPrefix: key.substring(0, 10) }, "API key validation error");
     return null;
   }
 }
