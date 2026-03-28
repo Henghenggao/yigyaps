@@ -19,6 +19,7 @@ export default tseslint.config(
             "*.js",
             "*.ts",
             "scripts/*.js",
+            "scripts/*.mjs",
             "scripts/*.ts",
             "tmp/*.js",
             "tmp/*.ts",

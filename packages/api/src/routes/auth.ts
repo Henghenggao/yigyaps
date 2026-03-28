@@ -13,7 +13,9 @@ import { requireAuth } from "../middleware/auth-v2.js";
 import { customAlphabet } from "nanoid";
 import { env } from "../lib/env.js";
 import { AUTH_COOKIE_NAME } from "../lib/constants.js";
+import { sendVerificationEmail, sendPasswordResetEmail } from "../lib/email.js";
 import crypto from "node:crypto";
+import { z } from "zod";
 
 // Password hashing utility using scrypt
 export function hashPassword(password: string, salt: string): string {
@@ -71,9 +73,13 @@ interface GoogleUser {
 
 // ─── Authentication Routes ────────────────────────────────────────────────────
 
+// Rate limit configs for auth endpoints (brute-force protection)
+const authRateLimit = { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } };
+const callbackRateLimit = { config: { rateLimit: { max: 15, timeWindow: "1 minute" } } };
+
 export const authRoutes: FastifyPluginAsync = async (fastify) => {
   // GET /v1/auth/github - Redirect to GitHub OAuth
-  fastify.get("/github", async (request, reply) => {
+  fastify.get("/github", authRateLimit, async (request, reply) => {
     if (!isGithubConfigured()) {
       return reply.status(500).send({
         error: "Server misconfiguration",
@@ -90,7 +96,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     // Store state in cookie (or session)
     reply.setCookie("oauth_state", state, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: env.NODE_ENV === "production",
       sameSite: "lax",
       maxAge: 600, // 10 minutes
       path: "/",
@@ -106,7 +112,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
   });
 
   // GET /v1/auth/google - Redirect to Google OAuth
-  fastify.get("/google", async (request, reply) => {
+  fastify.get("/google", authRateLimit, async (request, reply) => {
     if (!isGoogleConfigured()) {
       return reply.status(500).send({
         error: "Server misconfiguration",
@@ -121,7 +127,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
 
     reply.setCookie("oauth_state", state, {
       httpOnly: true,
-      secure: process.env.NODE_ENV === "production",
+      secure: env.NODE_ENV === "production",
       sameSite: "lax",
       maxAge: 600,
       path: "/",
@@ -140,7 +146,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
   // GET /v1/auth/github/callback - Handle GitHub OAuth callback
   fastify.get<{
     Querystring: { code?: string; state?: string; error?: string };
-  }>("/github/callback", async (request, reply) => {
+  }>("/github/callback", callbackRateLimit, async (request, reply) => {
     const { code, state, error } = request.query;
 
     if (error) {
@@ -269,7 +275,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       // Set session cookie
       reply.setCookie("session_token", session.sessionToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: env.NODE_ENV === "production",
         sameSite: "lax",
         maxAge: 7 * 24 * 60 * 60, // 7 days
         path: "/",
@@ -278,7 +284,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
       // Set JWT cookie
       reply.setCookie(AUTH_COOKIE_NAME, jwt, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: env.NODE_ENV === "production",
         sameSite: "lax",
         maxAge: 7 * 24 * 60 * 60, // 7 days
         path: "/",
@@ -295,7 +301,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
   // GET /v1/auth/google/callback - Handle Google OAuth callback
   fastify.get<{
     Querystring: { code?: string; state?: string; error?: string };
-  }>("/google/callback", async (request, reply) => {
+  }>("/google/callback", callbackRateLimit, async (request, reply) => {
     const { code, state, error } = request.query;
 
     if (error) {
@@ -408,7 +414,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
 
       reply.setCookie("session_token", session.sessionToken, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: env.NODE_ENV === "production",
         sameSite: "lax",
         maxAge: 7 * 24 * 60 * 60,
         path: "/",
@@ -416,7 +422,7 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
 
       reply.setCookie(AUTH_COOKIE_NAME, jwt, {
         httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
+        secure: env.NODE_ENV === "production",
         sameSite: "lax",
         maxAge: 7 * 24 * 60 * 60,
         path: "/",
@@ -525,7 +531,318 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     const user = await userDAL.getById(request.user.userId);
     if (!user) return reply.status(404).send({ error: "Not found", message: "User not found" });
     const newJwt = signJWT({ userId: user.id, userName: user.displayName, githubUsername: user.githubUsername ?? "", tier: user.tier as "free" | "pro" | "epic" | "legendary", role: user.role as "user" | "admin" });
-    reply.setCookie(AUTH_COOKIE_NAME, newJwt, { httpOnly: true, secure: process.env.NODE_ENV === "production", sameSite: "lax", maxAge: 7 * 24 * 60 * 60, path: "/" });
+    reply.setCookie(AUTH_COOKIE_NAME, newJwt, { httpOnly: true, secure: env.NODE_ENV === "production", sameSite: "lax", maxAge: 7 * 24 * 60 * 60, path: "/" });
     return reply.send({ refreshed: true, user: { id: user.id, githubUsername: user.githubUsername, displayName: user.displayName, email: user.email, avatarUrl: user.avatarUrl, tier: user.tier, role: user.role } });
+  });
+
+  // ─── Email/Password Authentication ───────────────────────────────────────────
+
+  const registerSchema = z.object({
+    email: z.string().email(),
+    password: z.string().min(8).max(128),
+    displayName: z.string().min(1).max(100),
+  });
+
+  const loginSchema = z.object({
+    email: z.string().email(),
+    password: z.string().min(1),
+  });
+
+  // Helper: issue session + JWT cookies for a user
+  const issueAuthCookies = async (
+    user: { id: string; displayName: string; githubUsername: string | null; tier: string; role: string },
+    request: import("fastify").FastifyRequest,
+    reply: import("fastify").FastifyReply,
+  ) => {
+    const now = Date.now();
+    const sessionDAL = new SessionDAL(fastify.db);
+    const session = await sessionDAL.create({
+      id: `sess_${now}_${nanoid()}`,
+      userId: user.id,
+      sessionToken: customAlphabet("0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz", 64)(),
+      expiresAt: now + 7 * 24 * 60 * 60 * 1000,
+      createdAt: now,
+      lastActiveAt: now,
+      ipAddress: request.headers["x-forwarded-for"]?.toString() ?? request.ip,
+      userAgent: request.headers["user-agent"],
+    });
+
+    const jwt = signJWT({
+      userId: user.id,
+      userName: user.displayName,
+      githubUsername: user.githubUsername ?? "",
+      tier: user.tier as "free" | "pro" | "epic" | "legendary",
+      role: user.role as "user" | "admin",
+    });
+
+    reply.setCookie("session_token", session.sessionToken, {
+      httpOnly: true, secure: env.NODE_ENV === "production", sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60, path: "/",
+    });
+    reply.setCookie(AUTH_COOKIE_NAME, jwt, {
+      httpOnly: true, secure: env.NODE_ENV === "production", sameSite: "lax",
+      maxAge: 7 * 24 * 60 * 60, path: "/",
+    });
+  };
+
+  // POST /v1/auth/register - Email/password registration
+  const registerRateLimit = { config: { rateLimit: { max: 5, timeWindow: "1 minute" } } };
+  fastify.post("/register", registerRateLimit, async (request, reply) => {
+    const parsed = registerSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({
+        error: "Bad Request",
+        message: "Validation failed",
+        details: parsed.error.issues,
+      });
+    }
+
+    const { email, password, displayName } = parsed.data;
+    const userDAL = new UserDAL(fastify.db);
+
+    // Check if email already registered
+    const existing = await userDAL.getByEmail(email);
+    if (existing) {
+      return reply.status(409).send({
+        error: "Conflict",
+        message: "An account with this email already exists",
+      });
+    }
+
+    // Hash password with scrypt
+    const salt = crypto.randomBytes(16).toString("hex");
+    const hash = hashPassword(password, salt);
+    const passwordHashStr = `${salt}:${hash}`;
+
+    // Generate verification token
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+    const verificationExpiry = Date.now() + 24 * 60 * 60 * 1000; // 24h
+
+    const now = Date.now();
+    const user = await userDAL.create({
+      id: `usr_${now}_${nanoid()}`,
+      email,
+      displayName,
+      passwordHash: passwordHashStr,
+      emailVerified: false,
+      verificationToken,
+      verificationTokenExpiresAt: verificationExpiry,
+      tier: "free",
+      role: "user",
+      isVerifiedCreator: false,
+      totalPackages: 0,
+      totalEarningsUsd: "0",
+      createdAt: now,
+      updatedAt: now,
+      lastLoginAt: now,
+    });
+
+    // Send verification email (non-blocking)
+    sendVerificationEmail(email, verificationToken).catch((err) => {
+      request.log.error({ err }, "Failed to send verification email");
+    });
+
+    // Issue auth cookies immediately (user can use account, but some actions may require verified email)
+    await issueAuthCookies(user, request, reply);
+
+    return reply.status(201).send({
+      id: user.id,
+      email: user.email,
+      displayName: user.displayName,
+      emailVerified: false,
+      message: "Account created. Please check your email to verify your address.",
+    });
+  });
+
+  // POST /v1/auth/login - Email/password login
+  const loginRateLimit = { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } };
+  fastify.post("/login", loginRateLimit, async (request, reply) => {
+    const parsed = loginSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.status(400).send({
+        error: "Bad Request",
+        message: "Validation failed",
+        details: parsed.error.issues,
+      });
+    }
+
+    const { email, password } = parsed.data;
+    const userDAL = new UserDAL(fastify.db);
+    const user = await userDAL.getByEmail(email);
+
+    // Generic error to avoid user enumeration
+    const invalidMsg = "Invalid email or password";
+
+    if (!user || !user.passwordHash) {
+      return reply.status(401).send({ error: "Unauthorized", message: invalidMsg });
+    }
+
+    // Verify password
+    const [salt, storedHash] = user.passwordHash.split(":");
+    const attemptHash = hashPassword(password, salt);
+    if (!crypto.timingSafeEqual(Buffer.from(storedHash, "hex"), Buffer.from(attemptHash, "hex"))) {
+      return reply.status(401).send({ error: "Unauthorized", message: invalidMsg });
+    }
+
+    // Update last login
+    await userDAL.updateLastLogin(user.id);
+
+    // Issue auth cookies
+    await issueAuthCookies(user, request, reply);
+
+    return reply.send({
+      id: user.id,
+      email: user.email,
+      displayName: user.displayName,
+      emailVerified: user.emailVerified,
+      tier: user.tier,
+      role: user.role,
+    });
+  });
+
+  // POST /v1/auth/verify-email - Verify email with token
+  fastify.post<{ Body: { token: string } }>("/verify-email", async (request, reply) => {
+    const { token } = request.body ?? {};
+    if (!token || typeof token !== "string") {
+      return reply.status(400).send({ error: "Bad Request", message: "Missing verification token" });
+    }
+
+    const userDAL = new UserDAL(fastify.db);
+    // Find user by verification token (scan is fine — small table, rare operation)
+    const { eq } = await import("drizzle-orm");
+    const { usersTable } = await import("@yigyaps/db");
+    const rows = await fastify.db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.verificationToken, token))
+      .limit(1);
+
+    const user = rows[0];
+    if (!user) {
+      return reply.status(400).send({ error: "Bad Request", message: "Invalid or expired verification token" });
+    }
+
+    if (user.verificationTokenExpiresAt && user.verificationTokenExpiresAt < Date.now()) {
+      return reply.status(400).send({ error: "Bad Request", message: "Verification token has expired" });
+    }
+
+    // Mark email as verified, clear token
+    await userDAL.updateProfile(user.id, {
+      emailVerified: true,
+      verificationToken: null,
+      verificationTokenExpiresAt: null,
+    });
+
+    return reply.send({ success: true, message: "Email verified successfully" });
+  });
+
+  // POST /v1/auth/resend-verification - Resend verification email
+  fastify.post("/resend-verification", { preHandler: requireAuth(), ...registerRateLimit }, async (request, reply) => {
+    if (!request.user) {
+      return reply.status(401).send({ error: "Unauthorized", message: "Not authenticated" });
+    }
+
+    const userDAL = new UserDAL(fastify.db);
+    const user = await userDAL.getById(request.user.userId);
+    if (!user) {
+      return reply.status(404).send({ error: "Not found", message: "User not found" });
+    }
+
+    if (user.emailVerified) {
+      return reply.send({ success: true, message: "Email already verified" });
+    }
+
+    if (!user.email) {
+      return reply.status(400).send({ error: "Bad Request", message: "No email address on file" });
+    }
+
+    const verificationToken = crypto.randomBytes(32).toString("hex");
+    await userDAL.updateProfile(user.id, {
+      verificationToken,
+      verificationTokenExpiresAt: Date.now() + 24 * 60 * 60 * 1000,
+    });
+
+    await sendVerificationEmail(user.email, verificationToken);
+
+    return reply.send({ success: true, message: "Verification email sent" });
+  });
+
+  // POST /v1/auth/forgot-password - Send password reset email
+  const forgotRateLimit = { config: { rateLimit: { max: 3, timeWindow: "1 minute" } } };
+  fastify.post("/forgot-password", forgotRateLimit, async (request, reply) => {
+    const body = request.body as { email?: string };
+    const email = body?.email;
+    if (!email || typeof email !== "string") {
+      return reply.status(400).send({ error: "Bad Request", message: "Email is required" });
+    }
+
+    const userDAL = new UserDAL(fastify.db);
+    const user = await userDAL.getByEmail(email);
+
+    // Always return success to prevent user enumeration
+    if (!user || !user.passwordHash) {
+      return reply.send({ success: true, message: "If an account exists, a reset email has been sent" });
+    }
+
+    const resetToken = crypto.randomBytes(32).toString("hex");
+    await userDAL.updateProfile(user.id, {
+      verificationToken: resetToken,
+      verificationTokenExpiresAt: Date.now() + 60 * 60 * 1000, // 1h
+    });
+
+    await sendPasswordResetEmail(email, resetToken);
+
+    return reply.send({ success: true, message: "If an account exists, a reset email has been sent" });
+  });
+
+  // POST /v1/auth/reset-password - Reset password with token
+  fastify.post("/reset-password", forgotRateLimit, async (request, reply) => {
+    const body = request.body as { token?: string; password?: string };
+    const { token, password } = body ?? {};
+
+    if (!token || !password || typeof token !== "string" || typeof password !== "string") {
+      return reply.status(400).send({ error: "Bad Request", message: "Token and password are required" });
+    }
+
+    if (password.length < 8 || password.length > 128) {
+      return reply.status(400).send({ error: "Bad Request", message: "Password must be 8-128 characters" });
+    }
+
+    const { eq } = await import("drizzle-orm");
+    const { usersTable } = await import("@yigyaps/db");
+    const rows = await fastify.db
+      .select()
+      .from(usersTable)
+      .where(eq(usersTable.verificationToken, token))
+      .limit(1);
+
+    const user = rows[0];
+    if (!user) {
+      return reply.status(400).send({ error: "Bad Request", message: "Invalid or expired reset token" });
+    }
+
+    if (user.verificationTokenExpiresAt && user.verificationTokenExpiresAt < Date.now()) {
+      return reply.status(400).send({ error: "Bad Request", message: "Reset token has expired" });
+    }
+
+    // Hash new password
+    const salt = crypto.randomBytes(16).toString("hex");
+    const hash = hashPassword(password, salt);
+
+    const userDAL = new UserDAL(fastify.db);
+    await userDAL.updateProfile(user.id, {
+      passwordHash: `${salt}:${hash}`,
+      verificationToken: null,
+      verificationTokenExpiresAt: null,
+    });
+
+    // Invalidate all existing sessions (force re-login after password change)
+    const sessionDAL = new SessionDAL(fastify.db);
+    const sessions = await sessionDAL.getByUser(user.id);
+    for (const s of sessions) {
+      await sessionDAL.deleteById(s.id);
+    }
+
+    return reply.send({ success: true, message: "Password reset successfully. Please log in." });
   });
 };

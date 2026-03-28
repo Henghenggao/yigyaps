@@ -98,17 +98,27 @@ async function buildServer() {
   });
 
   // ── Database ──────────────────────────────────────────────────────────────
-  // In production, Railway embeds SSL parameters in DATABASE_URL (e.g. ?sslmode=require).
-  // We let pg honour those URL params by not overriding ssl when the URL already
-  // contains sslmode. In development/test we disable SSL so local Postgres works
-  // without a certificate setup.
-  const dbUrlHasSsl = env.DATABASE_URL.includes("sslmode=");
-  const sslConfig: pg.PoolConfig["ssl"] =
-    env.NODE_ENV === "production"
-      ? dbUrlHasSsl
-        ? undefined // pg will parse sslmode from the URL; rejectUnauthorized defaults to true
-        : { rejectUnauthorized: true } // explicit SSL with proper cert verification
-      : false; // development / test — no SSL needed
+  // SSL strategy:
+  //   - If DATABASE_URL contains sslmode=disable → no SSL
+  //   - If DATABASE_URL contains sslmode=require/verify-* → let pg parse it
+  //   - If DATABASE_URL targets .railway.internal → no SSL (Railway internal network)
+  //   - Production without sslmode → SSL with rejectUnauthorized=false (cloud DBs)
+  //   - Development/test → no SSL
+  const dbUrl = env.DATABASE_URL;
+  const dbUrlHasSsl = dbUrl.includes("sslmode=");
+  const isRailwayInternal = dbUrl.includes(".railway.internal");
+  const sslDisabled = dbUrl.includes("sslmode=disable");
+
+  let sslConfig: pg.PoolConfig["ssl"];
+  if (sslDisabled || isRailwayInternal) {
+    sslConfig = false; // Explicitly disabled or Railway internal network
+  } else if (dbUrlHasSsl) {
+    sslConfig = undefined; // Let pg parse sslmode from URL
+  } else if (env.NODE_ENV === "production") {
+    sslConfig = { rejectUnauthorized: false }; // Cloud DB with self-signed certs
+  } else {
+    sslConfig = false; // Development / test — no SSL
+  }
 
   const pool = new Pool({
     connectionString: env.DATABASE_URL,
@@ -352,8 +362,24 @@ async function main() {
     process.exit(1);
   }
 
+  // ── Expired Session Cleanup ─────────────────────────────────────────────
+  // Clean up expired sessions on startup, then every 6 hours
+  const { SessionDAL } = await import("@yigyaps/db");
+  const sessionDAL = new SessionDAL(server.db);
+  const cleanupSessions = async () => {
+    try {
+      await sessionDAL.deleteExpired();
+      server.log.info("Cleaned up expired sessions");
+    } catch (err) {
+      server.log.error({ err }, "Failed to clean expired sessions");
+    }
+  };
+  await cleanupSessions();
+  const cleanupInterval = setInterval(cleanupSessions, 6 * 60 * 60 * 1000);
+
   // ── Graceful Shutdown (E6) ────────────────────────────────────────────────
   const shutdown = async (signal: string) => {
+    clearInterval(cleanupInterval);
     server.log.info(`Received ${signal}, starting graceful shutdown...`);
     try {
       // Stop accepting new requests; wait up to 30s for in-flight requests

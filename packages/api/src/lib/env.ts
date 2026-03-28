@@ -10,22 +10,21 @@ dotenv.config({ path: join(__dirname, "../../../../.env") });
 
 const nodeEnv = process.env.NODE_ENV || "development";
 const isTest = nodeEnv === "test";
+const isProd = nodeEnv === "production";
 
+// In production, secrets MUST be explicitly set — auto-generating would invalidate
+// all tokens on every deploy and is a critical security risk.
 const envSchema = z.object({
-  // Required but default to random for easy deployments
-  // In test mode, accept TEST_DATABASE_URL as fallback
   DATABASE_URL:
     isTest && process.env.TEST_DATABASE_URL
       ? z.string().url().default(process.env.TEST_DATABASE_URL)
       : z.string().url(),
-  SESSION_SECRET: z
-    .string()
-    .min(32)
-    .default(() => crypto.randomBytes(32).toString("hex")),
-  JWT_SECRET: z
-    .string()
-    .min(32)
-    .default(() => crypto.randomBytes(32).toString("hex")),
+  SESSION_SECRET: isProd
+    ? z.string().min(32, "SESSION_SECRET must be ≥32 chars in production")
+    : z.string().min(32).default(() => crypto.randomBytes(32).toString("hex")),
+  JWT_SECRET: isProd
+    ? z.string().min(32, "JWT_SECRET must be ≥32 chars in production")
+    : z.string().min(32).default(() => crypto.randomBytes(32).toString("hex")),
   GITHUB_CLIENT_ID: z.string().min(1).default("UNCONFIGURED_GITHUB_CLIENT_ID"),
   GITHUB_CLIENT_SECRET: z
     .string()
