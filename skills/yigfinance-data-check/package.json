@@ -1,0 +1,13 @@
+{
+  "name": "yigfinance-data-check",
+  "version": "0.3.0",
+  "description": "Verify data source, version, time range, currency, entity scope, mapping status, and known limitations before financial analysis begins. The quality gatekeeper that blocks analysis on bad data.",
+  "author": "@Henghenggao",
+  "license": "MIT",
+  "yigyaps": {
+    "category": "data",
+    "tags": ["finance", "data-quality", "validation", "FP&A", "corporate-finance", "audit"],
+    "template": "knowledge-base"
+  },
+  "mcpTransport": "stdio"
+}

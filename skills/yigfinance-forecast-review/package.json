@@ -1,0 +1,13 @@
+{
+  "name": "yigfinance-forecast-review",
+  "version": "0.3.0",
+  "description": "Challenge forecast assumptions, expose fragility, and define downside triggers. A pressure-test skill that does not accept forecasts at face value — every key assumption gets source, owner, trigger, and sensitivity assessment.",
+  "author": "@Henghenggao",
+  "license": "MIT",
+  "yigyaps": {
+    "category": "data",
+    "tags": ["finance", "forecast", "stress-test", "scenarios", "FP&A", "budget", "assumptions"],
+    "template": "knowledge-base"
+  },
+  "mcpTransport": "stdio"
+}

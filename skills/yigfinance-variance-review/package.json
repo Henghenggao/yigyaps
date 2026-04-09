@@ -1,0 +1,13 @@
+{
+  "name": "yigfinance-variance-review",
+  "version": "0.3.0",
+  "description": "Driver-based variance decomposition: actual vs budget/forecast/prior year. Produces evidence-backed variance bridges with identified drivers, unexplained residuals, and management implications.",
+  "author": "@Henghenggao",
+  "license": "MIT",
+  "yigyaps": {
+    "category": "data",
+    "tags": ["finance", "variance-analysis", "FP&A", "budget", "business-review", "corporate-finance"],
+    "template": "knowledge-base"
+  },
+  "mcpTransport": "stdio"
+}

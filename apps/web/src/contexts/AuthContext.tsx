@@ -39,6 +39,7 @@ export interface AuthContextType {
   loginWithGoogle: () => void;
   registerWithEmail: (email: string, password: string, displayName: string) => Promise<void>;
   loginWithEmail: (email: string, password: string) => Promise<void>;
+  forgotPassword: (email: string) => Promise<void>;
   logout: () => void;
   refreshUser: () => Promise<void>;
   isAuthModalOpen: boolean;
@@ -123,6 +124,8 @@ export function AuthProvider({ children }: AuthProviderProps) {
       method: "POST",
       body: JSON.stringify({ email, password, displayName }),
     });
+    // Refresh user info since cookies are set on registration
+    await fetchUserProfile();
   };
 
   // Login with Email
@@ -131,8 +134,15 @@ export function AuthProvider({ children }: AuthProviderProps) {
       method: "POST",
       body: JSON.stringify({ email, password }),
     });
-    // Immediately refresh the user info since cookies are set
     await fetchUserProfile();
+  };
+
+  // Forgot Password
+  const forgotPassword = async (email: string) => {
+    await fetchApi("/v1/auth/forgot-password", {
+      method: "POST",
+      body: JSON.stringify({ email }),
+    });
   };
 
   // Logout user
@@ -163,6 +173,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
     loginWithGoogle,
     registerWithEmail,
     loginWithEmail,
+    forgotPassword,
     logout,
     refreshUser,
     isAuthModalOpen,

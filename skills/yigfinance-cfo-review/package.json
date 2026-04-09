@@ -1,0 +1,13 @@
+{
+  "name": "yigfinance-cfo-review",
+  "version": "0.3.0",
+  "description": "CFO-style pressure test of plans, initiatives, and business cases. Produces explicit FUND / FUND_WITH_CONDITIONS / HOLD_REVISE / DO_NOT_FUND verdicts with assumption registers, downside cases, and 30/60/90-day tracking metrics.",
+  "author": "@Henghenggao",
+  "license": "MIT",
+  "yigyaps": {
+    "category": "data",
+    "tags": ["finance", "CFO", "investment", "business-case", "funding", "capital-allocation", "ROI"],
+    "template": "knowledge-base"
+  },
+  "mcpTransport": "stdio"
+}

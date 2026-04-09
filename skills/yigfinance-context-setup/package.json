@@ -1,0 +1,13 @@
+{
+  "name": "yigfinance-context-setup",
+  "version": "0.3.0",
+  "description": "Jointly define analysis boundaries with the user: analysis subject, reporting basis, business model, analysis goal, scope limits, and preferred methods. Mandatory first skill in every Yigfinance analysis chain.",
+  "author": "@Henghenggao",
+  "license": "MIT",
+  "yigyaps": {
+    "category": "data",
+    "tags": ["finance", "analysis", "context", "FP&A", "corporate-finance", "CFO", "reporting"],
+    "template": "knowledge-base"
+  },
+  "mcpTransport": "stdio"
+}

@@ -585,9 +585,9 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     });
   };
 
-  // POST /v1/auth/register - Email/password registration
+  // POST /v1/auth/email/register - Email/password registration
   const registerRateLimit = { config: { rateLimit: { max: 5, timeWindow: "1 minute" } } };
-  fastify.post("/register", registerRateLimit, async (request, reply) => {
+  fastify.post("/email/register", registerRateLimit, async (request, reply) => {
     const parsed = registerSchema.safeParse(request.body);
     if (!parsed.success) {
       return reply.status(400).send({
@@ -654,9 +654,9 @@ export const authRoutes: FastifyPluginAsync = async (fastify) => {
     });
   });
 
-  // POST /v1/auth/login - Email/password login
+  // POST /v1/auth/email/login - Email/password login
   const loginRateLimit = { config: { rateLimit: { max: 10, timeWindow: "1 minute" } } };
-  fastify.post("/login", loginRateLimit, async (request, reply) => {
+  fastify.post("/email/login", loginRateLimit, async (request, reply) => {
     const parsed = loginSchema.safeParse(request.body);
     if (!parsed.success) {
       return reply.status(400).send({

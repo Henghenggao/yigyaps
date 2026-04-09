@@ -1,0 +1,13 @@
+{
+  "name": "yigfinance-management-pack",
+  "version": "0.3.0",
+  "description": "Convert completed financial analysis into concise, decision-oriented management summaries. Aggregates upstream results into key messages, risks, actions, and decisions with an Analysis Quality Dashboard.",
+  "author": "@Henghenggao",
+  "license": "MIT",
+  "yigyaps": {
+    "category": "data",
+    "tags": ["finance", "management-reporting", "executive-summary", "FP&A", "decision-support"],
+    "template": "knowledge-base"
+  },
+  "mcpTransport": "stdio"
+}

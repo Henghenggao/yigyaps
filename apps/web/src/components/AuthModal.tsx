@@ -2,8 +2,8 @@ import { useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 
 export function AuthModal() {
-    const { isAuthModalOpen, closeAuthModal, login, loginWithGoogle, registerWithEmail, loginWithEmail } = useAuth();
-    const [mode, setMode] = useState<"options" | "email-login" | "email-register">("options");
+    const { isAuthModalOpen, closeAuthModal, login, loginWithGoogle, registerWithEmail, loginWithEmail, forgotPassword } = useAuth();
+    const [mode, setMode] = useState<"options" | "email-login" | "email-register" | "forgot-password">("options");
 
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
@@ -18,15 +18,20 @@ export function AuthModal() {
         setLoading(true);
         setError("");
         try {
-            if (mode === "email-login") {
+            if (mode === "forgot-password") {
+                await forgotPassword(email);
+                setError("If an account exists with that email, a reset link has been sent.");
+            } else if (mode === "email-login") {
                 await loginWithEmail(email, password);
                 closeAuthModal();
             } else {
                 await registerWithEmail(email, password, displayName);
                 setError("Registration successful! Please check your email to verify your account.");
+                closeAuthModal();
             }
-        } catch (err: any) {
-            setError(err?.message || "An error occurred during authentication.");
+        } catch (err: unknown) {
+            const msg = err instanceof Error ? err.message : "An error occurred during authentication.";
+            setError(msg);
         } finally {
             setLoading(false);
         }
@@ -45,7 +50,7 @@ export function AuthModal() {
             <div className="auth-modal-content" onClick={(e) => e.stopPropagation()}>
                 <button className="auth-modal-close" onClick={closeAuthModal}>×</button>
 
-                <h2>{mode === "options" ? "Sign In to YigYaps" : mode === "email-login" ? "Log in with Email" : "Sign up with Email"}</h2>
+                <h2>{mode === "options" ? "Sign In to YigYaps" : mode === "email-login" ? "Log in with Email" : mode === "forgot-password" ? "Reset Password" : "Sign up with Email"}</h2>
 
                 {error && <div className={`auth-modal-error ${error.includes("successful") ? "auth-modal-success" : ""}`}>{error}</div>}
 
@@ -76,21 +81,30 @@ export function AuthModal() {
                             <label>Email Address</label>
                             <input required value={email} onChange={e => setEmail(e.target.value)} type="email" placeholder="you@example.com" />
                         </div>
-                        <div className="form-group">
-                            <label>Password</label>
-                            <input required value={password} onChange={e => setPassword(e.target.value)} type="password" placeholder="••••••••" />
-                        </div>
+                        {mode !== "forgot-password" && (
+                            <div className="form-group">
+                                <label>Password</label>
+                                <input required value={password} onChange={e => setPassword(e.target.value)} type="password" placeholder="••••••••" />
+                            </div>
+                        )}
 
                         <button type="submit" className="auth-btn-submit" disabled={loading}>
-                            {loading ? "Please wait..." : mode === "email-login" ? "Sign In" : "Sign Up"}
+                            {loading ? "Please wait..." : mode === "email-login" ? "Sign In" : mode === "forgot-password" ? "Send Reset Link" : "Sign Up"}
                         </button>
 
                         <div className="auth-form-footer">
                             <button type="button" className="auth-btn-link" onClick={resetMode}>Back</button>
-                            {mode === "email-login" ? (
+                            {mode === "email-login" && (
+                                <button type="button" className="auth-btn-link" onClick={() => { setError(""); setMode("forgot-password"); }}>Forgot password?</button>
+                            )}
+                            {mode === "email-login" && (
                                 <button type="button" className="auth-btn-link" onClick={() => { resetMode(); setMode("email-register"); }}>Need an account? Sign up</button>
-                            ) : (
+                            )}
+                            {mode === "email-register" && (
                                 <button type="button" className="auth-btn-link" onClick={() => { resetMode(); setMode("email-login"); }}>Have an account? Log in</button>
+                            )}
+                            {mode === "forgot-password" && (
+                                <button type="button" className="auth-btn-link" onClick={() => { resetMode(); setMode("email-login"); }}>Back to login</button>
                             )}
                         </div>
                     </form>

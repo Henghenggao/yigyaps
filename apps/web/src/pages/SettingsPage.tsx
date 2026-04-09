@@ -48,8 +48,8 @@ export function SettingsPage() {
   useEffect(() => {
     if (tab !== "api-keys") return;
     setLoading(true);
-    fetchApi<{ keys: ApiKey[] }>("/v1/auth/api-keys")
-      .then((data) => setApiKeys(data.keys ?? []))
+    fetchApi<{ apiKeys: ApiKey[] }>("/v1/auth/api-keys")
+      .then((data) => setApiKeys(data.apiKeys ?? []))
       .catch(() => addToast({ message: "Failed to load API keys", type: "error" }))
       .finally(() => setLoading(false));
   }, [tab, addToast]);
@@ -61,15 +61,27 @@ export function SettingsPage() {
     }
     setGenerating(true);
     try {
-      const data = await fetchApi<{ key: string; apiKey: ApiKey }>(
+      const data = await fetchApi<ApiKey & { key: string }>(
         "/v1/auth/api-keys",
         {
           method: "POST",
-          body: JSON.stringify({ name: newKeyName.trim() }),
+          body: JSON.stringify({
+            name: newKeyName.trim(),
+            accepted_anti_training_terms: true,
+          }),
         },
       );
       setGeneratedKey(data.key);
-      setApiKeys((prev) => [data.apiKey, ...prev]);
+      setApiKeys((prev) => [{
+        id: data.id,
+        name: data.name,
+        keyPrefix: data.keyPrefix,
+        scopes: data.scopes,
+        createdAt: data.createdAt,
+        lastUsedAt: null,
+        revokedAt: null,
+        expiresAt: data.expiresAt,
+      }, ...prev]);
       setNewKeyName("");
       setShowNewKeyForm(false);
     } catch {
@@ -479,7 +491,12 @@ export function SettingsPage() {
               )}
               <div>
                 <div style={{ fontWeight: 700, fontSize: "1.2rem" }}>{user.displayName}</div>
-                <div style={{ color: "var(--color-text-muted)" }}>@{user.githubUsername}</div>
+                {user.githubUsername && (
+                  <div style={{ color: "var(--color-text-muted)" }}>@{user.githubUsername}</div>
+                )}
+                {user.email && !user.githubUsername && (
+                  <div style={{ color: "var(--color-text-muted)" }}>{user.email}</div>
+                )}
                 <span
                   style={{
                     display: "inline-block",
@@ -497,13 +514,19 @@ export function SettingsPage() {
                 </span>
               </div>
             </div>
-            <p style={{ color: "var(--color-text-muted)", fontSize: "0.875rem" }}>
-              Profile information is sourced from GitHub. Update your profile at{" "}
-              <a href="https://github.com/settings/profile" target="_blank" rel="noopener noreferrer">
-                github.com/settings/profile
-              </a>
-              .
-            </p>
+            {user.githubUsername ? (
+              <p style={{ color: "var(--color-text-muted)", fontSize: "0.875rem" }}>
+                Profile information is sourced from GitHub. Update your profile at{" "}
+                <a href="https://github.com/settings/profile" target="_blank" rel="noopener noreferrer">
+                  github.com/settings/profile
+                </a>
+                .
+              </p>
+            ) : (
+              <p style={{ color: "var(--color-text-muted)", fontSize: "0.875rem" }}>
+                Signed in with email. Profile settings coming soon.
+              </p>
+            )}
           </div>
         )}
       </main>

@@ -37,6 +37,16 @@ const EvolutionLabPage = lazy(() =>
     default: m.EvolutionLabPage,
   })),
 );
+const VerifyEmailPage = lazy(() =>
+  import("./pages/VerifyEmailPage").then((m) => ({
+    default: m.VerifyEmailPage,
+  })),
+);
+const ResetPasswordPage = lazy(() =>
+  import("./pages/ResetPasswordPage").then((m) => ({
+    default: m.ResetPasswordPage,
+  })),
+);
 
 function App() {
   return (
@@ -67,6 +77,8 @@ function App() {
           <Route path="/skill/:packageId" element={<SkillDetailPage />} />
           <Route path="/auth/success" element={<AuthCallback />} />
           <Route path="/auth/error" element={<AuthCallback />} />
+          <Route path="/auth/verify-email" element={<VerifyEmailPage />} />
+          <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
           <Route path="/terms" element={<TermsPage />} />
           <Route path="/privacy" element={<PrivacyPage />} />
           <Route path="*" element={<NotFoundPage />} />
