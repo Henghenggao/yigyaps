@@ -185,4 +185,151 @@ export class RuleEngine {
       `See the skill documentation for the supported rule format.`
     );
   }
+
+  // ── Markdown Rule Parsing ───────────────────────────────────────────────────
+
+  /**
+   * Parse Markdown-formatted rules into structured sections.
+   * Extracts ## headings as dimensions, bold items and list items as rules,
+   * and keywords from content for matching.
+   * Returns null if text has no recognizable Markdown structure.
+   */
+  static tryParseMarkdownRules(text: string): MarkdownSection[] | null {
+    const lines = text.split("\n");
+    const sections: MarkdownSection[] = [];
+    let current: MarkdownSection | null = null;
+
+    for (const line of lines) {
+      const headingMatch = line.match(/^##\s+(.+)/);
+      if (headingMatch) {
+        if (current && current.items.length > 0) {
+          sections.push(current);
+        }
+        current = {
+          heading: headingMatch[1].trim(),
+          items: [],
+          keywords: [],
+        };
+        continue;
+      }
+      if (!current) continue;
+
+      // Extract numbered list items: "1. **NEVER do X**" or "1. Do X"
+      const numberedMatch = line.match(/^\s*\d+\.\s+\*{0,2}(.+?)\*{0,2}\s*$/);
+      // Extract bullet list items: "- Something important"
+      const bulletMatch = line.match(/^\s*[-*]\s+\*{0,2}(.+?)\*{0,2}\s*$/);
+      // Extract bold text from any line: "**important phrase**"
+      const boldMatches = line.matchAll(/\*\*([^*]+)\*\*/g);
+
+      if (numberedMatch) {
+        current.items.push(numberedMatch[1].replace(/\*\*/g, "").trim());
+      } else if (bulletMatch) {
+        current.items.push(bulletMatch[1].replace(/\*\*/g, "").trim());
+      }
+
+      for (const bold of boldMatches) {
+        const phrase = bold[1].toLowerCase().trim();
+        if (phrase.length > 2 && phrase.length < 80) {
+          current.keywords.push(phrase);
+        }
+      }
+
+      // Extract backtick tokens: `BLOCKED`, `ESCALATION_REQUIRED`
+      const tickMatches = line.matchAll(/`([A-Z_]{3,})`/g);
+      for (const tick of tickMatches) {
+        current.keywords.push(tick[1].toLowerCase());
+      }
+    }
+
+    if (current && current.items.length > 0) {
+      sections.push(current);
+    }
+
+    return sections.length > 0 ? sections : null;
+  }
+
+  /**
+   * Evaluate Markdown-parsed sections against a user query.
+   * Scores each section by keyword overlap between query and section content.
+   * No rule content is exposed in the output — only dimension names, scores,
+   * and generic conclusion tokens.
+   */
+  static evaluateMarkdown(
+    sections: MarkdownSection[],
+    userQuery: string,
+  ): RuleEvaluation {
+    const queryWords = new Set(
+      userQuery
+        .toLowerCase()
+        .replace(/[^a-z0-9\s]/g, " ")
+        .split(/\s+/)
+        .filter((w) => w.length > 2),
+    );
+
+    const results: MatchResult[] = [];
+
+    for (const section of sections) {
+      // Build the section's keyword set from items + extracted keywords
+      const sectionText = section.items.join(" ").toLowerCase();
+      const sectionWords = new Set(
+        sectionText
+          .replace(/[^a-z0-9\s]/g, " ")
+          .split(/\s+/)
+          .filter((w) => w.length > 2),
+      );
+
+      // Count query words that match section content
+      let matches = 0;
+      for (const word of queryWords) {
+        if (sectionWords.has(word)) matches++;
+      }
+
+      // Also check extracted keyword phrases
+      const queryLower = userQuery.toLowerCase();
+      let phraseMatches = 0;
+      for (const kw of section.keywords) {
+        if (queryLower.includes(kw)) phraseMatches++;
+      }
+
+      // Score: combination of word overlap and phrase matches
+      const wordScore = queryWords.size > 0 ? matches / queryWords.size : 0;
+      const phraseScore =
+        section.keywords.length > 0
+          ? phraseMatches / section.keywords.length
+          : 0;
+      const combined = wordScore * 0.6 + phraseScore * 0.4;
+      const score = Math.max(1, Math.min(10, Math.round(combined * 10 + 3)));
+
+      // Determine conclusion token from heading — never expose rule content
+      const conclusion = section.items.length > 0
+        ? `${section.items.length}_rules_defined`
+        : "section_present";
+
+      results.push({
+        dimension: section.heading,
+        score,
+        triggered_rules: [`md_${section.heading.toLowerCase().replace(/[^a-z0-9]+/g, "_")}`],
+        conclusion_key: conclusion,
+      });
+    }
+
+    const overallScore =
+      results.length > 0
+        ? Math.round(
+            results.reduce((acc, r) => acc + r.score, 0) / results.length,
+          )
+        : 5;
+
+    const verdict: RuleEvaluation["verdict"] =
+      overallScore >= 7 ? "recommend" : overallScore >= 4 ? "neutral" : "caution";
+
+    return { results, verdict, overall_score: overallScore };
+  }
+}
+
+/** Parsed Markdown section used by evaluateMarkdown */
+export interface MarkdownSection {
+  heading: string;
+  items: string[];
+  keywords: string[];
 }

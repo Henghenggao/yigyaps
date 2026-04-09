@@ -370,7 +370,25 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
           dimensions: Array<{ name: string; score: number; conclusion_key: string }>;
         } | null = null;
 
-        if (!parsedRules) {
+        // Try Markdown parsing if JSON parsing failed
+        const mdSections = parsedRules ? null : RuleEngine.tryParseMarkdownRules(rulesContent);
+
+        if (!parsedRules && mdSections) {
+          const evaluation = RuleEngine.evaluateMarkdown(mdSections, userQuery);
+          demoEvaluationDetails = {
+            overall_score: evaluation.overall_score,
+            verdict: evaluation.verdict,
+            dimensions: evaluation.results.map((r) => ({
+              name: r.dimension,
+              score: r.score,
+              conclusion_key: r.conclusion_key,
+            })),
+          };
+          const scoreLines = evaluation.results
+            .map((r) => `• ${r.dimension}: ${r.score}/10 — ${r.conclusion_key}`)
+            .join("\n");
+          demoText = `Skill Evaluation (Markdown Rules)\nOverall: ${evaluation.overall_score}/10 (${evaluation.verdict})\n\n${scoreLines}`;
+        } else if (!parsedRules) {
           demoText = RuleEngine.mockResponseForFreeformRules(userQuery);
         } else {
           const evaluation = RuleEngine.evaluate(parsedRules, userQuery);
@@ -528,8 +546,17 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
           const rules = RuleEngine.tryParseRules(plaintextRules);
 
           if (!rules) {
-            // Free-form rules (plain text / markdown) — cannot evaluate locally.
-            // Return a safe stub. No rule content is exposed.
+            // Try Markdown parsing before falling back to mock
+            const mdSections = RuleEngine.tryParseMarkdownRules(plaintextRules);
+            if (mdSections) {
+              const mdEval = RuleEngine.evaluateMarkdown(mdSections, userQuery);
+              return {
+                text: `Skill Evaluation (Markdown Rules)\nOverall: ${mdEval.overall_score}/10 (${mdEval.verdict})\n\n` +
+                  mdEval.results.map((r) => `• ${r.dimension}: ${r.score}/10 — ${r.conclusion_key}`).join("\n"),
+                mode: "local" as InvokeMode,
+                evaluationDetails: toEvaluationDetails(mdEval),
+              };
+            }
             return {
               text: RuleEngine.mockResponseForFreeformRules(userQuery),
               mode: "local" as InvokeMode,
