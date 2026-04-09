@@ -3,7 +3,7 @@
  * YigYaps Yigfinance Skills Seed Script
  *
  * Seeds 6 Yigfinance corporate finance analysis skills into the database.
- * Each skill reads its rules from skills/yigfinance-*/rules/ and README.md.
+ * Each skill reads its rules from each skill package's rules directory and README.md.
  *
  * Skills:
  *   1. Finance Context Setup — mandatory analysis boundary setter
