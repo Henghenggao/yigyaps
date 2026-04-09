@@ -20,9 +20,13 @@ import {
   invocationLogsTable,
   ipRegistrationsTable,
   shamirSharesTable,
+  skillCorpusTable,
 } from "@yigyaps/db";
-import { SkillPackageDAL, SkillRuleDAL } from "@yigyaps/db";
+import { SkillPackageDAL, SkillRuleDAL, SkillCorpusDAL } from "@yigyaps/db";
 import { ShamirManager } from "../lib/shamir.js";
+import { InferenceEngine } from "../lib/inference-engine.js";
+import { AnthropicProvider } from "../lib/llm-provider.js";
+import { AuditLogger } from "../lib/audit-logger.js";
 import { eq, desc, and, sql } from "drizzle-orm";
 import crypto from "crypto";
 import { randomUUID } from "crypto";
@@ -324,6 +328,102 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
         return reply.code(402).send({
           error: "Payment Required",
           message: quota.reason ?? "Subscription quota exhausted.",
+        });
+      }
+
+      // ── Corpus path: knowledge_type routing ────────────────────────────
+      if (pkg.knowledgeType === "corpus") {
+        const expertShare = bodyParsed.data?.expert_share;
+
+        // Reconstruct DEK: try cached DEK first, then Shamir
+        let dek: Buffer | null = null;
+
+        const corpusDAL = new SkillCorpusDAL(fastify.db);
+        const cachedEntries = await fastify.db
+          .select({ cachedEncryptedDek: skillCorpusTable.cachedEncryptedDek })
+          .from(skillCorpusTable)
+          .where(eq(skillCorpusTable.skillPackageId, pkg.id))
+          .limit(1);
+
+        if (cachedEntries[0]?.cachedEncryptedDek) {
+          try {
+            dek = await KMS.decryptDek(cachedEntries[0].cachedEncryptedDek);
+          } catch {
+            // Fall through to Shamir
+          }
+        }
+
+        if (!dek) {
+          const shamirShares = await fastify.db
+            .select()
+            .from(shamirSharesTable)
+            .where(eq(shamirSharesTable.skillPackageId, pkg.id));
+          const platformShare = shamirShares.find((s) => s.shareIndex === 1);
+
+          if (platformShare && expertShare) {
+            try {
+              const dekHex = ShamirManager.reconstruct([
+                platformShare.shareData,
+                expertShare,
+              ]);
+              dek = Buffer.from(dekHex, "hex");
+            } catch {
+              return reply.code(400).send({
+                error: "Bad Request",
+                message: "Invalid expert share.",
+              });
+            }
+          } else if (platformShare) {
+            return reply.code(400).send({
+              error: "Shamir Share Required",
+              message: "Provide expert_share to invoke this corpus skill.",
+            });
+          } else {
+            return reply.code(404).send({
+              error: "No encryption keys found for this skill.",
+            });
+          }
+        }
+
+        if (!env.ANTHROPIC_API_KEY) {
+          return reply.code(503).send({
+            error: "Service Unavailable",
+            message: "LLM provider not configured",
+          });
+        }
+
+        const llm = new AnthropicProvider({ apiKey: env.ANTHROPIC_API_KEY });
+        const inferenceResult = await InferenceEngine.invoke({
+          db: fastify.db,
+          llm,
+          skillPackageId: pkg.id,
+          userQuery,
+          dek,
+          skillName: pkg.displayName,
+        });
+
+        // Audit log
+        AuditLogger.logEvent(fastify.db, {
+          skillPackageId: pkg.id,
+          apiClientId: callerId,
+          conclusionText: inferenceResult.text,
+          inferenceMs: inferenceResult.inferenceMs,
+        }).catch((err) => {
+          request.log.warn({ err }, "Audit log failed for corpus invoke");
+        });
+
+        recordInvocation(fastify.db, callerId, pkg.id, quota).catch((err) => {
+          request.log.warn({ err }, "Failed to record corpus invocation usage");
+        });
+
+        return reply.send({
+          success: true,
+          conclusion: inferenceResult.text,
+          mode: "corpus",
+          privacy_notice:
+            "CORPUS MODE — Expert knowledge decrypted server-side, synthesized via LLM. No raw QA pairs leave the server.",
+          qa_count: inferenceResult.qaCount,
+          inference_ms: inferenceResult.inferenceMs,
         });
       }
 
@@ -707,11 +807,15 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
         .where(eq(shamirSharesTable.skillPackageId, pkg.id))
         .returning({ id: shamirSharesTable.id });
 
-      // Delete encrypted knowledge records
+      // Delete encrypted knowledge records (legacy rules path)
       const deletedKnowledge = await fastify.db
         .delete(encryptedKnowledgeTable)
         .where(eq(encryptedKnowledgeTable.skillPackageId, pkg.id))
         .returning({ id: encryptedKnowledgeTable.id });
+
+      // Clear cached DEKs from corpus entries (capture path)
+      const corpusDAL = new SkillCorpusDAL(fastify.db);
+      await corpusDAL.setCachedDek(pkg.id, null);
 
       return reply.send({
         success: true,

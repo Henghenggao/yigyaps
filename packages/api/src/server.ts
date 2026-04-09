@@ -49,6 +49,8 @@ import { adminRoutes } from "./routes/admin.js";
 import { exportRoutes } from "./routes/export.js";
 import { stripeRoutes } from "./routes/stripe.js";
 import { yigcoreRegistryRoutes, yigcoreUsageRoutes } from "./routes/yigcore-registry.js";
+import { captureRoutes } from "./routes/capture.js";
+import { validateRoutes } from "./routes/validate.js";
 import { env } from "./lib/env.js";
 
 const { Pool } = pg;
@@ -252,6 +254,8 @@ async function buildServer() {
   await fastify.register(stripeRoutes, { prefix: "/v1" });
   await fastify.register(yigcoreRegistryRoutes, { prefix: "/v1/registry" });
   await fastify.register(yigcoreUsageRoutes, { prefix: "/v1/usage" });
+  await fastify.register(captureRoutes, { prefix: "/v1/capture" });
+  await fastify.register(validateRoutes, { prefix: "/v1/validate" });
 
   // ── Error Handling ─────────────────────────────────────────────────────────
   fastify.setErrorHandler(function (err, request, reply) {

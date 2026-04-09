@@ -1,0 +1,36 @@
+{
+  "id": "software-engineering",
+  "name": "Software Engineering",
+  "description": "Expert knowledge for designing, building, and maintaining software systems. Covers architecture decisions, code quality practices, debugging strategies, performance optimization, and the human side of engineering (code reviews, mentoring, technical leadership).",
+  "tags": [
+    { "id": "architecture_decision", "label": "Architecture Decision", "category": "design" },
+    { "id": "code_review", "label": "Code Review", "category": "quality" },
+    { "id": "debugging", "label": "Debugging", "category": "operations" },
+    { "id": "performance_optimization", "label": "Performance Optimization", "category": "operations" },
+    { "id": "security_vulnerability", "label": "Security Vulnerability", "category": "security" },
+    { "id": "tech_debt", "label": "Technical Debt", "category": "quality" },
+    { "id": "system_design", "label": "System Design", "category": "design" },
+    { "id": "api_design", "label": "API Design", "category": "design" }
+  ],
+  "scenarioTypes": [
+    { "id": "design_review", "label": "Design Review" },
+    { "id": "incident_response", "label": "Incident Response" },
+    { "id": "code_review_feedback", "label": "Code Review Feedback" },
+    { "id": "architecture_tradeoff", "label": "Architecture Tradeoff" },
+    { "id": "debugging_strategy", "label": "Debugging Strategy" },
+    { "id": "migration_planning", "label": "Migration Planning" }
+  ],
+  "complexityLevels": ["L1", "L2", "L3"],
+  "convergence": {
+    "minQaPairs": 15,
+    "minScenarioCoverage": 3,
+    "minValidationPassRate": 0.6,
+    "minValidationRounds": 1,
+    "minSourceDiversity": 1
+  },
+  "questionHints": {
+    "structured_interview": "Ask about the expert's principles for choosing between monolith vs. microservices, how they decide when to refactor vs. rewrite, their approach to writing reviewable code, and how they evaluate third-party dependencies. Probe for heuristics they use under uncertainty (e.g., 'if latency is above X, I start looking at Y') and patterns they have seen fail repeatedly.",
+    "case_judgment": "Present scenarios such as: a production database query that has degraded from 50ms to 8 seconds over 6 months, a junior engineer's PR that works but violates three team conventions, or a request to adopt a new framework that would require rewriting 40% of the codebase. Ask the expert to reason through diagnosis, tradeoffs, and the recommendation they would give to the team.",
+    "scenario_simulation": "Simulate a P1 incident where the API is returning 500 errors to 15% of users and the on-call engineer has been paged, a design review where the proposed architecture has a single point of failure the author hasn't noticed, or a planning meeting where the team must choose between paying down tech debt or shipping a revenue-critical feature. Observe how the expert triages, communicates, and makes decisions under time pressure."
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "id": "financial-advisory",
+  "name": "Financial Advisory",
+  "description": "Expert knowledge for wealth management, investment strategy, tax optimization, and financial planning. Covers portfolio construction, risk management, regulatory compliance, retirement planning, and client relationship management in financial services.",
+  "tags": [
+    { "id": "risk_assessment", "label": "Risk Assessment", "category": "analysis" },
+    { "id": "portfolio_strategy", "label": "Portfolio Strategy", "category": "investment" },
+    { "id": "tax_optimization", "label": "Tax Optimization", "category": "planning" },
+    { "id": "retirement_planning", "label": "Retirement Planning", "category": "planning" },
+    { "id": "market_analysis", "label": "Market Analysis", "category": "analysis" },
+    { "id": "regulatory_compliance", "label": "Regulatory Compliance", "category": "compliance" },
+    { "id": "client_communication", "label": "Client Communication", "category": "communication" },
+    { "id": "wealth_preservation", "label": "Wealth Preservation", "category": "strategy" }
+  ],
+  "scenarioTypes": [
+    { "id": "portfolio_review", "label": "Portfolio Review" },
+    { "id": "market_downturn_response", "label": "Market Downturn Response" },
+    { "id": "client_onboarding", "label": "Client Onboarding" },
+    { "id": "tax_strategy_session", "label": "Tax Strategy Session" },
+    { "id": "risk_rebalancing", "label": "Risk Rebalancing" },
+    { "id": "estate_planning_consultation", "label": "Estate Planning Consultation" }
+  ],
+  "complexityLevels": ["L1", "L2", "L3"],
+  "convergence": {
+    "minQaPairs": 20,
+    "minScenarioCoverage": 4,
+    "minValidationPassRate": 0.7,
+    "minValidationRounds": 2,
+    "minSourceDiversity": 2
+  },
+  "questionHints": {
+    "structured_interview": "Ask about the expert's framework for assessing a new client's risk tolerance beyond standard questionnaires, how they construct portfolios that balance growth with downside protection, their approach to tax-loss harvesting and asset location across account types, and how they communicate during market volatility to prevent panic selling. Probe for the rules of thumb and mental models they apply when quantitative models are insufficient.",
+    "case_judgment": "Present scenarios such as: a client nearing retirement whose portfolio is 80% in a single stock from their employer, a high-net-worth individual asking about cryptocurrency allocation when it represents a significant concentration risk, or a situation where the optimal tax strategy conflicts with the client's emotional attachment to certain holdings. Ask the expert to walk through their analysis, the alternatives they would present, and how they would guide the client toward a sound decision.",
+    "scenario_simulation": "Simulate a quarterly review meeting during a 20% market correction where the client wants to move everything to cash, an estate planning session for a blended family with competing inheritance expectations, or a compliance review where a recommended product has been flagged for potential suitability concerns. Focus on how the expert balances fiduciary duty, regulatory requirements, and the human psychology of money."
+  }
+}

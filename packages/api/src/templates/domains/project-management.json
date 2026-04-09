@@ -1,0 +1,36 @@
+{
+  "id": "project-management",
+  "name": "Project Management",
+  "description": "Expert knowledge for managing software projects, handling stakeholder expectations, navigating scope changes, and delivering under constraints. Covers agile/waterfall methodologies, risk management, and team leadership.",
+  "tags": [
+    { "id": "time_pressure", "label": "Time Pressure", "category": "constraint" },
+    { "id": "requirements_change", "label": "Requirements Change", "category": "risk" },
+    { "id": "stakeholder_management", "label": "Stakeholder Management", "category": "communication" },
+    { "id": "resource_allocation", "label": "Resource Allocation", "category": "planning" },
+    { "id": "risk_assessment", "label": "Risk Assessment", "category": "risk" },
+    { "id": "team_conflict", "label": "Team Conflict", "category": "leadership" },
+    { "id": "deadline_negotiation", "label": "Deadline Negotiation", "category": "communication" },
+    { "id": "scope_management", "label": "Scope Management", "category": "planning" }
+  ],
+  "scenarioTypes": [
+    { "id": "boundary_decision", "label": "Boundary Decision" },
+    { "id": "trade_off_analysis", "label": "Trade-off Analysis" },
+    { "id": "crisis_response", "label": "Crisis Response" },
+    { "id": "stakeholder_communication", "label": "Stakeholder Communication" },
+    { "id": "resource_optimization", "label": "Resource Optimization" },
+    { "id": "process_improvement", "label": "Process Improvement" }
+  ],
+  "complexityLevels": ["L1", "L2", "L3"],
+  "convergence": {
+    "minQaPairs": 15,
+    "minScenarioCoverage": 3,
+    "minValidationPassRate": 0.6,
+    "minValidationRounds": 1,
+    "minSourceDiversity": 1
+  },
+  "questionHints": {
+    "structured_interview": "Ask about the expert's approach to estimating timelines, how they handle scope creep from stakeholders, their framework for prioritizing competing demands, and how they communicate bad news (delays, budget overruns) to leadership. Probe for concrete methodologies (earned value, velocity tracking) and war stories that reveal judgment.",
+    "case_judgment": "Present scenarios involving late-stage requirement changes from a key stakeholder, a critical team member leaving mid-sprint, or discovering that a dependency team is 3 weeks behind schedule. Ask the expert to walk through their decision process step by step, including what information they would gather, who they would consult, and how they would communicate the impact.",
+    "scenario_simulation": "Simulate a sprint review where the demo fails in front of the VP, a budget cut that forces the expert to choose which features to descope, or a situation where two senior engineers disagree on architecture and refuse to compromise. Focus on real-time decision-making under pressure and the expert's ability to balance technical and human factors."
+  }
+}

@@ -1,0 +1,36 @@
+{
+  "id": "legal-advisory",
+  "name": "Legal Advisory",
+  "description": "Expert knowledge for legal analysis, contract review, dispute resolution, and regulatory compliance. Covers risk assessment in legal contexts, precedent analysis, negotiation strategy, due diligence, and the practical judgment that distinguishes experienced legal counsel from textbook knowledge.",
+  "tags": [
+    { "id": "contract_review", "label": "Contract Review", "category": "transactional" },
+    { "id": "regulatory_compliance", "label": "Regulatory Compliance", "category": "compliance" },
+    { "id": "dispute_resolution", "label": "Dispute Resolution", "category": "litigation" },
+    { "id": "risk_mitigation", "label": "Risk Mitigation", "category": "strategy" },
+    { "id": "client_counsel", "label": "Client Counsel", "category": "communication" },
+    { "id": "precedent_analysis", "label": "Precedent Analysis", "category": "research" },
+    { "id": "negotiation_strategy", "label": "Negotiation Strategy", "category": "strategy" },
+    { "id": "due_diligence", "label": "Due Diligence", "category": "transactional" }
+  ],
+  "scenarioTypes": [
+    { "id": "contract_negotiation", "label": "Contract Negotiation" },
+    { "id": "regulatory_response", "label": "Regulatory Response" },
+    { "id": "dispute_assessment", "label": "Dispute Assessment" },
+    { "id": "risk_advisory", "label": "Risk Advisory" },
+    { "id": "compliance_audit", "label": "Compliance Audit" },
+    { "id": "transaction_review", "label": "Transaction Review" }
+  ],
+  "complexityLevels": ["L1", "L2", "L3"],
+  "convergence": {
+    "minQaPairs": 20,
+    "minScenarioCoverage": 4,
+    "minValidationPassRate": 0.7,
+    "minValidationRounds": 2,
+    "minSourceDiversity": 2
+  },
+  "questionHints": {
+    "structured_interview": "Ask about the expert's approach to identifying the most critical clauses in a commercial contract, how they assess litigation risk vs. settlement value, their framework for advising clients on regulatory compliance in evolving legal landscapes, and how they communicate legal risk to non-legal stakeholders in terms they can act on. Probe for the pattern recognition and judgment calls that come from years of practice — the things that are not in the statute books.",
+    "case_judgment": "Present scenarios such as: a vendor contract with an indemnification clause that shifts unlimited liability to the client, a potential IP infringement claim where the client's product has significant overlap with a competitor's patent, or a situation where a regulatory filing deadline is approaching and the client's disclosures may be materially incomplete. Ask the expert to identify the key risks, outline the options with their respective tradeoffs, and recommend a course of action with supporting reasoning.",
+    "scenario_simulation": "Simulate a negotiation session where the opposing party has introduced a last-minute change to a key term in a signed LOI, a board meeting where the expert must advise on whether to proceed with an acquisition after due diligence uncovered an undisclosed environmental liability, or a client call where the expert must explain that their preferred business strategy carries significant legal exposure. Focus on how the expert balances legal precision with practical business judgment and client relationship management."
+  }
+}

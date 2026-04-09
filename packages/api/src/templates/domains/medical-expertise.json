@@ -1,0 +1,36 @@
+{
+  "id": "medical-expertise",
+  "name": "Medical Expertise",
+  "description": "Expert knowledge for clinical reasoning, diagnosis, treatment planning, and patient communication. Covers differential diagnosis, evidence-based medicine, emergency protocols, drug interactions, and the ethical dimensions of medical practice.",
+  "tags": [
+    { "id": "diagnosis", "label": "Diagnosis", "category": "clinical" },
+    { "id": "treatment_plan", "label": "Treatment Plan", "category": "clinical" },
+    { "id": "patient_communication", "label": "Patient Communication", "category": "communication" },
+    { "id": "emergency_protocol", "label": "Emergency Protocol", "category": "operations" },
+    { "id": "drug_interaction", "label": "Drug Interaction", "category": "pharmacology" },
+    { "id": "differential_diagnosis", "label": "Differential Diagnosis", "category": "clinical" },
+    { "id": "preventive_care", "label": "Preventive Care", "category": "wellness" },
+    { "id": "ethical_dilemma", "label": "Ethical Dilemma", "category": "ethics" }
+  ],
+  "scenarioTypes": [
+    { "id": "diagnostic_reasoning", "label": "Diagnostic Reasoning" },
+    { "id": "treatment_decision", "label": "Treatment Decision" },
+    { "id": "emergency_triage", "label": "Emergency Triage" },
+    { "id": "patient_counseling", "label": "Patient Counseling" },
+    { "id": "ethical_consultation", "label": "Ethical Consultation" },
+    { "id": "multidisciplinary_review", "label": "Multidisciplinary Review" }
+  ],
+  "complexityLevels": ["L1", "L2", "L3"],
+  "convergence": {
+    "minQaPairs": 20,
+    "minScenarioCoverage": 4,
+    "minValidationPassRate": 0.7,
+    "minValidationRounds": 2,
+    "minSourceDiversity": 2
+  },
+  "questionHints": {
+    "structured_interview": "Ask about the expert's systematic approach to differential diagnosis when presented with ambiguous symptoms, how they weigh clinical guidelines against individual patient factors, their protocol for identifying and managing drug interactions in polypharmacy patients, and how they communicate uncertain prognoses to patients and families. Probe for the mental models and pattern recognition that come from years of clinical experience.",
+    "case_judgment": "Present clinical vignettes such as: a patient presenting with chest pain where ECG is borderline and troponin is initially negative, a request for an antibiotic prescription that may not be indicated but the patient is insistent, or a situation where the recommended treatment conflicts with the patient's cultural or religious beliefs. Ask the expert to walk through their clinical reasoning, the tests they would order, and how they would communicate their recommendation.",
+    "scenario_simulation": "Simulate an emergency department scenario where multiple patients arrive simultaneously with varying acuity levels, a family meeting where the expert must discuss transitioning a patient to palliative care, or a case conference where new lab results contradict the working diagnosis. Focus on how the expert prioritizes, adapts their reasoning when new information arrives, and balances clinical best practice with human compassion."
+  }
+}

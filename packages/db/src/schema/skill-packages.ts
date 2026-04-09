@@ -90,6 +90,11 @@ export const skillPackagesTable = pgTable(
     repositoryUrl: text("repository_url"),
     homepageUrl: text("homepage_url"),
     kekId: text("kek_id"),
+    /** Routing discriminator: 'rules' (legacy RuleEngine) or 'corpus' (new capture system) */
+    knowledgeType: text("knowledge_type")
+      .$type<"rules" | "corpus">()
+      .notNull()
+      .default("rules"),
     status: text("status").notNull().default("active"),
     createdAt: bigint("created_at", { mode: "number" }).notNull(),
     updatedAt: bigint("updated_at", { mode: "number" }).notNull(),
