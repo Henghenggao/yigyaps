@@ -1,0 +1,11 @@
+{
+  "contract_version": "1.0",
+  "signals": {
+    "expert_review_required": true,
+    "quality_dimensions": [
+      "margin_logic",
+      "risk_traceability",
+      "forecast_assumptions"
+    ]
+  }
+}

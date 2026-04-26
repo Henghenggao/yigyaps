@@ -4,9 +4,8 @@
  * Tests GitHub OAuth, Google OAuth, logout, JWT refresh, and session management.
  *
  * Database strategy:
- *   - In CI: uses TEST_DATABASE_URL with a PostgreSQL service container.
- *   - Locally without Docker: falls back to DATABASE_URL (Railway) with a
- *     dedicated test schema, cleared per test suite run.
+ *   - Uses TEST_DATABASE_URL provided by Vitest global setup.
+ *   - Does not fall back to DATABASE_URL; shared DB drift must not affect tests.
  *
  * External OAuth HTTP calls are mocked via vi.stubGlobal on fetch.
  *
@@ -41,12 +40,10 @@ import * as schema from "@yigyaps/db";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 // ── Resolve database URL ──────────────────────────────────────────────────────
-// In CI, TEST_DATABASE_URL points at a fresh service-container DB.
-// Locally, fallback to DATABASE_URL (the Railway instance).
+// TEST_DATABASE_URL points at the deterministic integration test database.
 
 const DB_URL =
   process.env.TEST_DATABASE_URL ||
-  process.env.DATABASE_URL ||
   "postgresql://postgres:password@localhost:5432/yigyaps_test";
 
 // ── Database cleanup ──────────────────────────────────────────────────────────

@@ -1,13 +1,17 @@
 /**
  * Integration Test Global Setup
  *
- * Manages PostgreSQL container lifecycle for API integration tests.
- * Container is started once for all integration tests.
+ * Uses TEST_DATABASE_URL when provided, otherwise starts a PostgreSQL
+ * Testcontainers instance. It never falls back to DATABASE_URL, because that
+ * can point at a shared or drifted database and make the release gate lie.
  *
  * License: Apache 2.0
  */
 
-import { PostgreSqlContainer } from "@testcontainers/postgresql";
+import {
+  PostgreSqlContainer,
+  type StartedPostgreSqlContainer,
+} from "@testcontainers/postgresql";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { Pool } from "pg";
@@ -17,54 +21,59 @@ import { fileURLToPath } from "url";
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 export async function setup() {
-  console.log("🚀 Starting PostgreSQL container for integration tests...");
+  let container: StartedPostgreSqlContainer | null = null;
+  let connectionString = process.env.TEST_DATABASE_URL;
 
-  const container = await new PostgreSqlContainer("postgres:16-alpine")
-    .withDatabase("yigyaps_test")
-    .withUsername("test_user")
-    .withPassword("test_password")
-    .start();
+  if (!connectionString) {
+    console.log("Starting PostgreSQL container for integration tests...");
 
-  const connectionString = container.getConnectionUri();
+    container = await new PostgreSqlContainer("postgres:16-alpine")
+      .withDatabase("yigyaps_test")
+      .withUsername("test_user")
+      .withPassword("test_password")
+      .start();
+
+    connectionString = container.getConnectionUri();
+  } else {
+    console.log("Using TEST_DATABASE_URL for integration tests.");
+  }
+
   const pool = new Pool({ connectionString });
   const db = drizzle(pool);
 
-  // Run migrations
   const migrationsPath = path.resolve(__dirname, "../../../../db/migrations");
-  console.log(`📂 Migrations folder: ${migrationsPath}`);
+  console.log(`Migrations folder: ${migrationsPath}`);
 
   try {
     await migrate(db, { migrationsFolder: migrationsPath });
-    console.log("✅ Migrations completed successfully");
+    console.log("Migrations completed successfully.");
 
-    // Verify tables exist
     const result = await pool.query(`
       SELECT tablename FROM pg_catalog.pg_tables
       WHERE schemaname = 'public'
       ORDER BY tablename
     `);
     console.log(
-      "📋 Created tables:",
+      "Created tables:",
       result.rows.map((r) => r.tablename).join(", "),
     );
   } catch (error) {
-    console.error("❌ Migration failed:", error);
+    console.error("Migration failed:", error);
     throw error;
   }
 
-  console.log("✅ Integration test database ready");
-
-  // Save connection info to environment variable
   process.env.TEST_DATABASE_URL = connectionString;
   process.env.JWT_SECRET = "test-jwt-secret-for-integration-tests";
 
   return async () => {
     await pool.end();
-    await container.stop();
-    console.log("🛑 Integration test container stopped");
+    if (container) {
+      await container.stop();
+      console.log("Integration test container stopped.");
+    }
   };
 }
 
 export async function teardown() {
-  // Cleanup is handled in setup's return function
+  // Cleanup is handled in setup's return function.
 }

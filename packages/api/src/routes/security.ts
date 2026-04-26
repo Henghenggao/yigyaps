@@ -284,7 +284,15 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
       }
       const { packageId } = paramsParsed.data;
 
-      const bodyParsed = invokeBodySchema.safeParse(request.body);
+      const bodyParsed = invokeBodySchema.safeParse(request.body ?? {});
+      if (!bodyParsed.success) {
+        return reply.code(400).send({
+          error: "Bad Request",
+          message: "Validation failed",
+          details: bodyParsed.error.issues,
+        });
+      }
+
       const userQuery =
         bodyParsed.data?.user_query ??
         "Evaluate this skill and describe what it does.";
@@ -338,7 +346,6 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
         // Reconstruct DEK: try cached DEK first, then Shamir
         let dek: Buffer | null = null;
 
-        const corpusDAL = new SkillCorpusDAL(fastify.db);
         const cachedEntries = await fastify.db
           .select({ cachedEncryptedDek: skillCorpusTable.cachedEncryptedDek })
           .from(skillCorpusTable)

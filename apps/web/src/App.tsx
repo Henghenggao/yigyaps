@@ -37,6 +37,11 @@ const EvolutionLabPage = lazy(() =>
     default: m.EvolutionLabPage,
   })),
 );
+const YapAssemblyPage = lazy(() =>
+  import("./pages/YapAssemblyPage").then((m) => ({
+    default: m.YapAssemblyPage,
+  })),
+);
 const VerifyEmailPage = lazy(() =>
   import("./pages/VerifyEmailPage").then((m) => ({
     default: m.VerifyEmailPage,
@@ -57,6 +62,11 @@ function App() {
           <Route path="/" element={<LandingPage />} />
           <Route path="/marketplace" element={<HomePage />} />
           <Route path="/blog" element={<BlogPage />} />
+          <Route path="/yaps/:yapId" element={<YapAssemblyPage />} />
+          <Route
+            path="/yaps/:yapId/assembly"
+            element={<YapAssemblyPage />}
+          />
 
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>

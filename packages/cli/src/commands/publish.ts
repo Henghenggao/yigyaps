@@ -88,12 +88,18 @@ export async function publishCommand(options: PublishOptions) {
             success: true,
             packageId: result.id,
             url: packageUrl,
+            expertShare: result.encryptedKnowledge?.expert_share,
           }),
         );
       } else {
+        const expertShareNotice = result.encryptedKnowledge
+          ? `\n\n${colors.warning("Save this expert share. It is required for secure invocation:")}\n${colors.primary(result.encryptedKnowledge.expert_share)}`
+          : "";
         p.outro(`${colors.success("🚀 Successfully published!")}
 
 🔗 ${colors.link(packageUrl)}
+
+${expertShareNotice}
 
 ${colors.muted("To try your skill locally, run:")}
 ${colors.primary(`yigyaps run ${result.id}`)}`);

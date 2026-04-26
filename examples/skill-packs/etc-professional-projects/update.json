@@ -1,0 +1,6 @@
+{
+  "contract_version": "1.0",
+  "channels": {
+    "default": "stable"
+  }
+}

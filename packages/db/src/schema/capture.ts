@@ -165,7 +165,7 @@ export const skillTestsTable = pgTable(
     generatedQuestion: text("generated_question").notNull(),
     aiAnswer: text("ai_answer").notNull(),
     expertVerdict: text("expert_verdict")
-      .$type<"correct" | "partial" | "wrong">()
+      .$type<"pending" | "correct" | "partial" | "wrong">()
       .notNull(),
     /** Expert correction text (creates new corpus entry if non-null) */
     expertCorrection: text("expert_correction"),

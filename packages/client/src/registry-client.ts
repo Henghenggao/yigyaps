@@ -13,6 +13,9 @@ import type {
   SkillPackageSearchResult,
   SkillPackageInstallation,
   McpRegistryDiscovery,
+  ResolvedYapManifest,
+  YapRuntimePlan,
+  YapRuntimePlanRequest,
 } from "@yigyaps/types";
 
 export interface AuthUser {
@@ -124,6 +127,47 @@ export class YigYapsRegistryClient {
     if (!res.ok)
       throw new Error(`YigYaps getInstallations failed: ${res.status}`);
     return res.json() as Promise<{ installations: SkillPackageInstallation[] }>;
+  }
+
+  async getYapAssembly(
+    yapIdOrSlug: string,
+    query: { maxMounts?: number } = {},
+  ): Promise<ResolvedYapManifest> {
+    const params = new URLSearchParams();
+    if (query.maxMounts !== undefined) {
+      params.set("maxMounts", String(query.maxMounts));
+    }
+    const suffix = params.toString() ? `?${params}` : "";
+
+    const res = await fetch(
+      `${this.baseUrl}/v1/yaps/${encodeURIComponent(yapIdOrSlug)}/assembly${suffix}`,
+      { headers: this.headers },
+    );
+    if (!res.ok) throw new Error(`YigYaps getYapAssembly failed: ${res.status}`);
+    return res.json() as Promise<ResolvedYapManifest>;
+  }
+
+  async planYapRuntime(
+    yapIdOrSlug: string,
+    params: YapRuntimePlanRequest,
+    query: { maxMounts?: number } = {},
+  ): Promise<YapRuntimePlan> {
+    const search = new URLSearchParams();
+    if (query.maxMounts !== undefined) {
+      search.set("maxMounts", String(query.maxMounts));
+    }
+    const suffix = search.toString() ? `?${search}` : "";
+
+    const res = await fetch(
+      `${this.baseUrl}/v1/yaps/${encodeURIComponent(yapIdOrSlug)}/runtime-plans${suffix}`,
+      {
+        method: "POST",
+        headers: this.headers,
+        body: JSON.stringify(params),
+      },
+    );
+    if (!res.ok) throw new Error(`YigYaps planYapRuntime failed: ${res.status}`);
+    return res.json() as Promise<YapRuntimePlan>;
   }
 
   async uninstall(id: string): Promise<void> {

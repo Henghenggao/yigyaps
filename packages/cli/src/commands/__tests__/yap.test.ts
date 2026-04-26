@@ -1,0 +1,630 @@
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
+import fs from "fs-extra";
+import os from "os";
+import path from "path";
+import type {
+  YigYapsPublisherClient,
+  YigYapsRegistryClient,
+} from "@yigyaps/client";
+import type {
+  ResolvedYapManifest,
+  SkillPack,
+  SkillPackArtifact,
+  Yap,
+  YapMountValidationResult,
+  YapPackMount,
+  YapRuntimePlan,
+} from "@yigyaps/types";
+import {
+  yapAssemblyExportCommand,
+  yapImportCommand,
+  yapMountAddCommand,
+  yapMountSwitchCommand,
+  yapMountValidateCommand,
+  yapPackPublishCommand,
+  yapRuntimePlanCommand,
+} from "../yap.js";
+import * as auth from "../../lib/auth.js";
+import * as registry from "../../lib/registry.js";
+
+vi.mock("../../lib/auth.js");
+vi.mock("../../lib/registry.js");
+vi.mock("../../lib/logger.js");
+
+const tempRoots: string[] = [];
+
+afterEach(async () => {
+  await Promise.all(tempRoots.map((root) => fs.remove(root)));
+  tempRoots.length = 0;
+  vi.restoreAllMocks();
+});
+
+beforeEach(() => {
+  vi.clearAllMocks();
+  vi.mocked(auth.ensureAuthenticated).mockResolvedValue({
+    id: "u1",
+    displayName: "User",
+    githubUsername: "user",
+    email: "",
+    avatarUrl: "",
+    tier: "free",
+    role: "user",
+    isVerifiedCreator: true,
+    totalPackages: 0,
+    totalEarningsUsd: "0",
+    createdAt: 0,
+    lastLoginAt: 0,
+  });
+});
+
+describe("yapImportCommand", () => {
+  it("builds a Yigfinance import plan without authentication in dry-run mode", async () => {
+    const root = await createFixture();
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+
+    await yapImportCommand(root, { dryRun: true, json: true });
+
+    expect(auth.ensureAuthenticated).not.toHaveBeenCalled();
+    const output = JSON.parse(String(log.mock.calls[0]?.[0]));
+    expect(output).toMatchObject({
+      dryRun: true,
+      yap: { slug: "yigfinance" },
+      skillPack: { name: "yigfinance", packType: "core" },
+      summary: { skillCount: 1 },
+    });
+  });
+
+  it("uploads the YAP before uploading its core SkillPack", async () => {
+    const root = await createFixture();
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const yap = fakeYap();
+    const skillPack = fakeSkillPack();
+    const artifact = fakeArtifact(skillPack.id);
+    const client = {
+      createYap: vi.fn().mockResolvedValue(yap),
+      createSkillPack: vi
+        .fn()
+        .mockResolvedValue({ skillPack, artifacts: [artifact] }),
+    };
+    vi.mocked(registry.createPublisherClient).mockReturnValue(
+      client as unknown as YigYapsPublisherClient,
+    );
+
+    await yapImportCommand(root, { json: true });
+
+    expect(client.createYap).toHaveBeenCalledWith(
+      expect.objectContaining({ slug: "yigfinance", version: "0.7.0" }),
+    );
+    expect(client.createSkillPack).toHaveBeenCalledWith(
+      "yap_test",
+      expect.objectContaining({
+        name: "yigfinance",
+        packType: "core",
+        source: "imported",
+      }),
+    );
+    const output = JSON.parse(String(log.mock.calls[0]?.[0]));
+    expect(output).toMatchObject({
+      success: true,
+      yapCreated: true,
+      skillPackCreated: true,
+      artifactCount: 1,
+    });
+  });
+});
+
+describe("yapPackPublishCommand", () => {
+  it("builds a generic extension SkillPack publish plan in dry-run mode", async () => {
+    const root = await createPackFixture();
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+
+    await yapPackPublishCommand("yigfinance", root, {
+      dryRun: true,
+      json: true,
+    });
+
+    expect(auth.ensureAuthenticated).not.toHaveBeenCalled();
+    const output = JSON.parse(String(log.mock.calls[0]?.[0]));
+    expect(output).toMatchObject({
+      dryRun: true,
+      skillPack: {
+        name: "etc-professional-projects",
+        packType: "extension",
+        status: "active",
+      },
+      summary: {
+        commandCount: 1,
+        skillMarkdownCount: 1,
+        schemaCount: 1,
+      },
+    });
+  });
+
+  it("uploads a generic SkillPack under the requested YAP", async () => {
+    const root = await createPackFixture();
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const skillPack = fakeSkillPack({
+      id: "spack_etc",
+      name: "etc-professional-projects",
+      packType: "extension",
+    });
+    const artifact = fakeArtifact(skillPack.id);
+    const client = {
+      createSkillPack: vi
+        .fn()
+        .mockResolvedValue({ skillPack, artifacts: [artifact] }),
+    };
+    vi.mocked(registry.createPublisherClient).mockReturnValue(
+      client as unknown as YigYapsPublisherClient,
+    );
+
+    await yapPackPublishCommand("yigfinance", root, { json: true });
+
+    expect(auth.ensureAuthenticated).toHaveBeenCalled();
+    expect(client.createSkillPack).toHaveBeenCalledWith(
+      "yigfinance",
+      expect.objectContaining({
+        name: "etc-professional-projects",
+        packType: "extension",
+        source: "imported",
+      }),
+    );
+    const output = JSON.parse(String(log.mock.calls[0]?.[0]));
+    expect(output).toMatchObject({
+      success: true,
+      artifactCount: 1,
+      skillPack: { id: "spack_etc" },
+    });
+  });
+});
+
+describe("YAP mount commands", () => {
+  it("validates a candidate extension mount", async () => {
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const validation = fakeValidation();
+    const client = {
+      validateYapPackMount: vi.fn().mockResolvedValue(validation),
+    };
+    vi.mocked(registry.createPublisherClient).mockReturnValue(
+      client as unknown as YigYapsPublisherClient,
+    );
+
+    await yapMountValidateCommand("yigfinance", "spack_etc", {
+      mountKey: "etc",
+      mountPoint: "extensions",
+      priority: 20,
+      json: true,
+    });
+
+    expect(client.validateYapPackMount).toHaveBeenCalledWith("yigfinance", {
+      skillPackId: "spack_etc",
+      mountKey: "etc",
+      mountPoint: "extensions",
+      displayName: undefined,
+      priority: 20,
+      enabled: true,
+      required: false,
+    });
+    expect(JSON.parse(String(log.mock.calls[0]?.[0]))).toMatchObject({
+      status: "pass",
+      candidate: { mountKey: "etc" },
+    });
+  });
+
+  it("adds a mounted extension pack", async () => {
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const mount = fakeMount();
+    const skillPack = fakeSkillPack({
+      id: "spack_etc",
+      name: "etc-professional-projects",
+      packType: "extension",
+    });
+    const client = {
+      createYapPackMount: vi.fn().mockResolvedValue({ mount, skillPack }),
+    };
+    vi.mocked(registry.createPublisherClient).mockReturnValue(
+      client as unknown as YigYapsPublisherClient,
+    );
+
+    await yapMountAddCommand("yigfinance", "spack_etc", {
+      mountKey: "etc",
+      json: true,
+    });
+
+    expect(client.createYapPackMount).toHaveBeenCalledWith("yigfinance", {
+      skillPackId: "spack_etc",
+      mountKey: "etc",
+      mountPoint: undefined,
+      displayName: undefined,
+      priority: undefined,
+      enabled: true,
+      required: false,
+    });
+    expect(JSON.parse(String(log.mock.calls[0]?.[0]))).toMatchObject({
+      success: true,
+      mount: { mountKey: "etc" },
+      skillPack: { id: "spack_etc" },
+    });
+  });
+
+  it("switches an existing mount slot to another extension pack", async () => {
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const mount = fakeMount({ skillPackId: "spack_alt" });
+    const skillPack = fakeSkillPack({
+      id: "spack_alt",
+      name: "alternate-project-pack",
+      packType: "extension",
+    });
+    const client = {
+      updateYapPackMount: vi.fn().mockResolvedValue({ mount, skillPack }),
+    };
+    vi.mocked(registry.createPublisherClient).mockReturnValue(
+      client as unknown as YigYapsPublisherClient,
+    );
+
+    await yapMountSwitchCommand("yigfinance", "mount_etc", "spack_alt", {
+      mountKey: "etc",
+      disabled: true,
+      json: true,
+    });
+
+    expect(client.updateYapPackMount).toHaveBeenCalledWith(
+      "yigfinance",
+      "mount_etc",
+      {
+        skillPackId: "spack_alt",
+        mountKey: "etc",
+        mountPoint: undefined,
+        displayName: undefined,
+        priority: undefined,
+        enabled: false,
+        required: undefined,
+      },
+    );
+    expect(JSON.parse(String(log.mock.calls[0]?.[0]))).toMatchObject({
+      success: true,
+      mount: { skillPackId: "spack_alt" },
+      skillPack: { id: "spack_alt" },
+    });
+  });
+});
+
+describe("yapAssemblyExportCommand", () => {
+  it("exports the resolved YAP assembly to JSON", async () => {
+    const root = await fs.mkdtemp(path.join(os.tmpdir(), "yigyaps-export-"));
+    tempRoots.push(root);
+    const outputPath = path.join(root, "assembly.json");
+    vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const client = {
+      getYapAssembly: vi.fn().mockResolvedValue(fakeAssembly()),
+    };
+    vi.mocked(registry.createRegistryClient).mockReturnValue(
+      client as unknown as YigYapsRegistryClient,
+    );
+
+    await yapAssemblyExportCommand("yigfinance", {
+      output: outputPath,
+      maxMounts: 5,
+    });
+
+    expect(client.getYapAssembly).toHaveBeenCalledWith("yigfinance", {
+      maxMounts: 5,
+    });
+    await expect(fs.readJson(outputPath)).resolves.toMatchObject({
+      yap: { slug: "yigfinance" },
+      merged: { packOrder: ["spack_test"] },
+    });
+  });
+});
+
+describe("yapRuntimePlanCommand", () => {
+  it("plans runtime candidates through the registry client", async () => {
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const client = {
+      planYapRuntime: vi.fn().mockResolvedValue(fakeRuntimePlan()),
+    };
+    vi.mocked(registry.createRegistryClient).mockReturnValue(
+      client as unknown as YigYapsRegistryClient,
+    );
+
+    await yapRuntimePlanCommand("yigfinance", {
+      task: "Review ETC project margin risk",
+      requiredSkills: ["project-margin-review"],
+      maxCandidates: 3,
+      maxMounts: 5,
+      mountKeys: ["etc"],
+      json: true,
+    });
+
+    expect(client.planYapRuntime).toHaveBeenCalledWith(
+      "yigfinance",
+      {
+        task: "Review ETC project margin risk",
+        requiredSkills: ["project-margin-review"],
+        expectedContractVersion: undefined,
+        maxCandidates: 3,
+        hints: {
+          skillNames: undefined,
+          mountKeys: ["etc"],
+          routeKeys: undefined,
+          toolKeys: undefined,
+        },
+      },
+      { maxMounts: 5 },
+    );
+    expect(JSON.parse(String(log.mock.calls[0]?.[0]))).toMatchObject({
+      status: "ready",
+      candidates: [{ skill: { name: "project-margin-review" } }],
+    });
+  });
+});
+
+async function createFixture(): Promise<string> {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "yigyaps-yap-"));
+  tempRoots.push(root);
+
+  const pluginDir = path.join(
+    root,
+    "generated",
+    "yigthinker",
+    ".yigthinker-plugin",
+  );
+  await fs.ensureDir(path.join(pluginDir, "schemas"));
+  await fs.ensureDir(path.join(root, "generated", "yigthinker", "commands"));
+  await fs.ensureDir(
+    path.join(root, "generated", "claude", "skills", "variance-review"),
+  );
+
+  await fs.writeJson(path.join(pluginDir, "plugin.json"), {
+    name: "yigfinance",
+    description: "Finance analysis skill stack for CFO-grade analysis",
+    version: "0.7.0",
+  });
+  await fs.writeJson(path.join(pluginDir, "skillpack.json"), {
+    name: "yigfinance",
+    version: "0.7.0",
+    contract_version: "1.0",
+    compatibility: { yigthinker: ">=0.3.0 <0.5.0" },
+    skills: [{ name: "variance-review", version: "0.7.0" }],
+  });
+  await fs.writeJson(path.join(pluginDir, "routes.json"), {
+    contract_version: "1.0",
+    skills: {},
+  });
+  await fs.writeJson(path.join(pluginDir, "tool-map.json"), {
+    contract_version: "1.0",
+    mappings: {},
+  });
+  await fs.writeJson(path.join(pluginDir, "feedback.json"), {
+    contract_version: "1.0",
+  });
+  await fs.writeJson(path.join(pluginDir, "update.json"), {
+    contract_version: "1.0",
+  });
+  await fs.writeJson(
+    path.join(pluginDir, "schemas", "variance-review.schema.json"),
+    { type: "object" },
+  );
+  await fs.writeFile(
+    path.join(root, "generated", "yigthinker", "commands", "variance-review.md"),
+    "# variance-review\n",
+  );
+  await fs.writeFile(
+    path.join(
+      root,
+      "generated",
+      "claude",
+      "skills",
+      "variance-review",
+      "SKILL.md",
+    ),
+    "# Skill\n",
+  );
+
+  return root;
+}
+
+async function createPackFixture(): Promise<string> {
+  const root = await fs.mkdtemp(path.join(os.tmpdir(), "yigyaps-pack-"));
+  tempRoots.push(root);
+
+  await fs.ensureDir(path.join(root, "schemas"));
+  await fs.ensureDir(path.join(root, "commands"));
+  await fs.ensureDir(path.join(root, "skills", "etc-projects"));
+
+  await fs.writeJson(path.join(root, "skillpack.json"), {
+    name: "etc-professional-projects",
+    version: "1.2.3",
+    contract_version: "1.0",
+    compatibility: { yigfinance: ">=0.7.0 <1.0.0" },
+    skills: [{ name: "etc-projects", version: "1.2.3" }],
+  });
+  await fs.writeJson(path.join(root, "plugin.json"), {
+    name: "etc-professional-projects",
+    description: "ETC professional project analysis pack",
+    version: "1.2.3",
+  });
+  await fs.writeJson(path.join(root, "schemas", "etc.schema.json"), {
+    type: "object",
+  });
+  await fs.writeFile(path.join(root, "commands", "etc.md"), "# ETC\n");
+  await fs.writeFile(
+    path.join(root, "skills", "etc-projects", "SKILL.md"),
+    "# ETC Projects\n",
+  );
+
+  return root;
+}
+
+function fakeYap(): Yap {
+  return {
+    id: "yap_test",
+    slug: "yigfinance",
+    version: "0.7.0",
+    displayName: "Yigfinance",
+    description: "Finance analysis skill stack for CFO-grade analysis",
+    readme: null,
+    ownerId: "u1",
+    ownerName: "User",
+    category: "finance",
+    tags: ["finance"],
+    visibility: "public",
+    status: "active",
+    assemblyConfig: {},
+    createdAt: 1,
+    updatedAt: 1,
+    releasedAt: 1,
+  };
+}
+
+function fakeSkillPack(overrides: Partial<SkillPack> = {}): SkillPack {
+  return {
+    id: "spack_test",
+    yapId: "yap_test",
+    name: "yigfinance",
+    version: "0.7.0",
+    displayName: "Yigfinance",
+    description: "Finance analysis skill stack for CFO-grade analysis",
+    packType: "core",
+    contractVersion: "1.0",
+    compatibility: {},
+    manifest: {},
+    source: "imported",
+    status: "active",
+    createdAt: 1,
+    updatedAt: 1,
+    releasedAt: 1,
+    ...overrides,
+  };
+}
+
+function fakeArtifact(skillPackId: string): SkillPackArtifact {
+  return {
+    id: "spa_test",
+    skillPackId,
+    artifactType: "skillpack",
+    artifactPath: "skillpack.json",
+    mediaType: "application/json",
+    content: {},
+    contentSha256: "hash",
+    createdAt: 1,
+    updatedAt: 1,
+  };
+}
+
+function fakeMount(overrides: Partial<YapPackMount> = {}): YapPackMount {
+  return {
+    id: "mount_etc",
+    yapId: "yap_test",
+    skillPackId: "spack_etc",
+    mountKey: "etc",
+    mountPoint: "extensions",
+    displayName: "ETC",
+    priority: 20,
+    enabled: true,
+    required: false,
+    config: {},
+    constraints: {},
+    createdAt: 1,
+    updatedAt: 1,
+    ...overrides,
+  };
+}
+
+function fakeValidation(): YapMountValidationResult {
+  return {
+    status: "pass",
+    issues: [],
+    candidate: {
+      yapId: "yap_test",
+      skillPackId: "spack_etc",
+      mountKey: "etc",
+      enabled: true,
+      replacingMountId: null,
+    },
+    summary: {
+      packOrder: ["spack_test", "spack_etc"],
+      skillCount: 2,
+      routeCount: 0,
+      toolMappingCount: 0,
+      schemaCount: 1,
+    },
+    generatedAt: 1,
+  };
+}
+
+function fakeAssembly(): ResolvedYapManifest {
+  const yap = fakeYap();
+  const skillPack = fakeSkillPack();
+  return {
+    yap,
+    corePack: {
+      role: "core",
+      mount: null,
+      skillPack,
+      artifacts: {
+        manifest: {},
+        routes: null,
+        toolMap: null,
+        feedback: null,
+        update: null,
+        schemas: {},
+        artifactIndex: [],
+      },
+    },
+    mountedPacks: [],
+    merged: {
+      contractVersion: "1.0",
+      packOrder: [skillPack.id],
+      skills: [],
+      routes: {},
+      toolMap: {},
+      schemas: {},
+      artifactIndex: [],
+    },
+    diagnostics: {
+      conflicts: [],
+      warnings: [],
+    },
+    generatedAt: 1,
+  };
+}
+
+function fakeRuntimePlan(): YapRuntimePlan {
+  const assembly = fakeAssembly();
+  return {
+    yap: assembly.yap,
+    task: "Review ETC project margin risk",
+    status: "ready",
+    candidates: [
+      {
+        skill: {
+          name: "project-margin-review",
+          version: "1.2.3",
+          sourcePackId: "spack_etc",
+          sourcePackName: "etc-professional-projects",
+          sourceMountKey: "etc",
+          definition: {},
+        },
+        sourcePackId: "spack_etc",
+        sourcePackName: "etc-professional-projects",
+        sourceMountKey: "etc",
+        routeKey: "project-margin-review",
+        route: { next_candidates: ["variance-review"] },
+        toolMappings: {
+          "finance-calc.project_margin": {
+            tool: "finance_project_margin",
+          },
+        },
+        schemaKeys: ["schemas/project-margin-review.schema.json"],
+        score: 72,
+        reasons: ["task token matches"],
+      },
+    ],
+    diagnostics: {
+      issues: [],
+      warnings: [],
+    },
+    generatedAt: 1,
+  };
+}

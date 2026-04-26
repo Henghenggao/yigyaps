@@ -23,7 +23,7 @@ import {
   type TestServerContext,
 } from "../helpers/test-server.js";
 import { createAdminJWT } from "../../unit/helpers/jwt-helpers.js";
-import { SkillPackageDAL } from "@yigyaps/db";
+import { SkillPackageDAL, SkillRuleDAL } from "@yigyaps/db";
 import { SkillPackageFactory } from "../../../../db/__tests__/helpers/factories.js";
 import { sql } from "drizzle-orm";
 
@@ -376,6 +376,94 @@ describe("Packages Routes", () => {
       expect(response.statusCode).toBe(404);
       expect(JSON.parse(response.body)).toMatchObject({
         error: "Package not found",
+      });
+    });
+  });
+
+  describe("GET /v1/packages/*/rules", () => {
+    it("returns plaintext rules for free open-source packages", async () => {
+      const pkg = await packageDAL.create(
+        SkillPackageFactory.create({
+          packageId: "public-rules-package",
+          license: "open-source",
+          priceUsd: "0.00",
+          requiresApiKey: false,
+        }),
+      );
+      const ruleDAL = new SkillRuleDAL(testDb);
+      await ruleDAL.create({
+        id: "rule_public_001",
+        packageId: pkg.id,
+        path: "main.md",
+        content: "public rule content",
+        createdAt: Date.now(),
+      });
+
+      const response = await serverContext.fastify.inject({
+        method: "GET",
+        url: "/v1/packages/by-pkg/public-rules-package/rules",
+      });
+
+      expect(response.statusCode).toBe(200);
+      const body = JSON.parse(response.body);
+      expect(body.rules).toHaveLength(1);
+      expect(body.rules[0]).toMatchObject({
+        path: "main.md",
+        content: "public rule content",
+      });
+    });
+
+    it("does not expose plaintext rules for proprietary packages", async () => {
+      const pkg = await packageDAL.create(
+        SkillPackageFactory.create({
+          packageId: "protected-rules-package",
+          license: "premium",
+          priceUsd: "9.99",
+          requiresApiKey: false,
+        }),
+      );
+      const ruleDAL = new SkillRuleDAL(testDb);
+      await ruleDAL.create({
+        id: "rule_protected_001",
+        packageId: pkg.id,
+        path: "main.md",
+        content: "protected rule content",
+        createdAt: Date.now(),
+      });
+
+      const response = await serverContext.fastify.inject({
+        method: "GET",
+        url: "/v1/packages/by-pkg/protected-rules-package/rules",
+      });
+
+      expect(response.statusCode).toBe(403);
+      expect(JSON.parse(response.body)).toMatchObject({
+        error: "Rules are not publicly readable",
+      });
+    });
+
+    it("rejects proprietary rules on the legacy plaintext create path", async () => {
+      const response = await serverContext.fastify.inject({
+        method: "POST",
+        url: "/v1/packages",
+        headers: {
+          authorization: `Bearer ${createAdminJWT()}`,
+        },
+        payload: {
+          packageId: "protected-create-rules",
+          version: "1.0.0",
+          displayName: "Protected Create Rules",
+          description: "A protected package should not accept plaintext rules",
+          authorName: "Test Author",
+          license: "premium",
+          priceUsd: 9.99,
+          rules: [{ path: "main.md", content: "secret" }],
+        },
+      });
+
+      expect(response.statusCode).toBe(400);
+      expect(JSON.parse(response.body)).toMatchObject({
+        error: "Plaintext rules are only allowed for free open-source packages",
       });
     });
   });

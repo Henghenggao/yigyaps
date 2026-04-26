@@ -2,12 +2,17 @@ import { defineConfig } from "vitest/config";
 import path from "path";
 
 export default defineConfig({
+  root: __dirname,
   test: {
     globals: true,
     environment: "node",
-    include: ["__tests__/**/*.test.ts"],
-    testTimeout: 15000,
-    hookTimeout: 30000,
+    include: ["**/__tests__/**/*.test.ts"],
+    globalSetup: [
+      path.resolve(__dirname, "__tests__/integration/helpers/global-setup.ts"),
+    ],
+    testTimeout: 30000,
+    hookTimeout: 120000,
+    fileParallelism: false,
     env: {
       NODE_ENV: "test",
     },

@@ -2,8 +2,9 @@ import { Link } from "react-router-dom";
 import { UserMenu } from "./UserMenu";
 import { API_URL } from "../lib/api";
 import { useAuth } from "../contexts/AuthContext";
+import type { User } from "../contexts/AuthContext";
 
-export function Header({ user }: { user: any }) {
+export function Header({ user }: { user: User | null }) {
   const { openAuthModal } = useAuth();
 
   return (
@@ -17,6 +18,7 @@ export function Header({ user }: { user: any }) {
 
         <nav className="site-nav">
           <Link to="/marketplace" className="nav-link">Marketplace</Link>
+          <Link to="/yaps/yigfinance/assembly" className="nav-link">YAPs</Link>
           <Link to="/publish" className="nav-link">Publish</Link>
           <Link to="/blog" className="nav-link">Docs</Link>
           <a href={`${API_URL}/docs`} target="_blank" rel="noopener noreferrer" className="nav-link">

@@ -55,5 +55,4 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - name: Build and verify Dockerfile
-        # Assuming there is a Dockerfile at the root
-        run: docker build -t yigyaps-api . || echo "Docker build failed/skipped"
+        run: docker build -t yigyaps-api .

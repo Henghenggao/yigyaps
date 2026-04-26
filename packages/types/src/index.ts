@@ -37,3 +37,44 @@ export type {
   SkillInvokeMode,
   SkillInvokeResult,
 } from "./invoke.js";
+
+export type {
+  Yap,
+  YapSearchQuery,
+  YapSearchResult,
+  YapStatus,
+  YapVisibility,
+} from "./yap.js";
+
+export type {
+  SkillPack,
+  SkillPackArtifact,
+  SkillPackArtifactType,
+  SkillPackSource,
+  SkillPackStatus,
+  SkillPackType,
+  YapPackMount,
+  YapPackMountWithSkillPack,
+} from "./skill-pack.js";
+
+export type {
+  ResolvedYapArtifactRef,
+  ResolvedYapConflict,
+  ResolvedYapManifest,
+  ResolvedYapPack,
+  ResolvedYapPackArtifacts,
+  ResolvedYapSkill,
+  YapMountValidationIssue,
+  YapMountValidationResult,
+  YapMountValidationSeverity,
+  YapMountValidationStatus,
+} from "./yap-assembly.js";
+
+export type {
+  YapRuntimePlan,
+  YapRuntimePlanCandidate,
+  YapRuntimePlanIssue,
+  YapRuntimePlanIssueSeverity,
+  YapRuntimePlanRequest,
+  YapRuntimePlanStatus,
+} from "./yap-runtime-plan.js";

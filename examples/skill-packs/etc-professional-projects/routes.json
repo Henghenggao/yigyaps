@@ -1,0 +1,16 @@
+{
+  "contract_version": "1.0",
+  "skills": {
+    "etc-project-review": {
+      "next_candidates": [
+        "variance-review",
+        "risk-review"
+      ],
+      "inputs": [
+        "project_actuals",
+        "forecast_to_complete",
+        "contract_scope"
+      ]
+    }
+  }
+}

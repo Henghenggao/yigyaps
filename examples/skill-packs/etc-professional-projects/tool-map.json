@@ -1,0 +1,14 @@
+{
+  "contract_version": "1.0",
+  "mappings": {
+    "finance-calc.etc_project_margin": {
+      "tool": "finance_etc_project_margin",
+      "skill": "etc-project-review",
+      "inputs": [
+        "actual_cost",
+        "forecast_cost_to_complete",
+        "contract_value"
+      ]
+    }
+  }
+}

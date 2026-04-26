@@ -51,6 +51,11 @@ import { stripeRoutes } from "./routes/stripe.js";
 import { yigcoreRegistryRoutes, yigcoreUsageRoutes } from "./routes/yigcore-registry.js";
 import { captureRoutes } from "./routes/capture.js";
 import { validateRoutes } from "./routes/validate.js";
+import { yapsRoutes } from "./routes/yaps.js";
+import { skillPacksRoutes } from "./routes/skill-packs.js";
+import { yapMountsRoutes } from "./routes/yap-mounts.js";
+import { yapAssemblyRoutes } from "./routes/yap-assembly.js";
+import { yapRuntimePlanRoutes } from "./routes/yap-runtime-plans.js";
 import { env } from "./lib/env.js";
 
 const { Pool } = pg;
@@ -243,6 +248,11 @@ async function buildServer() {
   await fastify.register(registryRoutes, { prefix: "/v1" });
   await fastify.register(authRoutes, { prefix: "/v1/auth" });
   await fastify.register(usersRoutes, { prefix: "/v1/users" });
+  await fastify.register(yapsRoutes, { prefix: "/v1/yaps" });
+  await fastify.register(skillPacksRoutes, { prefix: "/v1/yaps" });
+  await fastify.register(yapMountsRoutes, { prefix: "/v1/yaps" });
+  await fastify.register(yapAssemblyRoutes, { prefix: "/v1/yaps" });
+  await fastify.register(yapRuntimePlanRoutes, { prefix: "/v1/yaps" });
   await fastify.register(packagesRoutes, { prefix: "/v1/packages" });
   await fastify.register(installationsRoutes, { prefix: "/v1/installations" });
   await fastify.register(reviewsRoutes, { prefix: "/v1/reviews" });

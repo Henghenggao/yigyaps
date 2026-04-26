@@ -1,0 +1,16 @@
+{
+  "name": "etc-professional-projects",
+  "version": "0.1.0",
+  "contract_version": "1.0",
+  "compatibility": {
+    "yigfinance": ">=0.7.0 <1.0.0"
+  },
+  "skills": [
+    {
+      "name": "etc-project-review",
+      "version": "0.1.0",
+      "status": "stable",
+      "description": "Review estimate-to-complete project margin, delivery risk, and variance drivers."
+    }
+  ]
+}

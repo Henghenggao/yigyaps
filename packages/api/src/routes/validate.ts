@@ -115,12 +115,6 @@ export const validateRoutes: FastifyPluginAsync = async (fastify) => {
         });
       }
 
-      // Decrypt the source answer to use as context for variation generation
-      const sourceAnswer = KMS.decryptKnowledge(
-        sourceQa.encryptedAnswer as Buffer,
-        dek,
-      );
-
       // Use LLM to generate a variation question
       const anthropicKey = env.ANTHROPIC_API_KEY;
       if (!anthropicKey) {
@@ -166,7 +160,7 @@ export const validateRoutes: FastifyPluginAsync = async (fastify) => {
         variationType,
         generatedQuestion,
         aiAnswer: aiResult.text,
-        expertVerdict: "correct", // Placeholder, expert will update via verdict endpoint
+        expertVerdict: "pending",
         createdAt: Date.now(),
       });
 

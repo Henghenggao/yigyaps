@@ -1,0 +1,31 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "ETC Project Review Input",
+  "type": "object",
+  "required": [
+    "projectName",
+    "contractValue",
+    "actualCost",
+    "forecastCostToComplete"
+  ],
+  "properties": {
+    "projectName": {
+      "type": "string"
+    },
+    "contractValue": {
+      "type": "number"
+    },
+    "actualCost": {
+      "type": "number"
+    },
+    "forecastCostToComplete": {
+      "type": "number"
+    },
+    "riskNotes": {
+      "type": "array",
+      "items": {
+        "type": "string"
+      }
+    }
+  }
+}

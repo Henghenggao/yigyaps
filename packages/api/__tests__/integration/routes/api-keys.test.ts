@@ -7,9 +7,8 @@
  *   DELETE /v1/auth/api-keys/:id   — Revoke an API key
  *
  * Database strategy:
- *   - In CI: uses TEST_DATABASE_URL with a PostgreSQL service container.
- *   - Locally without Docker: falls back to DATABASE_URL (Railway) with
- *     test-prefixed IDs so cleanup is safe on a shared DB.
+ *   - Uses TEST_DATABASE_URL provided by Vitest global setup.
+ *   - Does not fall back to DATABASE_URL; shared DB drift must not affect tests.
  *
  * License: Apache 2.0
  */
@@ -36,7 +35,6 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
 const DB_URL =
   process.env.TEST_DATABASE_URL ||
-  process.env.DATABASE_URL ||
   "postgresql://postgres:password@localhost:5432/yigyaps_test";
 
 // ── DB helpers ─────────────────────────────────────────────────────────────────

@@ -114,10 +114,11 @@ const createPackageSchema = z.object({
   rules: z
     .array(
       z.object({
-        path: z.string().min(1),
-        content: z.string().min(1),
+        path: z.string().min(1).max(300),
+        content: z.string().min(1).max(100_000),
       }),
     )
+    .max(50)
     .optional(),
 });
 
@@ -184,6 +185,29 @@ async function withCreatorInfo(
   };
 }
 
+function isPublicPlaintextRulesPackage(
+  pkg: Awaited<ReturnType<SkillPackageDAL["getById"]>>,
+): boolean {
+  if (!pkg) return false;
+  const price = Number.parseFloat(pkg.priceUsd);
+  return (
+    pkg.license === "open-source" &&
+    Number.isFinite(price) &&
+    price === 0 &&
+    !pkg.requiresApiKey
+  );
+}
+
+function acceptsLegacyPlaintextRules(
+  body: z.infer<typeof createPackageSchema>,
+): boolean {
+  return (
+    body.license === "open-source" &&
+    body.priceUsd === 0 &&
+    !body.requiresApiKey
+  );
+}
+
 export async function packagesRoutes(fastify: FastifyInstance) {
   const db = fastify.db;
   const packageDAL = new SkillPackageDAL(db);
@@ -205,6 +229,14 @@ export async function packagesRoutes(fastify: FastifyInstance) {
     }
     const body = parsed.data;
     const now = Date.now();
+
+    if (body.rules?.length && !acceptsLegacyPlaintextRules(body)) {
+      return reply.code(400).send({
+        error: "Plaintext rules are only allowed for free open-source packages",
+        message:
+          "Use /v1/security/knowledge/:packageId for proprietary or gated rules.",
+      });
+    }
 
     const existing = await packageDAL.getByPackageId(body.packageId);
     if (existing) {
@@ -309,6 +341,17 @@ export async function packagesRoutes(fastify: FastifyInstance) {
   fastify.get<{ Params: { id: string } }>(
     "/:id/rules",
     async (request, reply) => {
+      const pkg = await packageDAL.getById(request.params.id);
+      if (!pkg) return reply.code(404).send({ error: "Package not found" });
+
+      if (!isPublicPlaintextRulesPackage(pkg)) {
+        return reply.code(403).send({
+          error: "Rules are not publicly readable",
+          message:
+            "This package's rules are protected. Use the secure invocation API instead.",
+        });
+      }
+
       const ruleDAL = new SkillRuleDAL(fastify.db);
       const rules = await ruleDAL.getByPackage(request.params.id);
       return reply.send({ rules });
@@ -329,6 +372,14 @@ export async function packagesRoutes(fastify: FastifyInstance) {
     async (request, reply) => {
       const pkg = await packageDAL.getByPackageId(request.params.packageId);
       if (!pkg) return reply.code(404).send({ error: "Package not found" });
+
+      if (!isPublicPlaintextRulesPackage(pkg)) {
+        return reply.code(403).send({
+          error: "Rules are not publicly readable",
+          message:
+            "This package's rules are protected. Use the secure invocation API instead.",
+        });
+      }
 
       const ruleDAL = new SkillRuleDAL(fastify.db);
       const rules = await ruleDAL.getByPackage(pkg.id);

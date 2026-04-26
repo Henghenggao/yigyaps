@@ -33,6 +33,15 @@ import { interactiveCommand } from "./commands/interactive.js";
 import { onboardingCommand } from "./commands/onboarding.js";
 import { exportCommand } from "./commands/export.js";
 import { mcpBridgeCommand } from "./commands/mcp-bridge.js";
+import {
+  yapAssemblyExportCommand,
+  yapImportCommand,
+  yapMountAddCommand,
+  yapMountSwitchCommand,
+  yapMountValidateCommand,
+  yapPackPublishCommand,
+  yapRuntimePlanCommand,
+} from "./commands/yap.js";
 import { getConfig } from "./lib/config.js";
 import { checkForUpdates } from "./lib/update-check.js";
 import fs from "fs-extra";
@@ -43,6 +52,22 @@ const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const pkg = fs.readJsonSync(path.join(__dirname, "../package.json"));
 
 const program = new Command();
+
+function parseCsvOption(value?: string): string[] | undefined {
+  if (!value) return undefined;
+  const items = value
+    .split(",")
+    .map((item) => item.trim())
+    .filter(Boolean);
+  return items.length ? items : undefined;
+}
+
+function parseNumberOption(value?: string): number | undefined {
+  if (value === undefined) return undefined;
+  const parsed = Number(value);
+  if (!Number.isFinite(parsed)) return undefined;
+  return parsed;
+}
 
 program
   .name("yigyaps")
@@ -107,7 +132,175 @@ program
   .argument("<id>", "Package ID or internal ID")
   .action(statusCommand);
 
+const yap = program
+  .command("yap")
+  .description("Manage YAP containers and SkillPack assemblies");
+
+yap
+  .command("import")
+  .description("Import a Yigfinance-style SkillPack Bridge repository as a YAP")
+  .argument("<sourceDir>", "Path to the source repository")
+  .option("--slug <slug>", "YAP slug (defaults to skillpack name)")
+  .option("--display-name <name>", "YAP display name")
+  .option("--description <description>", "YAP description")
+  .option("--category <category>", "YAP category", "finance")
+  .option("--tags <csv>", "Comma-separated YAP tags")
+  .option("--visibility <visibility>", "public, private, or unlisted", "public")
+  .option("--status <status>", "active or draft", "active")
+  .option(
+    "--plugin-dir <path>",
+    "Bridge plugin directory relative to sourceDir",
+  )
+  .option(
+    "--commands-dir <path>",
+    "Command markdown directory relative to sourceDir",
+  )
+  .option(
+    "--skills-dir <path>",
+    "Generated SKILL.md directory relative to sourceDir",
+  )
+  .option("--dry-run", "Build the import plan without uploading")
+  .option("--json", "Output results in JSON format")
+  .action((sourceDir, options) =>
+    yapImportCommand(sourceDir, {
+      ...options,
+      tags: parseCsvOption(options.tags),
+    }),
+  );
+
+const yapPack = yap
+  .command("pack")
+  .description("Publish SkillPack Bridge artifacts under a YAP");
+
+yapPack
+  .command("publish")
+  .description("Publish a SkillPack Bridge directory under a YAP")
+  .argument("<yap>", "YAP ID or slug")
+  .argument("<sourceDir>", "Bridge plugin directory or repository root")
+  .option("--pack-type <type>", "core or extension", "extension")
+  .option("--status <status>", "active or draft", "active")
+  .option("--display-name <name>", "SkillPack display name")
+  .option("--description <description>", "SkillPack description")
+  .option("--commands-dir <path>", "Command markdown directory relative to sourceDir")
+  .option("--skills-dir <path>", "Generated SKILL.md directory relative to sourceDir")
+  .option("--dry-run", "Build the publish plan without uploading")
+  .option("--json", "Output results in JSON format")
+  .action((yapIdOrSlug, sourceDir, options) =>
+    yapPackPublishCommand(yapIdOrSlug, sourceDir, options),
+  );
+
+const yapMount = yap
+  .command("mount")
+  .description("Validate, add, and switch mounted extension packs");
+
+yapMount
+  .command("validate")
+  .description("Validate an extension pack before mounting or switching")
+  .argument("<yap>", "YAP ID or slug")
+  .argument("<skillPackId>", "SkillPack ID to validate")
+  .requiredOption("--mount-key <key>", "Stable mount key")
+  .option("--mount-point <path>", "Mount point", "extensions")
+  .option("--display-name <name>", "Mount display name")
+  .option("--priority <number>", "Mount priority")
+  .option("--disabled", "Validate as disabled")
+  .option("--required", "Mark mount as required")
+  .option("--json", "Output results in JSON format")
+  .action((yapIdOrSlug, skillPackId, options) =>
+    yapMountValidateCommand(yapIdOrSlug, skillPackId, {
+      ...options,
+      priority: parseNumberOption(options.priority),
+    }),
+  );
+
+yapMount
+  .command("add")
+  .description("Add an extension pack mount to a YAP")
+  .argument("<yap>", "YAP ID or slug")
+  .argument("<skillPackId>", "SkillPack ID to mount")
+  .requiredOption("--mount-key <key>", "Stable mount key")
+  .option("--mount-point <path>", "Mount point", "extensions")
+  .option("--display-name <name>", "Mount display name")
+  .option("--priority <number>", "Mount priority")
+  .option("--disabled", "Create mount disabled")
+  .option("--required", "Mark mount as required")
+  .option("--json", "Output results in JSON format")
+  .action((yapIdOrSlug, skillPackId, options) =>
+    yapMountAddCommand(yapIdOrSlug, skillPackId, {
+      ...options,
+      priority: parseNumberOption(options.priority),
+    }),
+  );
+
+yapMount
+  .command("switch")
+  .description("Switch an existing mount slot to another extension pack")
+  .argument("<yap>", "YAP ID or slug")
+  .argument("<mountId>", "Mount ID to update")
+  .argument("<skillPackId>", "Replacement SkillPack ID")
+  .option("--mount-key <key>", "Rename the stable mount key")
+  .option("--mount-point <path>", "Mount point")
+  .option("--display-name <name>", "Mount display name")
+  .option("--priority <number>", "Mount priority")
+  .option("--disabled", "Switch mount to disabled")
+  .option("--required", "Mark mount as required")
+  .option("--json", "Output results in JSON format")
+  .action((yapIdOrSlug, mountId, skillPackId, options) =>
+    yapMountSwitchCommand(yapIdOrSlug, mountId, skillPackId, {
+      ...options,
+      priority: parseNumberOption(options.priority),
+    }),
+  );
+
+const yapAssembly = yap
+  .command("assembly")
+  .description("Export resolved YAP assemblies");
+
+yapAssembly
+  .command("export")
+  .description("Export a resolved YAP assembly")
+  .argument("<yap>", "YAP ID or slug")
+  .option("-o, --output <file>", "Output JSON file")
+  .option("--max-mounts <number>", "Maximum mounted packs to resolve")
+  .option("--json", "Print JSON to stdout")
+  .action((yapIdOrSlug, options) =>
+    yapAssemblyExportCommand(yapIdOrSlug, {
+      ...options,
+      maxMounts: parseNumberOption(options.maxMounts),
+    }),
+  );
+
 // ─── Phase 2: Consumer Commands ───────────────────────────────────────────────
+
+const yapRuntime = yap
+  .command("runtime")
+  .description("Inspect runtime planning for resolved YAP assemblies");
+
+yapRuntime
+  .command("plan")
+  .description("Plan candidate skills/routes/tools for a task")
+  .argument("<yap>", "YAP ID or slug")
+  .requiredOption("--task <text>", "Task to plan against the resolved YAP")
+  .option("--required-skills <csv>", "Comma-separated required skill names")
+  .option("--expected-contract-version <version>", "Required assembly contract version")
+  .option("--max-candidates <number>", "Maximum candidate skills to return")
+  .option("--max-mounts <number>", "Maximum mounted packs to resolve")
+  .option("--skill-names <csv>", "Comma-separated skill hint names")
+  .option("--mount-keys <csv>", "Comma-separated mount key hints")
+  .option("--route-keys <csv>", "Comma-separated route key hints")
+  .option("--tool-keys <csv>", "Comma-separated tool-map key hints")
+  .option("--json", "Print JSON to stdout")
+  .action((yapIdOrSlug, options) =>
+    yapRuntimePlanCommand(yapIdOrSlug, {
+      ...options,
+      requiredSkills: parseCsvOption(options.requiredSkills),
+      maxCandidates: parseNumberOption(options.maxCandidates),
+      maxMounts: parseNumberOption(options.maxMounts),
+      skillNames: parseCsvOption(options.skillNames),
+      mountKeys: parseCsvOption(options.mountKeys),
+      routeKeys: parseCsvOption(options.routeKeys),
+      toolKeys: parseCsvOption(options.toolKeys),
+    }),
+  );
 
 program
   .command("search")

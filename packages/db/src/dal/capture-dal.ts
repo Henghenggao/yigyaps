@@ -7,7 +7,7 @@
  * License: Apache 2.0
  */
 
-import { eq, and, sql, desc } from "drizzle-orm";
+import { eq, sql, desc } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import * as schema from "../schema/index.js";
 import {
@@ -313,6 +313,7 @@ export class SkillTestDAL {
     correct: number;
     partial: number;
     wrong: number;
+    pending: number;
     passRate: number;
   }> {
     return dbOperation(async () => {
@@ -321,13 +322,14 @@ export class SkillTestDAL {
         .from(skillTestsTable)
         .where(eq(skillTestsTable.skillPackageId, skillPackageId));
 
-      const total = rows.length;
       const correct = rows.filter((r) => r.verdict === "correct").length;
       const partial = rows.filter((r) => r.verdict === "partial").length;
       const wrong = rows.filter((r) => r.verdict === "wrong").length;
+      const pending = rows.filter((r) => r.verdict === "pending").length;
+      const total = correct + partial + wrong;
       const passRate = total > 0 ? correct / total : 0;
 
-      return { total, correct, partial, wrong, passRate };
+      return { total, correct, partial, wrong, pending, passRate };
     }, { method: "getPassRate", entity: "skillTest" });
   }
 }
