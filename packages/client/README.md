@@ -84,7 +84,7 @@ const handoff = await prepareYapHostRuntime(registry, {
   yap: "yigfinance",
   host: YIGTHINKER_HOST,
   hostVersion: "0.3.1",
-  mountKeys: ["etc"],
+  mountKeys: ["eto"],
   task: "Review ETO project margin risk and summarize the key risks.",
 });
 

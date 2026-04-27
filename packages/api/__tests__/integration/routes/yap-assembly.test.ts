@@ -154,7 +154,7 @@ describe("YAP Assembly Routes", () => {
       schemaPath: "schemas/variance-review.schema.json",
     });
     const extensionPack = await createSkillPack(serverContext, ADMIN_JWT, yap.id, {
-      name: "etc-professional-project",
+      name: "eto-professional-project",
       packType: "extension",
       skills: [
         { name: "project-margin-review", version: "0.7.0", status: "stable" },
@@ -193,7 +193,7 @@ describe("YAP Assembly Routes", () => {
     expect(body.mountedPacks).toHaveLength(1);
     expect(body.mountedPacks[0]).toMatchObject({
       mount: { mountKey: "default-project-pack" },
-      skillPack: { name: "etc-professional-project" },
+      skillPack: { name: "eto-professional-project" },
     });
     expect(body.merged.packOrder).toEqual([
       body.corePack.skillPack.id,
@@ -372,14 +372,14 @@ describe("YAP Assembly Routes", () => {
       schemaPath: "schemas/variance-review.schema.json",
     });
     const extensionPack = await createSkillPack(serverContext, ADMIN_JWT, yap.id, {
-      name: "etc-professional-project",
+      name: "eto-professional-project",
       packType: "extension",
       skills: [
         {
           name: "project-margin-review",
           version: "0.7.0",
           status: "stable",
-          description: "Review ETC project margin and project risk",
+          description: "Review ETO project margin and project risk",
         },
       ],
       routeSkills: {
@@ -400,7 +400,7 @@ describe("YAP Assembly Routes", () => {
       headers: { authorization: `Bearer ${ADMIN_JWT}` },
       payload: {
         skillPackId: extensionPack.id,
-        mountKey: "etc",
+        mountKey: "eto",
         mountPoint: "extensions/project",
         priority: 10,
       },
@@ -411,7 +411,7 @@ describe("YAP Assembly Routes", () => {
       method: "POST",
       url: `/v1/yaps/${yap.slug}/runtime-plans`,
       payload: {
-        task: "Review ETC project margin risk",
+        task: "Review ETO project margin risk",
         maxCandidates: 2,
       },
     });
@@ -426,7 +426,7 @@ describe("YAP Assembly Routes", () => {
     expect(body.candidates[0]).toMatchObject({
       skill: { name: "project-margin-review" },
       routeKey: "project-margin-review",
-      sourceMountKey: "etc",
+      sourceMountKey: "eto",
       toolMappings: {
         "finance-calc.project_margin": {
           tool: "finance_project_margin",

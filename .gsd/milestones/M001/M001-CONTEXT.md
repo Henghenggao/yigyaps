@@ -4,12 +4,12 @@
 
 Evolve Yigyaps from a single-skill marketplace into a YAPs publishing and assembly platform.
 
-A YAP is a publishable, installable, and runnable skills-pack plugin container. Yigfinance is the first canonical YAP. Skill packs can be mounted into a YAP without code changes, with ETC Professional Project Pack as the default extension pack mounted under Yigfinance for the initial product path.
+A YAP is a publishable, installable, and runnable skills-pack plugin container. Yigfinance is the first canonical YAP. Skill packs can be mounted into a YAP without code changes, with ETO Professional Project Pack as the default extension pack mounted under Yigfinance for the initial product path.
 
 ## Product Model
 
 - YAP: top-level product container, for example `yigfinance`.
-- Skill Pack: mountable module pack, for example `yigfinance-core` or `etc-professional-project-pack`.
+- Skill Pack: mountable module pack, for example `yigfinance-core` or `eto-professional-project-pack`.
 - Skill: a concrete contract inside a pack, for example `variance-review` or `project-margin-review`.
 - Mounted Pack: a version-pinned pack attachment to a YAP, enabled or disabled through data/configuration rather than code changes.
 
@@ -34,7 +34,7 @@ In scope:
 - Fix current security and test-gate blockers before adding the new model.
 - Add YAP, Skill Pack, mounted pack, and artifact concepts.
 - Import Yigfinance as the first full YAP.
-- Support default ETC pack mounting under Yigfinance.
+- Support default ETO pack mounting under Yigfinance.
 - Keep the mount system data-driven so other extension packs can be swapped in without code changes.
 - Add conflict/compatibility validation and merged manifest/resolver APIs.
 
@@ -42,7 +42,7 @@ Out of scope for the first milestone:
 
 - Full finance runtime execution parity.
 - Rewriting Yigfinance internals.
-- Hardcoding ETC-specific runtime behavior in Yigyaps.
+- Hardcoding ETO-specific runtime behavior in Yigyaps.
 
 ## First Execution Wave
 

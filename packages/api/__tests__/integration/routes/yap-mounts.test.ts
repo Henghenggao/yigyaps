@@ -142,7 +142,7 @@ describe("YAP Pack Mount Routes", () => {
     await clearMountTestData(testDb);
   });
 
-  it("mounts ETC as the default extension and switches the slot to another pack", async () => {
+  it("mounts ETO as the default extension and switches the slot to another pack", async () => {
     const yap = await createYap(serverContext, ADMIN_JWT);
     await createSkillPack(
       serverContext,
@@ -151,11 +151,11 @@ describe("YAP Pack Mount Routes", () => {
       "yigfinance",
       "core",
     );
-    const etcPack = await createSkillPack(
+    const etoPack = await createSkillPack(
       serverContext,
       ADMIN_JWT,
       yap.id,
-      "etc-professional-project",
+      "eto-professional-project",
     );
     const alternatePack = await createSkillPack(
       serverContext,
@@ -169,7 +169,7 @@ describe("YAP Pack Mount Routes", () => {
       url: `/v1/yaps/${yap.slug}/mounts`,
       headers: { authorization: `Bearer ${ADMIN_JWT}` },
       payload: {
-        skillPackId: etcPack.id,
+        skillPackId: etoPack.id,
         mountKey: "default-project-pack",
         mountPoint: "extensions/project",
         priority: 10,
@@ -185,13 +185,13 @@ describe("YAP Pack Mount Routes", () => {
     expect(mountBody).toMatchObject({
       mount: {
         yapId: yap.id,
-        skillPackId: etcPack.id,
+        skillPackId: etoPack.id,
         mountKey: "default-project-pack",
         mountPoint: "extensions/project",
         enabled: true,
       },
       skillPack: {
-        name: "etc-professional-project",
+        name: "eto-professional-project",
         packType: "extension",
       },
     });
@@ -208,7 +208,7 @@ describe("YAP Pack Mount Routes", () => {
       mounts: [
         {
           mount: { mountKey: "default-project-pack" },
-          skillPack: { name: "etc-professional-project" },
+          skillPack: { name: "eto-professional-project" },
         },
       ],
     });
@@ -244,11 +244,11 @@ describe("YAP Pack Mount Routes", () => {
       routeSkills: { "variance-review": { next_candidates: [] } },
       toolMappings: { "finance-calc.variance_bridge": { tool: "variance" } },
     });
-    const etcPack = await createSkillPack(
+    const etoPack = await createSkillPack(
       serverContext,
       ADMIN_JWT,
       yap.id,
-      "etc-professional-project",
+      "eto-professional-project",
       "extension",
       {
         routeSkills: { "project-margin-review": { next_candidates: [] } },
@@ -261,7 +261,7 @@ describe("YAP Pack Mount Routes", () => {
       url: `/v1/yaps/${yap.id}/mount-validations`,
       headers: { authorization: `Bearer ${ADMIN_JWT}` },
       payload: {
-        skillPackId: etcPack.id,
+        skillPackId: etoPack.id,
         mountKey: "default-project-pack",
       },
     });
@@ -271,7 +271,7 @@ describe("YAP Pack Mount Routes", () => {
       status: "pass",
       candidate: {
         yapId: yap.id,
-        skillPackId: etcPack.id,
+        skillPackId: etoPack.id,
         mountKey: "default-project-pack",
         enabled: true,
         replacingMountId: null,
@@ -389,11 +389,11 @@ describe("YAP Pack Mount Routes", () => {
 
   it("allows only the YAP owner or admin to update mounts", async () => {
     const yap = await createYap(serverContext, ADMIN_JWT);
-    const etcPack = await createSkillPack(
+    const etoPack = await createSkillPack(
       serverContext,
       ADMIN_JWT,
       yap.id,
-      "etc-professional-project",
+      "eto-professional-project",
     );
 
     const res = await serverContext.fastify.inject({
@@ -401,7 +401,7 @@ describe("YAP Pack Mount Routes", () => {
       url: `/v1/yaps/${yap.id}/mounts`,
       headers: { authorization: `Bearer ${OTHER_JWT}` },
       payload: {
-        skillPackId: etcPack.id,
+        skillPackId: etoPack.id,
         mountKey: "default-project-pack",
       },
     });

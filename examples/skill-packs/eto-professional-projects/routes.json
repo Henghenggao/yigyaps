@@ -1,7 +1,7 @@
 {
   "contract_version": "1.0",
   "skills": {
-    "etc-project-review": {
+    "eto-project-review": {
       "next_candidates": [
         "variance-review",
         "risk-review"

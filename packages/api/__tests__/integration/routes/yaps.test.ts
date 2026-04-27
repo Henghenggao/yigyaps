@@ -72,7 +72,7 @@ describe("YAP Routes", () => {
         category: "finance",
         tags: ["finance", "cfo"],
         assemblyConfig: {
-          defaultExtensionPack: "etc-professional-project-pack",
+          defaultExtensionPack: "eto-professional-project-pack",
         },
       },
     });
@@ -86,7 +86,7 @@ describe("YAP Routes", () => {
       displayName: "Yigfinance",
       ownerId: "usr_admin_001",
       assemblyConfig: {
-        defaultExtensionPack: "etc-professional-project-pack",
+        defaultExtensionPack: "eto-professional-project-pack",
       },
     });
     expect(created.id).toMatch(/^yap_\d+_[a-f0-9]{8}$/);
