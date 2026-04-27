@@ -57,6 +57,7 @@ async function createSkillPack(
   params: {
     name: string;
     packType: "core" | "extension";
+    compatibility?: Record<string, string>;
     skills: Array<Record<string, unknown>>;
     routeSkills: Record<string, unknown>;
     toolMappings: Record<string, unknown>;
@@ -74,6 +75,7 @@ async function createSkillPack(
       description: `${params.name} SkillPack Bridge artifacts`,
       packType: params.packType,
       contractVersion: "1.0",
+      compatibility: params.compatibility ?? {},
       manifest: {
         name: params.name,
         version: "0.7.0",
@@ -215,6 +217,128 @@ describe("YAP Assembly Routes", () => {
       ]),
     );
     expect(body.diagnostics.conflicts).toEqual([]);
+  });
+
+  it("exposes a compact remote manifest for Yigthinker and add-in hosts", async () => {
+    const yap = await createYap(serverContext, ADMIN_JWT);
+    await createSkillPack(serverContext, ADMIN_JWT, yap.id, {
+      name: "yigfinance",
+      packType: "core",
+      compatibility: { yigthinker: ">=0.3.0 <0.5.0" },
+      skills: [{ name: "variance-review", version: "0.7.0", status: "stable" }],
+      routeSkills: {
+        "variance-review": { next_candidates: ["management-pack"] },
+      },
+      toolMappings: {
+        "finance-calc.variance_bridge": { tool: "finance_variance_bridge" },
+      },
+      schemaPath: "schemas/variance-review.schema.json",
+    });
+    const extensionPack = await createSkillPack(serverContext, ADMIN_JWT, yap.id, {
+      name: "eto-professional-projects",
+      packType: "extension",
+      compatibility: { yigthinker: ">=0.3.0 <0.5.0" },
+      skills: [
+        {
+          name: "eto-project-review",
+          version: "0.1.0",
+          status: "stable",
+          description: "Review ETO project margin risk",
+        },
+      ],
+      routeSkills: {
+        "eto-project-review": { next_candidates: ["risk-review"] },
+      },
+      toolMappings: {
+        "finance-calc.eto_project_margin": {
+          tool: "finance_eto_project_margin",
+          skill: "eto-project-review",
+        },
+      },
+      schemaPath: "schemas/eto-project-review.schema.json",
+    });
+
+    const mountRes = await serverContext.fastify.inject({
+      method: "POST",
+      url: `/v1/yaps/${yap.id}/mounts`,
+      headers: { authorization: `Bearer ${ADMIN_JWT}` },
+      payload: {
+        skillPackId: extensionPack.id,
+        mountKey: "eto",
+        mountPoint: "extensions/project",
+        priority: 10,
+      },
+    });
+    expect(mountRes.statusCode).toBe(201);
+
+    const manifestRes = await serverContext.fastify.inject({
+      method: "GET",
+      url: `/v1/yaps/${yap.slug}/remote-manifest?host=yigthinker&hostVersion=0.3.1&mountKeys=eto`,
+      headers: { host: "api.test" },
+    });
+
+    expect(manifestRes.statusCode).toBe(200);
+    expect(manifestRes.headers["cache-control"]).toBe("public, max-age=60");
+    expect(manifestRes.headers.etag).toMatch(/^"[a-f0-9]{64}"$/);
+    const body = manifestRes.json();
+    expect(body).toMatchObject({
+      schemaVersion: "yigyaps.remote-manifest.v1",
+      product: {
+        slug: "yigfinance",
+        version: "0.7.0",
+        visibility: "public",
+      },
+      host: {
+        target: "yigthinker",
+        version: "0.3.1",
+        compatibility: { status: "compatible" },
+      },
+      assembly: {
+        skillCount: 2,
+        routeCount: 2,
+        toolMappingCount: 2,
+        schemaCount: 2,
+        conflictCount: 0,
+        warningCount: 0,
+      },
+      remote: {
+        baseUrl: expect.stringMatching(/^https?:\/\//),
+        invocationModes: ["local-plan", "hosted-plan"],
+      },
+      artifacts: {
+        fetchMode: "assembly",
+      },
+    });
+    expect(body.assembly.corePack).toMatchObject({
+      name: "yigfinance",
+      packType: "core",
+      mountKey: null,
+    });
+    expect(body.assembly.mountedPacks).toEqual([
+      expect.objectContaining({
+        name: "eto-professional-projects",
+        mountKey: "eto",
+        mountPoint: "extensions/project",
+      }),
+    ]);
+    expect(body.artifacts.index).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          artifactPath: "schemas/eto-project-review.schema.json",
+          sourceMountKey: "eto",
+        }),
+      ]),
+    );
+
+    const cachedRes = await serverContext.fastify.inject({
+      method: "GET",
+      url: `/v1/yaps/${yap.slug}/remote-manifest?host=yigthinker&hostVersion=0.3.1&mountKeys=eto`,
+      headers: {
+        host: "api.test",
+        "if-none-match": manifestRes.headers.etag,
+      },
+    });
+    expect(cachedRes.statusCode).toBe(304);
   });
 
   it("plans candidate runtime skills from a resolved YAP assembly", async () => {

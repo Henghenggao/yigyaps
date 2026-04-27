@@ -7,6 +7,7 @@ import type {
   YigYapsRegistryClient,
 } from "@yigyaps/client";
 import type {
+  RemoteYapManifest,
   ResolvedYapManifest,
   SkillPack,
   SkillPackArtifact,
@@ -17,6 +18,7 @@ import type {
 } from "@yigyaps/types";
 import {
   yapAssemblyExportCommand,
+  yapHostPrepareCommand,
   yapImportCommand,
   yapMountAddCommand,
   yapMountSwitchCommand,
@@ -359,6 +361,58 @@ describe("yapRuntimePlanCommand", () => {
   });
 });
 
+describe("yapHostPrepareCommand", () => {
+  it("prepares a remote host handoff through the registry client", async () => {
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const client = {
+      getYapRemoteManifest: vi.fn().mockResolvedValue(fakeRemoteManifest()),
+      planYapRuntime: vi.fn().mockResolvedValue(fakeRuntimePlan()),
+      getYapAssembly: vi.fn().mockResolvedValue(fakeAssembly()),
+    };
+    vi.mocked(registry.createRegistryClient).mockReturnValue(
+      client as unknown as YigYapsRegistryClient,
+    );
+
+    await yapHostPrepareCommand("yigfinance", {
+      task: "Review ETO project margin risk",
+      host: "yigthinker",
+      hostVersion: "0.3.1",
+      mountKeys: ["etc"],
+      maxCandidates: 3,
+      maxMounts: 5,
+      json: true,
+    });
+
+    expect(client.getYapRemoteManifest).toHaveBeenCalledWith("yigfinance", {
+      host: "yigthinker",
+      hostVersion: "0.3.1",
+      mountKeys: ["etc"],
+      maxMounts: 5,
+    });
+    expect(client.planYapRuntime).toHaveBeenCalledWith(
+      "yigfinance",
+      expect.objectContaining({
+        task: "Review ETO project margin risk",
+        maxCandidates: 3,
+        hints: { mountKeys: ["etc"] },
+      }),
+      { maxMounts: 5 },
+    );
+    expect(client.getYapAssembly).toHaveBeenCalledWith("yigfinance", {
+      maxMounts: 5,
+    });
+    expect(JSON.parse(String(log.mock.calls[0]?.[0]))).toMatchObject({
+      mode: "local-plan",
+      yap: { slug: "yigfinance" },
+      host: { target: "yigthinker" },
+      selectedCandidate: { skill: { name: "project-margin-review" } },
+      selectedArtifactIndex: [
+        { artifactPath: "schemas/project-margin-review.schema.json" },
+      ],
+    });
+  });
+});
+
 async function createFixture(): Promise<string> {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "yigyaps-yap-"));
   tempRoots.push(root);
@@ -626,5 +680,130 @@ function fakeRuntimePlan(): YapRuntimePlan {
       warnings: [],
     },
     generatedAt: 1,
+  };
+}
+
+function fakeRemoteManifest(): RemoteYapManifest {
+  const yap = fakeYap();
+  return {
+    schemaVersion: "yigyaps.remote-manifest.v1",
+    product: {
+      id: yap.id,
+      slug: yap.slug,
+      version: yap.version,
+      displayName: yap.displayName,
+      description: yap.description,
+      category: yap.category,
+      visibility: yap.visibility,
+      status: yap.status,
+      ownerName: yap.ownerName,
+    },
+    host: {
+      target: "yigthinker",
+      version: "0.3.1",
+      compatibility: {
+        status: "compatible",
+        packs: [
+          {
+            id: "spack_test",
+            name: "yigfinance",
+            version: "0.7.0",
+            packType: "core",
+            contractVersion: "1.0",
+            artifactCount: 1,
+            mountKey: null,
+            mountPoint: null,
+            compatibility: {
+              status: "declared",
+              range: ">=0.3.0 <0.5.0",
+            },
+          },
+          {
+            id: "spack_etc",
+            name: "etc-professional-projects",
+            version: "1.2.3",
+            packType: "extension",
+            contractVersion: "1.0",
+            artifactCount: 1,
+            mountKey: "etc",
+            mountPoint: "extensions",
+            compatibility: {
+              status: "declared",
+              range: ">=0.3.0 <0.5.0",
+            },
+          },
+        ],
+      },
+    },
+    remote: {
+      baseUrl: "https://api.yigyaps.com",
+      endpoints: {
+        assembly: "/v1/yaps/yigfinance/assembly",
+        runtimePlan: "/v1/yaps/yigfinance/runtime-plans",
+        remoteManifest: "/v1/yaps/yigfinance/remote-manifest",
+      },
+      invocationModes: ["local-plan", "hosted-plan"],
+    },
+    assembly: {
+      generatedAt: 1,
+      contractVersion: "1.0",
+      corePack: {
+        id: "spack_test",
+        name: "yigfinance",
+        version: "0.7.0",
+        packType: "core",
+        contractVersion: "1.0",
+        artifactCount: 1,
+        mountKey: null,
+        mountPoint: null,
+        compatibility: {
+          status: "declared",
+          range: ">=0.3.0 <0.5.0",
+        },
+      },
+      mountedPacks: [
+        {
+          id: "spack_etc",
+          name: "etc-professional-projects",
+          version: "1.2.3",
+          packType: "extension",
+          contractVersion: "1.0",
+          artifactCount: 1,
+          mountKey: "etc",
+          mountPoint: "extensions",
+          compatibility: {
+            status: "declared",
+            range: ">=0.3.0 <0.5.0",
+          },
+        },
+      ],
+      packOrder: ["spack_test", "spack_etc"],
+      skillCount: 2,
+      routeCount: 2,
+      toolMappingCount: 2,
+      schemaCount: 2,
+      conflictCount: 0,
+      warningCount: 0,
+    },
+    artifacts: {
+      fetchMode: "assembly",
+      index: [
+        {
+          id: "spa_schema",
+          artifactType: "schema",
+          artifactPath: "schemas/project-margin-review.schema.json",
+          mediaType: "application/schema+json",
+          contentSha256: "hash_schema",
+          sourcePackId: "spack_etc",
+          sourcePackName: "etc-professional-projects",
+          sourceMountKey: "etc",
+        },
+      ],
+    },
+    integrity: {
+      manifestSha256: "hash_manifest",
+      etag: '"hash_manifest"',
+      generatedAt: 1,
+    },
   };
 }

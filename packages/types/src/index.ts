@@ -78,3 +78,10 @@ export type {
   YapRuntimePlanRequest,
   YapRuntimePlanStatus,
 } from "./yap-runtime-plan.js";
+
+export type {
+  RemoteHostCompatibilityStatus,
+  RemoteYapManifest,
+  RemoteYapManifestPackSummary,
+  RemoteYapManifestSchemaVersion,
+} from "./yap-remote-manifest.js";

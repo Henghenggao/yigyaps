@@ -64,6 +64,14 @@ yigyaps install <package-id>
 
 # Diagnostics
 yigyaps doctor
+
+# Prepare a Yigfinance+ETO/ETC handoff for a host runtime
+yigyaps yap host prepare yigfinance \
+  --host yigthinker \
+  --host-version 0.3.1 \
+  --mount-keys etc \
+  --task "Review ETO project margin risk" \
+  --output handoff.json
 ```
 
 ---
@@ -89,6 +97,7 @@ yigyaps doctor
 | `yigyaps whoami`         | View account dashboard                                     |
 | `yigyaps doctor`         | Run CLI diagnostics                                        |
 | `yigyaps mcp config`     | Configure MCP host (Claude Desktop)                        |
+| `yigyaps yap host prepare <yap>` | Prepare a remote YAP handoff for Yigthinker/add-in hosts |
 
 ---
 
