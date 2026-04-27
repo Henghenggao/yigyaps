@@ -17,10 +17,9 @@ import {
   type TestServerContext,
 } from "../helpers/test-server.js";
 import { createAdminJWT } from "../../unit/helpers/jwt-helpers.js";
+import { getTestDatabaseUrl } from "../helpers/test-db-url.js";
 
-const DB_URL =
-  process.env.TEST_DATABASE_URL ||
-  "postgresql://postgres:password@localhost:5432/yigyaps_test";
+const DB_URL = getTestDatabaseUrl();
 
 async function clearAssemblyTestData(db: ReturnType<typeof drizzle>) {
   await db.execute(sql.raw(`TRUNCATE TABLE yy_yap_pack_mounts RESTART IDENTITY CASCADE`));
