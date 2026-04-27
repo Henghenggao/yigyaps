@@ -643,10 +643,22 @@ async function createOrReuseSkillPack(
     );
     if (!existing) throw error;
 
+    const refreshed = await client.updateSkillPack(yap.id, existing.id, {
+      displayName: plan.skillPack.displayName,
+      description: plan.skillPack.description,
+      packType: plan.skillPack.packType,
+      contractVersion: plan.skillPack.contractVersion,
+      compatibility: plan.skillPack.compatibility,
+      manifest: plan.skillPack.manifest,
+      source: plan.skillPack.source,
+      status: plan.skillPack.status,
+      artifacts: plan.skillPack.artifacts,
+    });
+
     return {
-      skillPack: existing,
+      skillPack: refreshed.skillPack,
       created: false,
-      artifactCount: plan.summary.artifactCount,
+      artifactCount: refreshed.artifacts.length,
     };
   }
 }

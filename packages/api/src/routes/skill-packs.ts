@@ -16,6 +16,7 @@ import {
   YapDAL,
   type SkillPackArtifactInsert,
   type SkillPackArtifactRow,
+  type SkillPackInsert,
   type YapRow,
 } from "@yigyaps/db";
 import * as schema from "@yigyaps/db";
@@ -71,6 +72,28 @@ const createSkillPackSchema = z.object({
   status: z.enum(["draft", "active"]).default("active"),
   artifacts: z.array(createArtifactSchema).max(500).default([]),
 });
+
+const updateSkillPackSchema = z
+  .object({
+    displayName: z.string().min(1).max(200).optional(),
+    description: z.string().min(10).max(1000).optional(),
+    packType: z.enum(["core", "extension"]).optional(),
+    contractVersion: z.string().min(1).max(40).optional(),
+    compatibility: z.record(z.string(), z.unknown()).optional(),
+    manifest: z.record(z.string(), z.unknown()).optional(),
+    source: z.enum(["manual", "imported", "generated"]).optional(),
+    status: z.enum(["draft", "active"]).optional(),
+    artifacts: z.array(createArtifactSchema).max(500).optional(),
+  })
+  .superRefine((value, ctx) => {
+    if (value.artifacts !== undefined && value.manifest === undefined) {
+      ctx.addIssue({
+        code: "custom",
+        path: ["manifest"],
+        message: "manifest is required when replacing artifacts",
+      });
+    }
+  });
 
 const yapParamsSchema = z.object({
   yapId: z.string().min(1),
@@ -148,6 +171,23 @@ function ensureNoDuplicateArtifacts(
     seen.add(key);
   }
   return null;
+}
+
+function buildSkillPackArtifacts(
+  skillPackId: string,
+  now: number,
+  manifest: Record<string, unknown>,
+  artifacts: Array<z.infer<typeof createArtifactSchema>>,
+): SkillPackArtifactInsert[] {
+  return [
+    toArtifactInsert(skillPackId, now, {
+      artifactType: "skillpack",
+      artifactPath: "skillpack.json",
+      mediaType: "application/json",
+      content: manifest,
+    }),
+    ...artifacts.map((artifact) => toArtifactInsert(skillPackId, now, artifact)),
+  ];
 }
 
 export async function skillPacksRoutes(fastify: FastifyInstance) {
@@ -232,17 +272,12 @@ export async function skillPacksRoutes(fastify: FastifyInstance) {
             releasedAt: now,
           });
 
-          const artifacts = [
-            toArtifactInsert(skillPack.id, now, {
-              artifactType: "skillpack",
-              artifactPath: "skillpack.json",
-              mediaType: "application/json",
-              content: body.manifest,
-            }),
-            ...body.artifacts.map((artifact) =>
-              toArtifactInsert(skillPack.id, now, artifact),
-            ),
-          ];
+          const artifacts = buildSkillPackArtifacts(
+            skillPack.id,
+            now,
+            body.manifest,
+            body.artifacts,
+          );
 
           const savedArtifacts = await artifactDALTx.createMany(artifacts);
           return { skillPack, artifacts: savedArtifacts };
@@ -254,6 +289,97 @@ export async function skillPacksRoutes(fastify: FastifyInstance) {
         `/v1/yaps/${yap.id}/skill-packs/${result.skillPack.id}`,
       );
       return reply.code(201).send(result);
+    },
+  );
+
+  fastify.patch<{ Params: { yapId: string; packId: string } }>(
+    "/:yapId/skill-packs/:packId",
+    { preHandler: requireAuth() },
+    async (request, reply) => {
+      const paramsParsed = packParamsSchema.safeParse(request.params);
+      const bodyParsed = updateSkillPackSchema.safeParse(request.body);
+      if (!paramsParsed.success || !bodyParsed.success) {
+        return reply.code(400).send({
+          error: "Bad Request",
+          message: "Validation failed",
+          details: paramsParsed.success
+            ? bodyParsed.error?.issues
+            : paramsParsed.error.issues,
+        });
+      }
+
+      const yap = await resolveYap(paramsParsed.data.yapId, yapDAL);
+      if (!yap) return reply.code(404).send({ error: "YAP not found" });
+      if (!canWriteYap(yap, request.user)) {
+        return reply.code(403).send({ error: "Not authorized to update this YAP" });
+      }
+
+      const existing = await packDAL.getById(paramsParsed.data.packId);
+      if (!existing || existing.yapId !== yap.id) {
+        return reply.code(404).send({ error: "Skill Pack not found" });
+      }
+
+      const body = bodyParsed.data;
+      if (body.manifest && body.artifacts) {
+        const duplicate = ensureNoDuplicateArtifacts([
+          {
+            artifactType: "skillpack",
+            artifactPath: "skillpack.json",
+            mediaType: "application/json",
+            content: body.manifest,
+          },
+          ...body.artifacts,
+        ]);
+        if (duplicate) {
+          return reply.code(400).send({
+            error: "Duplicate artifact",
+            artifact: duplicate,
+          });
+        }
+      }
+
+      const now = Date.now();
+      const result = await fastify.db.transaction(
+        async (tx: NodePgDatabase<typeof schema>) => {
+          const packDALTx = new SkillPackDAL(tx);
+          const artifactDALTx = new SkillPackArtifactDAL(tx);
+          const updateData: Partial<SkillPackInsert> = {};
+          if (body.displayName !== undefined) updateData.displayName = body.displayName;
+          if (body.description !== undefined) updateData.description = body.description;
+          if (body.packType !== undefined) updateData.packType = body.packType;
+          if (body.contractVersion !== undefined) {
+            updateData.contractVersion = body.contractVersion;
+          }
+          if (body.compatibility !== undefined) {
+            updateData.compatibility = body.compatibility;
+          }
+          if (body.manifest !== undefined) updateData.manifest = body.manifest;
+          if (body.source !== undefined) updateData.source = body.source;
+          if (body.status !== undefined) updateData.status = body.status;
+
+          const skillPack = await packDALTx.update(existing.id, updateData);
+
+          if (!skillPack) return null;
+
+          if (body.manifest && body.artifacts) {
+            await artifactDALTx.deleteBySkillPack(skillPack.id);
+            const artifacts = buildSkillPackArtifacts(
+              skillPack.id,
+              now,
+              body.manifest,
+              body.artifacts,
+            );
+            const savedArtifacts = await artifactDALTx.createMany(artifacts);
+            return { skillPack, artifacts: savedArtifacts };
+          }
+
+          const artifacts = await artifactDALTx.listBySkillPack(skillPack.id);
+          return { skillPack, artifacts };
+        },
+      );
+
+      if (!result) return reply.code(404).send({ error: "Skill Pack not found" });
+      return reply.send(result);
     },
   );
 
