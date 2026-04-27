@@ -35,6 +35,7 @@ import { exportCommand } from "./commands/export.js";
 import { mcpBridgeCommand } from "./commands/mcp-bridge.js";
 import {
   yapAssemblyExportCommand,
+  yapHostPrepareCommand,
   yapImportCommand,
   yapMountAddCommand,
   yapMountSwitchCommand,
@@ -299,6 +300,35 @@ yapRuntime
       mountKeys: parseCsvOption(options.mountKeys),
       routeKeys: parseCsvOption(options.routeKeys),
       toolKeys: parseCsvOption(options.toolKeys),
+    }),
+  );
+
+const yapHost = yap
+  .command("host")
+  .description("Prepare remote YAP handoffs for host runtimes");
+
+yapHost
+  .command("prepare")
+  .description("Prepare a YAP runtime handoff for Yigthinker or add-in hosts")
+  .argument("<yap>", "YAP ID or slug")
+  .requiredOption("--task <text>", "Task to plan against the resolved YAP")
+  .requiredOption("--host <host>", "Host target, for example yigthinker")
+  .option("--host-version <version>", "Host version")
+  .option("--mount-keys <csv>", "Comma-separated mount keys to include")
+  .option("--required-skills <csv>", "Comma-separated required skill names")
+  .option("--expected-contract-version <version>", "Required assembly contract version")
+  .option("--max-candidates <number>", "Maximum candidate skills to return")
+  .option("--max-mounts <number>", "Maximum mounted packs to resolve")
+  .option("--no-assembly", "Skip fetching the full resolved assembly")
+  .option("-o, --output <file>", "Output handoff JSON file")
+  .option("--json", "Print handoff JSON to stdout")
+  .action((yapIdOrSlug, options) =>
+    yapHostPrepareCommand(yapIdOrSlug, {
+      ...options,
+      mountKeys: parseCsvOption(options.mountKeys),
+      requiredSkills: parseCsvOption(options.requiredSkills),
+      maxCandidates: parseNumberOption(options.maxCandidates),
+      maxMounts: parseNumberOption(options.maxMounts),
     }),
   );
 

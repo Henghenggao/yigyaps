@@ -13,6 +13,7 @@ import type {
   SkillPackageSearchResult,
   SkillPackageInstallation,
   McpRegistryDiscovery,
+  RemoteYapManifest,
   ResolvedYapManifest,
   YapRuntimePlan,
   YapRuntimePlanRequest,
@@ -145,6 +146,36 @@ export class YigYapsRegistryClient {
     );
     if (!res.ok) throw new Error(`YigYaps getYapAssembly failed: ${res.status}`);
     return res.json() as Promise<ResolvedYapManifest>;
+  }
+
+  async getYapRemoteManifest(
+    yapIdOrSlug: string,
+    query: {
+      host?: string;
+      hostVersion?: string;
+      mountKeys?: string[];
+      maxMounts?: number;
+    } = {},
+  ): Promise<RemoteYapManifest> {
+    const params = new URLSearchParams();
+    if (query.host) params.set("host", query.host);
+    if (query.hostVersion) params.set("hostVersion", query.hostVersion);
+    if (query.mountKeys?.length) {
+      params.set("mountKeys", query.mountKeys.join(","));
+    }
+    if (query.maxMounts !== undefined) {
+      params.set("maxMounts", String(query.maxMounts));
+    }
+    const suffix = params.toString() ? `?${params}` : "";
+
+    const res = await fetch(
+      `${this.baseUrl}/v1/yaps/${encodeURIComponent(yapIdOrSlug)}/remote-manifest${suffix}`,
+      { headers: this.headers },
+    );
+    if (!res.ok) {
+      throw new Error(`YigYaps getYapRemoteManifest failed: ${res.status}`);
+    }
+    return res.json() as Promise<RemoteYapManifest>;
   }
 
   async planYapRuntime(

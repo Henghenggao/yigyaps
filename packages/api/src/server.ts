@@ -56,6 +56,7 @@ import { skillPacksRoutes } from "./routes/skill-packs.js";
 import { yapMountsRoutes } from "./routes/yap-mounts.js";
 import { yapAssemblyRoutes } from "./routes/yap-assembly.js";
 import { yapRuntimePlanRoutes } from "./routes/yap-runtime-plans.js";
+import { yapRemoteManifestRoutes } from "./routes/yap-remote-manifest.js";
 import { env } from "./lib/env.js";
 
 const { Pool } = pg;
@@ -254,6 +255,7 @@ async function buildServer() {
   await fastify.register(yapMountsRoutes, { prefix: "/v1/yaps" });
   await fastify.register(yapAssemblyRoutes, { prefix: "/v1/yaps" });
   await fastify.register(yapRuntimePlanRoutes, { prefix: "/v1/yaps" });
+  await fastify.register(yapRemoteManifestRoutes, { prefix: "/v1/yaps" });
   await fastify.register(packagesRoutes, { prefix: "/v1/packages" });
   await fastify.register(installationsRoutes, { prefix: "/v1/installations" });
   await fastify.register(reviewsRoutes, { prefix: "/v1/reviews" });

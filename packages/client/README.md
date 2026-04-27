@@ -67,6 +67,36 @@ await publisher.publishPackage({
 });
 ```
 
+### Prepare a remote YAP for Yigthinker or Yigcore add-ins
+
+```typescript
+import {
+  YIGTHINKER_HOST,
+  YigYapsRegistryClient,
+  prepareYapHostRuntime,
+} from "@yigyaps/client";
+
+const registry = new YigYapsRegistryClient({
+  apiKey: process.env.YIGYAPS_API_KEY,
+});
+
+const handoff = await prepareYapHostRuntime(registry, {
+  yap: "yigfinance",
+  host: YIGTHINKER_HOST,
+  hostVersion: "0.3.1",
+  mountKeys: ["etc"],
+  task: "Review ETO project margin risk and summarize the key risks.",
+});
+
+console.log(handoff.mode); // "local-plan"
+console.log(handoff.selectedCandidate?.skill.name);
+console.log(handoff.artifactIndex.map((artifact) => artifact.artifactPath));
+```
+
+Use `host: "yigcore-addins"` for Office/add-in hosts. The returned handoff
+contains the compact remote manifest, runtime plan, selected candidate, artifact
+hash index, and the full assembly by default so the host can execute locally.
+
 ---
 
 ## Framework Adapters (Phase 2)
@@ -248,6 +278,7 @@ happened for that specific invocation.
 | `toVercelAITool(client, packageId, desc?)` | `YigYapsVercelTool` | Vercel AI SDK tool descriptor |
 | `toLangChainTool(client, packageId, desc?)` | `YigYapsLangChainTool` | LangChain `DynamicStructuredTool` descriptor |
 | `toGeminiFunctionDeclaration(client, packageId, desc?)` | `YigYapsGeminiTool` | Google Gemini function declaration |
+| `prepareYapHostRuntime(client, options)` | `YapHostRuntimeHandoff` | Remote YAP manifest, runtime plan, and local execution handoff |
 
 ### `YigYapsRegistryClient`
 
@@ -255,6 +286,9 @@ happened for that specific invocation.
 |--------|-------------|
 | `search(query)` | Search the skill marketplace |
 | `getByPackageId(packageId)` | Fetch skill metadata |
+| `getYapRemoteManifest(yap, query?)` | Fetch compact YAP manifest for remote hosts |
+| `getYapAssembly(yap, query?)` | Fetch resolved YAP assembly |
+| `planYapRuntime(yap, params, query?)` | Plan candidate skills/routes/tools for a task |
 | `install(params)` | Install a skill for an agent |
 | `getInstallations()` | List installed skills |
 | `uninstall(id)` | Uninstall a skill |

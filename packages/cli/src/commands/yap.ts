@@ -1,11 +1,16 @@
 import fs from "fs-extra";
 import type {
+  RemoteYapManifest,
   SkillPack,
   Yap,
   YapMountValidationResult,
   YapRuntimePlan,
 } from "@yigyaps/types";
-import { YigYapsApiError } from "@yigyaps/client";
+import {
+  prepareYapHostRuntime,
+  YigYapsApiError,
+  type YapHostRuntimeHandoff,
+} from "@yigyaps/client";
 import { ensureAuthenticated } from "../lib/auth.js";
 import { CliError } from "../lib/errors.js";
 import { createPublisherClient, createRegistryClient } from "../lib/registry.js";
@@ -63,6 +68,20 @@ export interface YapRuntimePlanOptions {
   mountKeys?: string[];
   routeKeys?: string[];
   toolKeys?: string[];
+  json?: boolean;
+}
+
+export interface YapHostPrepareOptions {
+  task: string;
+  host: string;
+  hostVersion?: string;
+  mountKeys?: string[];
+  requiredSkills?: string[];
+  expectedContractVersion?: string;
+  maxCandidates?: number;
+  maxMounts?: number;
+  assembly?: boolean;
+  output?: string;
   json?: boolean;
 }
 
@@ -352,6 +371,43 @@ export async function yapRuntimePlanCommand(
   }
 }
 
+export async function yapHostPrepareCommand(
+  yapIdOrSlug: string,
+  options: YapHostPrepareOptions,
+): Promise<void> {
+  try {
+    const handoff = await prepareYapHostRuntime(createRegistryClient(), {
+      yap: yapIdOrSlug,
+      task: options.task,
+      host: options.host,
+      hostVersion: options.hostVersion,
+      mountKeys: options.mountKeys,
+      requiredSkills: options.requiredSkills,
+      expectedContractVersion: options.expectedContractVersion,
+      maxCandidates: options.maxCandidates,
+      maxMounts: options.maxMounts,
+      fetchAssembly: options.assembly !== false,
+    });
+
+    if (options.output) {
+      await fs.outputFile(
+        options.output,
+        `${JSON.stringify(handoff, null, 2)}\n`,
+        "utf8",
+      );
+    }
+
+    if (options.json) {
+      console.log(JSON.stringify(handoff, null, 2));
+      return;
+    }
+
+    emitHostHandoff(handoff, options.output);
+  } catch (error) {
+    throw toYapCommandError(error, "Host prepare failed");
+  }
+}
+
 function emitDryRun(plan: YigfinanceImportPlan, json: boolean): void {
   if (json) {
     console.log(
@@ -480,6 +536,39 @@ function emitRuntimePlan(plan: YapRuntimePlan): void {
   if (candidateLines.length > 0) {
     console.log(candidateLines.join("\n"));
   }
+}
+
+function emitHostHandoff(
+  handoff: YapHostRuntimeHandoff,
+  output?: string,
+): void {
+  console.log(
+    panel(
+      "YAP Host Handoff",
+      keyValue({
+        YAP: `${handoff.yap.slug} v${handoff.yap.version}`,
+        Host: hostLabel(handoff.manifest),
+        Mode: handoff.mode,
+        Status: handoff.plan.status,
+        "Selected Skill": handoff.selectedCandidate?.skill.name ?? "none",
+        Packs: String(handoff.manifest.assembly.packOrder.length),
+        Artifacts: String(handoff.artifactIndex.length),
+        "Selected Artifacts": String(handoff.selectedArtifactIndex.length),
+        Warnings: String(handoff.warnings.length),
+        ...(output ? { Output: output } : {}),
+      }),
+    ),
+  );
+
+  if (handoff.warnings.length > 0) {
+    console.log(handoff.warnings.slice(0, 5).join("\n"));
+  }
+}
+
+function hostLabel(manifest: RemoteYapManifest): string {
+  return manifest.host.version
+    ? `${manifest.host.target}@${manifest.host.version}`
+    : manifest.host.target;
 }
 
 function buildRuntimeHints(options: YapRuntimePlanOptions) {

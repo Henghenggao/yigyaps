@@ -22,3 +22,4 @@ export * from "./registry-client.js";
 export * from "./publisher-client.js";
 export * from "./security-client.js";
 export * from "./adapters.js";
+export * from "./yap-host-adapter.js";

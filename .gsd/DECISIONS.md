@@ -351,3 +351,67 @@ Artifact safety:
 Known local blocker:
 
 - On this workstation, API/DB integration gates still stop before execution because Testcontainers cannot find a working container runtime strategy. That is an environment/runtime blocker, not a shared-database fallback.
+
+## M002-S01: Remote Host Manifest For YAP Products
+
+Scope: start productizing Yigfinance + ETO/ETC as a remotely callable YAP by giving hosts a compact discovery and integrity contract before they pull the full assembly.
+
+API shape:
+
+- `GET /v1/yaps/:yapId/remote-manifest` returns `schemaVersion=yigyaps.remote-manifest.v1`.
+- Query parameters: `host`, `hostVersion`, `mountKeys`, and `maxMounts`.
+- The route is idempotent and cacheable for public YAPs. It returns an `ETag` based on a stable manifest hash and honors `If-None-Match` with `304`.
+- It filters enabled mounts by requested `mountKeys`; unknown mount keys return `422`.
+
+Remote host contract:
+
+- `product` identifies the YAP product.
+- `host.compatibility` reports whether each pack declares compatibility with the requested host, without pretending to solve semantic versioning yet.
+- `remote.endpoints` links to full assembly and runtime-plan endpoints.
+- `assembly` provides stable counts and pack summaries for preflight checks.
+- `artifacts.index` exposes artifact paths and hashes while keeping artifact bodies in the full assembly pull path.
+
+Rationale:
+
+- Yigthinker and Yigcore-addins should not need to download large artifact bodies just to decide whether a YAP is compatible and mounted correctly.
+- Hosted execution remains a later milestone; the first remote-callable layer should make discovery, cache validation, mount selection, and runtime planning dependable.
+
+## M002-S02: SDK Host Runtime Handoff
+
+Scope: give Yigthinker and Yigcore-addins a single SDK entry point for consuming remote YAP products such as Yigfinance plus its mounted ETO/ETC project pack.
+
+Client shape:
+
+- `prepareYapHostRuntime(client, options)` composes `getYapRemoteManifest`, `planYapRuntime`, and `getYapAssembly`.
+- `options.host` identifies the target host, currently `yigthinker` or `yigcore-addins`.
+- `options.mountKeys` lets the caller select the data-backed extension slot, for example `etc`, without changing Yigfinance product code.
+- The returned handoff includes the compact manifest, runtime plan, selected candidate, artifact hash index, selected candidate artifacts, endpoint links, and optionally the full resolved assembly.
+
+Execution boundary:
+
+- The SDK still returns `mode=local-plan`; it does not run finance or project-analysis code.
+- Remote hosts remain responsible for local execution, permissioning, and UI/runtime integration.
+- The handoff is intentionally structural so different hosts can use the same YAP product contract while mapping execution into their own plugin/add-in lifecycle.
+
+Rationale:
+
+- Yigfinance plus ETO/ETC needs to be callable by host products before Yigyaps owns hosted execution.
+- Keeping the first SDK layer as discovery plus planning avoids prematurely coupling platform API code to Yigthinker or Office add-in runtime details.
+
+## M002-S03: CLI Remote Host Prepare Smoke Path
+
+Scope: expose the SDK host handoff through the CLI so product/runtime integration can be verified without writing a Yigthinker or Office add-in adapter first.
+
+Command:
+
+- `yigyaps yap host prepare <yap>` prepares a remote host handoff.
+- Required options are `--host` and `--task`.
+- Optional `--host-version`, `--mount-keys`, `--required-skills`, `--expected-contract-version`, `--max-candidates`, and `--max-mounts` map directly to the SDK handoff inputs.
+- `--no-assembly` skips the full assembly pull when a host only needs discovery plus planning.
+- `--output` writes the full handoff JSON; `--json` prints it to stdout for scripts.
+
+Rationale:
+
+- This gives Yigfinance plus ETO/ETC a repeatable smoke command before host runtime code lands.
+- The command exercises the same route chain expected by Yigthinker and Yigcore-addins: remote manifest, runtime plan, and optional assembly pull.
+- It keeps no-code extension switching visible because `--mount-keys etc` selects the mounted pack data slot rather than a product constant.
