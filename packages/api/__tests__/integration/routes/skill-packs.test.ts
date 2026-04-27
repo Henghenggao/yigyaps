@@ -194,6 +194,70 @@ describe("Skill Pack Routes", () => {
     });
   });
 
+  it("refreshes SkillPack metadata and replaces artifacts", async () => {
+    const yap = await createYap(serverContext, ADMIN_JWT);
+    const createRes = await serverContext.fastify.inject({
+      method: "POST",
+      url: `/v1/yaps/${yap.slug}/skill-packs`,
+      headers: { authorization: `Bearer ${ADMIN_JWT}` },
+      payload: sampleSkillPackPayload(),
+    });
+    const { skillPack } = createRes.json();
+
+    const updateRes = await serverContext.fastify.inject({
+      method: "PATCH",
+      url: `/v1/yaps/${yap.slug}/skill-packs/${skillPack.id}`,
+      headers: { authorization: `Bearer ${ADMIN_JWT}` },
+      payload: {
+        compatibility: {
+          yigthinker: ">=0.3.0 <0.5.0",
+          "yigcore-addins": ">=0.1.0 <1.0.0",
+        },
+        manifest: {
+          ...sampleSkillPackPayload().manifest,
+          compatibility: {
+            yigthinker: ">=0.3.0 <0.5.0",
+            "yigcore-addins": ">=0.1.0 <1.0.0",
+          },
+        },
+        artifacts: [
+          {
+            artifactType: "routes",
+            artifactPath: "routes.json",
+            content: {
+              contract_version: "1.0",
+              skills: { "forecast-review": { next_candidates: [] } },
+            },
+          },
+        ],
+      },
+    });
+
+    expect(updateRes.statusCode).toBe(200);
+    const body = updateRes.json();
+    expect(body.skillPack).toMatchObject({
+      id: skillPack.id,
+      compatibility: {
+        "yigcore-addins": ">=0.1.0 <1.0.0",
+      },
+      manifest: {
+        compatibility: {
+          "yigcore-addins": ">=0.1.0 <1.0.0",
+        },
+      },
+    });
+    expect(body.artifacts).toHaveLength(2);
+    expect(
+      body.artifacts.map((artifact: { artifactPath: string }) => artifact.artifactPath),
+    ).toEqual(expect.arrayContaining(["skillpack.json", "routes.json"]));
+
+    const artifactsRes = await serverContext.fastify.inject({
+      method: "GET",
+      url: `/v1/yaps/${yap.slug}/skill-packs/${skillPack.id}/artifacts`,
+    });
+    expect(artifactsRes.json().total).toBe(2);
+  });
+
   it("rejects duplicate SkillPack name and version within a YAP", async () => {
     const yap = await createYap(serverContext, ADMIN_JWT);
     const payload = sampleSkillPackPayload();

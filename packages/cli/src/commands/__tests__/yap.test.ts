@@ -2,9 +2,10 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import fs from "fs-extra";
 import os from "os";
 import path from "path";
-import type {
-  YigYapsPublisherClient,
-  YigYapsRegistryClient,
+import {
+  YigYapsApiError,
+  type YigYapsPublisherClient,
+  type YigYapsRegistryClient,
 } from "@yigyaps/client";
 import type {
   RemoteYapManifest,
@@ -111,6 +112,71 @@ describe("yapImportCommand", () => {
       yapCreated: true,
       skillPackCreated: true,
       artifactCount: 1,
+    });
+  });
+
+  it("refreshes an existing core SkillPack when importing the same version", async () => {
+    const root = await createFixture();
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const yap = fakeYap();
+    const existing = fakeSkillPack({
+      compatibility: { yigthinker: ">=0.3.0 <0.5.0" },
+    });
+    const refreshed = fakeSkillPack({
+      compatibility: {
+        yigthinker: ">=0.3.0 <0.5.0",
+        "yigcore-addins": ">=0.1.0 <1.0.0",
+      },
+    });
+    const artifact = fakeArtifact(refreshed.id);
+    const client = {
+      createYap: vi.fn().mockResolvedValue(yap),
+      createSkillPack: vi
+        .fn()
+        .mockRejectedValue(
+          new YigYapsApiError("createSkillPack", 409, {
+            error: "Skill Pack version already exists",
+          }),
+        ),
+      listSkillPacks: vi
+        .fn()
+        .mockResolvedValue({ skillPacks: [existing], total: 1 }),
+      updateSkillPack: vi
+        .fn()
+        .mockResolvedValue({ skillPack: refreshed, artifacts: [artifact] }),
+    };
+    vi.mocked(registry.createPublisherClient).mockReturnValue(
+      client as unknown as YigYapsPublisherClient,
+    );
+
+    await yapImportCommand(root, { json: true });
+
+    expect(client.updateSkillPack).toHaveBeenCalledWith(
+      "yap_test",
+      "spack_test",
+      expect.objectContaining({
+        compatibility: {
+          yigthinker: ">=0.3.0 <0.5.0",
+          "yigcore-addins": ">=0.1.0 <1.0.0",
+        },
+        manifest: expect.objectContaining({
+          compatibility: {
+            yigthinker: ">=0.3.0 <0.5.0",
+            "yigcore-addins": ">=0.1.0 <1.0.0",
+          },
+        }),
+      }),
+    );
+    const output = JSON.parse(String(log.mock.calls[0]?.[0]));
+    expect(output).toMatchObject({
+      success: true,
+      skillPackCreated: false,
+      artifactCount: 1,
+      skillPack: {
+        compatibility: {
+          "yigcore-addins": ">=0.1.0 <1.0.0",
+        },
+      },
     });
   });
 });
@@ -438,7 +504,10 @@ async function createFixture(): Promise<string> {
     name: "yigfinance",
     version: "0.7.0",
     contract_version: "1.0",
-    compatibility: { yigthinker: ">=0.3.0 <0.5.0" },
+    compatibility: {
+      yigthinker: ">=0.3.0 <0.5.0",
+      "yigcore-addins": ">=0.1.0 <1.0.0",
+    },
     skills: [{ name: "variance-review", version: "0.7.0" }],
   });
   await fs.writeJson(path.join(pluginDir, "routes.json"), {

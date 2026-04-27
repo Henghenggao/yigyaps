@@ -87,6 +87,18 @@ export interface CreateSkillPackParams {
   artifacts?: CreateSkillPackArtifactParams[];
 }
 
+export interface UpdateSkillPackParams {
+  displayName?: string;
+  description?: string;
+  packType?: SkillPackType;
+  contractVersion?: string;
+  compatibility?: Record<string, unknown>;
+  manifest?: Record<string, unknown>;
+  source?: SkillPackSource;
+  status?: Extract<SkillPackStatus, "draft" | "active">;
+  artifacts?: CreateSkillPackArtifactParams[];
+}
+
 export interface CreateYapPackMountParams {
   skillPackId: string;
   mountKey: string;
@@ -219,6 +231,36 @@ export class YigYapsPublisherClient {
     );
     if (!res.ok) throw await toApiError("listSkillPacks", res);
     return res.json() as Promise<{ skillPacks: SkillPack[]; total: number }>;
+  }
+
+  async updateSkillPack(
+    yapIdOrSlug: string,
+    packId: string,
+    params: UpdateSkillPackParams,
+  ): Promise<{ skillPack: SkillPack; artifacts: SkillPackArtifact[] }> {
+    const res = await fetch(
+      `${this.baseUrl}/v1/yaps/${encodeURIComponent(yapIdOrSlug)}/skill-packs/${encodeURIComponent(packId)}`,
+      {
+        method: "PATCH",
+        headers: this.headers,
+        body: JSON.stringify({
+          displayName: params.displayName,
+          description: params.description,
+          packType: params.packType,
+          contractVersion: params.contractVersion,
+          compatibility: params.compatibility,
+          manifest: params.manifest,
+          source: params.source,
+          status: params.status,
+          artifacts: params.artifacts,
+        }),
+      },
+    );
+    if (!res.ok) throw await toApiError("updateSkillPack", res);
+    return res.json() as Promise<{
+      skillPack: SkillPack;
+      artifacts: SkillPackArtifact[];
+    }>;
   }
 
   async createYapPackMount(
