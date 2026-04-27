@@ -44,10 +44,12 @@ export function resolveYapAssembly(
   const routeSkills: Record<string, unknown> = {};
   const toolMappings: Record<string, unknown> = {};
   const schemas: Record<string, unknown> = {};
+  const qualityReports: Record<string, unknown>[] = [];
   const artifactIndex: ResolvedYapArtifactRef[] = [];
 
   for (const pack of resolvedPacks) {
     artifactIndex.push(...pack.artifacts.artifactIndex);
+    qualityReports.push(...pack.artifacts.qualityReports);
 
     for (const skill of readManifestSkills(pack)) {
       if (skillsByName.has(skill.name)) {
@@ -132,6 +134,7 @@ export function resolveYapAssembly(
         mappings: toolMappings,
       },
       schemas,
+      qualityReports,
       artifactIndex,
     },
     diagnostics: {
@@ -154,6 +157,7 @@ function resolvePackArtifacts(input: ResolverPackInput): ResolvedYapPack {
       feedback: artifactRecord(input.artifacts, "feedback"),
       update: artifactRecord(input.artifacts, "update"),
       schemas: schemaRecords(input.artifacts),
+      qualityReports: artifactRecords(input.artifacts, "quality-report"),
       artifactIndex: input.artifacts.map((artifact) =>
         artifactRef(artifact, input.skillPack, input.mount),
       ),
@@ -190,6 +194,15 @@ function artifactRecord(
 ): Record<string, unknown> | null {
   const artifact = artifacts.find((item) => item.artifactType === artifactType);
   return isRecord(artifact?.content) ? artifact.content : null;
+}
+
+function artifactRecords(
+  artifacts: SkillPackArtifactRow[],
+  artifactType: SkillPackArtifactRow["artifactType"],
+): Record<string, unknown>[] {
+  return artifacts
+    .filter((item) => item.artifactType === artifactType)
+    .flatMap((artifact) => (isRecord(artifact.content) ? [artifact.content] : []));
 }
 
 function schemaRecords(

@@ -18,6 +18,7 @@ import type {
   YapRow,
 } from "@yigyaps/db";
 import { resolveYapAssembly } from "./yap-assembly-resolver.js";
+import { satisfiesVersionRange } from "./semver-compat.js";
 
 export interface MountValidationPackInput {
   mount: YapPackMountRow;
@@ -67,6 +68,27 @@ export function validateYapMountCandidate(
       details: {
         coreContractVersion: input.corePack.contractVersion,
         candidateContractVersion: input.candidatePack.contractVersion,
+      },
+    });
+  }
+
+  const yapCompatibilityRange = compatibilityRangeForYap(
+    input.candidatePack,
+    input.yap.slug,
+  );
+  if (
+    yapCompatibilityRange &&
+    !satisfiesVersionRange(input.yap.version, yapCompatibilityRange)
+  ) {
+    issues.push({
+      severity: "error",
+      code: "yap_compatibility_mismatch",
+      message: `Candidate pack ${input.candidatePack.name}@${input.candidatePack.version} declares compatibility ${yapCompatibilityRange} for ${input.yap.slug}, but YAP version is ${input.yap.version}`,
+      sourcePackIds: [input.candidatePack.id],
+      details: {
+        yapSlug: input.yap.slug,
+        yapVersion: input.yap.version,
+        declaredRange: yapCompatibilityRange,
       },
     });
   }
@@ -125,7 +147,8 @@ export function validateYapMountCandidate(
     summary: {
       packOrder: assembly.merged.packOrder,
       skillCount: assembly.merged.skills.length,
-      routeCount: Object.keys(recordAt(assembly.merged.routes, "skills")).length,
+      routeCount: Object.keys(recordAt(assembly.merged.routes, "skills"))
+        .length,
       toolMappingCount: Object.keys(
         recordAt(assembly.merged.toolMap, "mappings"),
       ).length,
@@ -162,6 +185,14 @@ function conflictCode(
   if (kind === "route") return "duplicate_route";
   if (kind === "schema") return "duplicate_schema";
   return "duplicate_skill";
+}
+
+function compatibilityRangeForYap(
+  skillPack: SkillPackRow,
+  yapSlug: string,
+): string | null {
+  const value = skillPack.compatibility[yapSlug];
+  return typeof value === "string" && value.trim() ? value.trim() : null;
 }
 
 function recordAt(

@@ -3,6 +3,7 @@ import type {
   RemoteYapManifest,
   SkillPack,
   Yap,
+  YapPackMountWithSkillPack,
   YapMountValidationResult,
   YapRuntimePlan,
 } from "@yigyaps/types";
@@ -13,7 +14,10 @@ import {
 } from "@yigyaps/client";
 import { ensureAuthenticated } from "../lib/auth.js";
 import { CliError } from "../lib/errors.js";
-import { createPublisherClient, createRegistryClient } from "../lib/registry.js";
+import {
+  createPublisherClient,
+  createRegistryClient,
+} from "../lib/registry.js";
 import {
   planSkillPackBridgePublish,
   type SkillPackBridgePlan,
@@ -48,7 +52,10 @@ export interface YapMountOptions {
   json?: boolean;
 }
 
-export interface YapMountSwitchOptions extends Omit<YapMountOptions, "mountKey"> {
+export interface YapMountSwitchOptions extends Omit<
+  YapMountOptions,
+  "mountKey"
+> {
   mountKey?: string;
 }
 
@@ -92,6 +99,16 @@ interface ImportResult {
   skillPack: SkillPack;
   skillPackCreated: boolean;
   artifactCount: number;
+  extensionPacks: {
+    skillPack: SkillPack;
+    skillPackCreated: boolean;
+    artifactCount: number;
+  }[];
+  defaultMounts: {
+    mount: YapPackMountWithSkillPack["mount"];
+    skillPack: SkillPack;
+    action: "created" | "existing";
+  }[];
 }
 
 interface PackPublishResult {
@@ -128,8 +145,34 @@ export async function yapImportCommand(
     if (!options.json) s.start("Uploading YAP and SkillPack artifacts...");
 
     const { yap, created: yapCreated } = await createOrReuseYap(client, plan);
-    const { skillPack, created: skillPackCreated, artifactCount } =
-      await createOrReuseSkillPack(client, yap, plan);
+    const {
+      skillPack,
+      created: skillPackCreated,
+      artifactCount,
+    } = await createOrReuseSkillPack(client, yap, plan.skillPack);
+    const extensionResults = [];
+    for (const extensionPack of plan.extensionPacks) {
+      extensionResults.push(
+        await createOrReuseSkillPack(client, yap, extensionPack),
+      );
+    }
+    const defaultMountResults = [];
+    for (const mountPlan of plan.defaultMounts) {
+      const extension = extensionResults.find(
+        (result) =>
+          result.skillPack.name === mountPlan.skillPackName &&
+          result.skillPack.version === mountPlan.skillPackVersion,
+      );
+      if (!extension) continue;
+      defaultMountResults.push(
+        await createOrReuseDefaultMount(
+          client,
+          yap,
+          extension.skillPack,
+          mountPlan,
+        ),
+      );
+    }
 
     if (!options.json) {
       s.stop(
@@ -144,6 +187,12 @@ export async function yapImportCommand(
       skillPack,
       skillPackCreated,
       artifactCount,
+      extensionPacks: extensionResults.map((result) => ({
+        skillPack: result.skillPack,
+        skillPackCreated: result.created,
+        artifactCount: result.artifactCount,
+      })),
+      defaultMounts: defaultMountResults,
     };
 
     if (options.json) {
@@ -154,6 +203,8 @@ export async function yapImportCommand(
     const summary = keyValue({
       YAP: `${yap.slug} (${yapCreated ? "created" : "existing"})`,
       "Core Pack": `${skillPack.name}@${skillPack.version} (${skillPackCreated ? "created" : "existing"})`,
+      Extensions: String(extensionResults.length),
+      "Default Mounts": String(defaultMountResults.length),
       Skills: String(plan.summary.skillCount),
       Artifacts: String(artifactCount),
     });
@@ -356,6 +407,7 @@ export async function yapRuntimePlanCommand(
         hints: buildRuntimeHints(options),
       },
       {
+        mountKeys: options.mountKeys,
         maxMounts: options.maxMounts,
       },
     );
@@ -423,6 +475,15 @@ function emitDryRun(plan: YigfinanceImportPlan, json: boolean): void {
               mediaType: artifact.mediaType,
             })),
           },
+          extensionPacks: plan.extensionPacks.map((extensionPack) => ({
+            ...extensionPack,
+            artifacts: extensionPack.artifacts?.map((artifact) => ({
+              artifactType: artifact.artifactType,
+              artifactPath: artifact.artifactPath,
+              mediaType: artifact.mediaType,
+            })),
+          })),
+          defaultMounts: plan.defaultMounts,
           summary: plan.summary,
         },
         null,
@@ -435,7 +496,11 @@ function emitDryRun(plan: YigfinanceImportPlan, json: boolean): void {
   const summary = keyValue({
     YAP: `${plan.yap.slug} v${plan.yap.version ?? "0.1.0"}`,
     "Core Pack": `${plan.skillPack.name}@${plan.skillPack.version}`,
+    Extensions: String(plan.extensionPacks.length),
+    "Default Mounts": String(plan.defaultMounts.length),
     Skills: String(plan.summary.skillCount),
+    "Core Skills": String(plan.summary.coreSkillCount),
+    "Extension Skills": String(plan.summary.extensionSkillCount),
     Schemas: String(plan.summary.schemaCount),
     Commands: String(plan.summary.commandCount),
     "Skill MD": String(plan.summary.skillMarkdownCount),
@@ -511,13 +576,11 @@ function emitValidation(
 
 function emitRuntimePlan(plan: YapRuntimePlan): void {
   const topCandidate = plan.candidates[0];
-  const candidateLines = plan.candidates
-    .slice(0, 5)
-    .map((candidate, index) => {
-      const mount = candidate.sourceMountKey ?? "core";
-      const tools = Object.keys(candidate.toolMappings).length;
-      return `${index + 1}. ${candidate.skill.name} (${mount}, score ${candidate.score}, tools ${tools}, schemas ${candidate.schemaKeys.length})`;
-    });
+  const candidateLines = plan.candidates.slice(0, 5).map((candidate, index) => {
+    const mount = candidate.sourceMountKey ?? "core";
+    const tools = Object.keys(candidate.toolMappings).length;
+    return `${index + 1}. ${candidate.skill.name} (${mount}, score ${candidate.score}, tools ${tools}, schemas ${candidate.schemaKeys.length})`;
+  });
 
   console.log(
     panel(
@@ -578,7 +641,9 @@ function buildRuntimeHints(options: YapRuntimePlanOptions) {
     routeKeys: options.routeKeys,
     toolKeys: options.toolKeys,
   };
-  return Object.values(hints).some((value) => value?.length) ? hints : undefined;
+  return Object.values(hints).some((value) => value?.length)
+    ? hints
+    : undefined;
 }
 
 function mountParams(skillPackId: string, options: YapMountOptions) {
@@ -621,10 +686,10 @@ async function createOrReuseYap(
 async function createOrReuseSkillPack(
   client: ReturnType<typeof createPublisherClient>,
   yap: Yap,
-  plan: YigfinanceImportPlan,
+  skillPackPlan: YigfinanceImportPlan["skillPack"],
 ): Promise<{ skillPack: SkillPack; created: boolean; artifactCount: number }> {
   try {
-    const result = await client.createSkillPack(yap.id, plan.skillPack);
+    const result = await client.createSkillPack(yap.id, skillPackPlan);
     return {
       skillPack: result.skillPack,
       created: true,
@@ -638,27 +703,81 @@ async function createOrReuseSkillPack(
     const result = await client.listSkillPacks(yap.id);
     const existing = result.skillPacks.find(
       (pack) =>
-        pack.name === plan.skillPack.name &&
-        pack.version === plan.skillPack.version,
+        pack.name === skillPackPlan.name &&
+        pack.version === skillPackPlan.version,
     );
     if (!existing) throw error;
 
     const refreshed = await client.updateSkillPack(yap.id, existing.id, {
-      displayName: plan.skillPack.displayName,
-      description: plan.skillPack.description,
-      packType: plan.skillPack.packType,
-      contractVersion: plan.skillPack.contractVersion,
-      compatibility: plan.skillPack.compatibility,
-      manifest: plan.skillPack.manifest,
-      source: plan.skillPack.source,
-      status: plan.skillPack.status,
-      artifacts: plan.skillPack.artifacts,
+      displayName: skillPackPlan.displayName,
+      description: skillPackPlan.description,
+      packType: skillPackPlan.packType,
+      contractVersion: skillPackPlan.contractVersion,
+      compatibility: skillPackPlan.compatibility,
+      manifest: skillPackPlan.manifest,
+      source: skillPackPlan.source,
+      status: skillPackPlan.status,
+      artifacts: skillPackPlan.artifacts,
     });
 
     return {
       skillPack: refreshed.skillPack,
       created: false,
       artifactCount: refreshed.artifacts.length,
+    };
+  }
+}
+
+async function createOrReuseDefaultMount(
+  client: ReturnType<typeof createPublisherClient>,
+  yap: Yap,
+  skillPack: SkillPack,
+  mountPlan: YigfinanceImportPlan["defaultMounts"][number],
+): Promise<ImportResult["defaultMounts"][number]> {
+  const mounts = await client.listYapPackMounts(yap.id, { limit: 100 });
+  const existing = mounts.mounts.find(
+    (item) => item.mount.mountKey === mountPlan.mountKey,
+  );
+
+  if (existing) {
+    return {
+      mount: existing.mount,
+      skillPack: existing.skillPack,
+      action: "existing",
+    };
+  }
+
+  try {
+    const created = await client.createYapPackMount(yap.id, {
+      skillPackId: skillPack.id,
+      mountKey: mountPlan.mountKey,
+      mountPoint: mountPlan.mountPoint,
+      displayName: mountPlan.displayName,
+      priority: mountPlan.priority,
+      enabled: mountPlan.enabled,
+      required: mountPlan.required,
+      config: mountPlan.config,
+      constraints: mountPlan.constraints,
+    });
+    return {
+      mount: created.mount,
+      skillPack: created.skillPack,
+      action: "created",
+    };
+  } catch (error) {
+    if (!(error instanceof YigYapsApiError) || error.status !== 409) {
+      throw error;
+    }
+
+    const refreshed = await client.listYapPackMounts(yap.id, { limit: 100 });
+    const raced = refreshed.mounts.find(
+      (item) => item.mount.mountKey === mountPlan.mountKey,
+    );
+    if (!raced) throw error;
+    return {
+      mount: raced.mount,
+      skillPack: raced.skillPack,
+      action: "existing",
     };
   }
 }

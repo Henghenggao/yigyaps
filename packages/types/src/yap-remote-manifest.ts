@@ -15,6 +15,7 @@ export type RemoteYapManifestSchemaVersion = "yigyaps.remote-manifest.v1";
 
 export type RemoteHostCompatibilityStatus =
   | "compatible"
+  | "incompatible"
   | "partial"
   | "unknown";
 
@@ -28,7 +29,7 @@ export interface RemoteYapManifestPackSummary {
   mountKey: string | null;
   mountPoint: string | null;
   compatibility: {
-    status: "declared" | "not_declared";
+    status: "compatible" | "incompatible" | "declared" | "not_declared";
     range: string | null;
   };
 }
@@ -73,6 +74,8 @@ export interface RemoteYapManifest {
     routeCount: number;
     toolMappingCount: number;
     schemaCount: number;
+    qualityReportCount: number;
+    qualityGateStatus: string | null;
     conflictCount: number;
     warningCount: number;
   };

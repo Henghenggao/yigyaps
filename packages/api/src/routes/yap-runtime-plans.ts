@@ -25,6 +25,16 @@ const yapParamsSchema = z.object({
 });
 
 const planQuerySchema = z.object({
+  mountKeys: z
+    .string()
+    .max(1000)
+    .optional()
+    .transform((value) =>
+      value
+        ?.split(",")
+        .map((item) => item.trim())
+        .filter(Boolean),
+    ),
   maxMounts: z.coerce.number().int().min(0).max(100).default(50),
 });
 
@@ -55,7 +65,10 @@ function canReadYap(yap: YapRow, user?: AccessUser): boolean {
   return yap.status === "active" && yap.visibility !== "private";
 }
 
-async function resolveYap(yapId: string, yapDAL: YapDAL): Promise<YapRow | null> {
+async function resolveYap(
+  yapId: string,
+  yapDAL: YapDAL,
+): Promise<YapRow | null> {
   return yapId.startsWith("yap_")
     ? await yapDAL.getById(yapId)
     : await yapDAL.getBySlug(yapId);
@@ -69,7 +82,7 @@ export async function yapRuntimePlanRoutes(fastify: FastifyInstance) {
 
   fastify.post<{
     Params: { yapId: string };
-    Querystring: { maxMounts?: number };
+    Querystring: { mountKeys?: string; maxMounts?: number };
   }>(
     "/:yapId/runtime-plans",
     {
@@ -80,7 +93,11 @@ export async function yapRuntimePlanRoutes(fastify: FastifyInstance) {
       const paramsParsed = yapParamsSchema.safeParse(request.params);
       const queryParsed = planQuerySchema.safeParse(request.query);
       const bodyParsed = runtimePlanBodySchema.safeParse(request.body);
-      if (!paramsParsed.success || !queryParsed.success || !bodyParsed.success) {
+      if (
+        !paramsParsed.success ||
+        !queryParsed.success ||
+        !bodyParsed.success
+      ) {
         const details = !paramsParsed.success
           ? paramsParsed.error.issues
           : !queryParsed.success
@@ -118,6 +135,26 @@ export async function yapRuntimePlanRoutes(fastify: FastifyInstance) {
         });
       }
 
+      const requestedMountKeys = queryParsed.data.mountKeys ?? [];
+      const mountedPacks =
+        requestedMountKeys.length > 0
+          ? mountsResult.mounts.filter(({ mount }) =>
+              requestedMountKeys.includes(mount.mountKey),
+            )
+          : mountsResult.mounts;
+      const resolvedMountKeys = new Set(
+        mountedPacks.map(({ mount }) => mount.mountKey),
+      );
+      const missingMountKeys = requestedMountKeys.filter(
+        (mountKey) => !resolvedMountKeys.has(mountKey),
+      );
+      if (missingMountKeys.length > 0) {
+        return reply.code(422).send({
+          error: "Mount keys not found",
+          missingMountKeys,
+        });
+      }
+
       const corePack = selectCoreSkillPack(yap, skillPacks);
       if (!corePack) {
         return reply.code(409).send({
@@ -129,7 +166,7 @@ export async function yapRuntimePlanRoutes(fastify: FastifyInstance) {
       const [coreArtifacts, mountedArtifacts] = await Promise.all([
         artifactDAL.listBySkillPack(corePack.id),
         Promise.all(
-          mountsResult.mounts.map(({ skillPack }) =>
+          mountedPacks.map(({ skillPack }) =>
             artifactDAL.listBySkillPack(skillPack.id),
           ),
         ),
@@ -143,7 +180,7 @@ export async function yapRuntimePlanRoutes(fastify: FastifyInstance) {
           skillPack: corePack,
           artifacts: coreArtifacts,
         },
-        mountedPacks: mountsResult.mounts.map((mounted, index) => ({
+        mountedPacks: mountedPacks.map((mounted, index) => ({
           role: "mount",
           mount: mounted.mount,
           skillPack: mounted.skillPack,

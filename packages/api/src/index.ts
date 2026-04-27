@@ -12,3 +12,4 @@ export { installationsRoutes } from "./routes/installations.js";
 export { reviewsRoutes } from "./routes/reviews.js";
 export { mintsRoutes } from "./routes/mints.js";
 export { registryRoutes, wellKnownRoutes } from "./routes/registry.js";
+export { yapImportRoutes } from "./routes/yap-imports.js";

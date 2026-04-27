@@ -21,6 +21,7 @@ import { yapMountsRoutes } from "../../../src/routes/yap-mounts.js";
 import { yapAssemblyRoutes } from "../../../src/routes/yap-assembly.js";
 import { yapRuntimePlanRoutes } from "../../../src/routes/yap-runtime-plans.js";
 import { yapRemoteManifestRoutes } from "../../../src/routes/yap-remote-manifest.js";
+import { yapImportRoutes } from "../../../src/routes/yap-imports.js";
 import { installationsRoutes } from "../../../src/routes/installations.js";
 import { reviewsRoutes } from "../../../src/routes/reviews.js";
 import { mintsRoutes } from "../../../src/routes/mints.js";
@@ -80,6 +81,7 @@ export async function createTestServer(
   await fastify.register(yapAssemblyRoutes, { prefix: "/v1/yaps" });
   await fastify.register(yapRuntimePlanRoutes, { prefix: "/v1/yaps" });
   await fastify.register(yapRemoteManifestRoutes, { prefix: "/v1/yaps" });
+  await fastify.register(yapImportRoutes, { prefix: "/v1/yap-imports" });
   await fastify.register(packagesRoutes, { prefix: "/v1/packages" });
   await fastify.register(installationsRoutes, { prefix: "/v1/installations" });
   await fastify.register(reviewsRoutes, { prefix: "/v1/reviews" });

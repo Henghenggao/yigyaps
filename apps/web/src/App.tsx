@@ -42,6 +42,11 @@ const YapAssemblyPage = lazy(() =>
     default: m.YapAssemblyPage,
   })),
 );
+const YapStudioPage = lazy(() =>
+  import("./pages/YapStudioPage").then((m) => ({
+    default: m.YapStudioPage,
+  })),
+);
 const VerifyEmailPage = lazy(() =>
   import("./pages/VerifyEmailPage").then((m) => ({
     default: m.VerifyEmailPage,
@@ -63,25 +68,17 @@ function App() {
           <Route path="/marketplace" element={<HomePage />} />
           <Route path="/blog" element={<BlogPage />} />
           <Route path="/yaps/:yapId" element={<YapAssemblyPage />} />
-          <Route
-            path="/yaps/:yapId/assembly"
-            element={<YapAssemblyPage />}
-          />
+          <Route path="/yaps/:yapId/assembly" element={<YapAssemblyPage />} />
 
           {/* Protected Routes */}
           <Route element={<ProtectedRoute />}>
             <Route path="/publish" element={<PublishSkillPage />} />
+            <Route path="/yaps/studio" element={<YapStudioPage />} />
             <Route path="/my-packages" element={<MyPackagesPage />} />
-            <Route
-              path="/my-packages/:id/edit"
-              element={<EditPackagePage />}
-            />
+            <Route path="/my-packages/:id/edit" element={<EditPackagePage />} />
             <Route path="/settings" element={<SettingsPage />} />
             <Route path="/admin" element={<AdminPage />} />
-            <Route
-              path="/lab/:packageId"
-              element={<EvolutionLabPage />}
-            />
+            <Route path="/lab/:packageId" element={<EvolutionLabPage />} />
           </Route>
 
           <Route path="/skill/:packageId" element={<SkillDetailPage />} />

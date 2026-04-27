@@ -35,6 +35,10 @@ describe("YapAssemblyPage", () => {
     expect(screen.getAllByText("ETO Professional Projects").length).toBe(2);
     expect(screen.getByText("Conflict Status")).toBeTruthy();
     expect(screen.getByText("duplicate route")).toBeTruthy();
+    expect(screen.getByText("Capability Level")).toBeTruthy();
+    expect(screen.getByText("Core + extension assembly")).toBeTruthy();
+    expect(screen.getByText("Release quality gate")).toBeTruthy();
+    expect(screen.getByText("Quality report indexed; test run still required")).toBeTruthy();
     expect(screen.getByText("schemas/eto.schema.json")).toBeTruthy();
     expect(mockFetch.mock.calls[0][0]).toContain(
       "/v1/yaps/yigfinance/assembly",
@@ -119,6 +123,7 @@ function fakeAssembly(): ResolvedYapManifest {
         feedback: null,
         update: null,
         schemas: {},
+        qualityReports: [],
         artifactIndex: [],
       },
     },
@@ -164,6 +169,7 @@ function fakeAssembly(): ResolvedYapManifest {
           feedback: null,
           update: null,
           schemas: {},
+          qualityReports: [],
           artifactIndex: [],
         },
       },
@@ -203,6 +209,16 @@ function fakeAssembly(): ResolvedYapManifest {
       schemas: {
         "schemas/eto.schema.json": {},
       },
+      qualityReports: [
+        {
+          schemaVersion: "yigyaps.quality-report.v1",
+          status: "needs-run",
+          evidence: {
+            collectedTestCount: 42,
+            cachedFailedTestCount: 0,
+          },
+        },
+      ],
       artifactIndex: [
         {
           id: "artifact_command",
@@ -223,6 +239,16 @@ function fakeAssembly(): ResolvedYapManifest {
           sourcePackId: "spack_eto",
           sourcePackName: "eto-professional-projects",
           sourceMountKey: "eto",
+        },
+        {
+          id: "artifact_quality",
+          artifactType: "quality-report",
+          artifactPath: "quality/quality-report.json",
+          mediaType: "application/json",
+          contentSha256: "quality123",
+          sourcePackId: "spack_core",
+          sourcePackName: "yigfinance",
+          sourceMountKey: null,
         },
       ],
     },

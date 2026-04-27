@@ -22,9 +22,15 @@ import { getTestDatabaseUrl } from "../helpers/test-db-url.js";
 const DB_URL = getTestDatabaseUrl();
 
 async function clearAssemblyTestData(db: ReturnType<typeof drizzle>) {
-  await db.execute(sql.raw(`TRUNCATE TABLE yy_yap_pack_mounts RESTART IDENTITY CASCADE`));
-  await db.execute(sql.raw(`TRUNCATE TABLE yy_skill_pack_artifacts RESTART IDENTITY CASCADE`));
-  await db.execute(sql.raw(`TRUNCATE TABLE yy_skill_packs RESTART IDENTITY CASCADE`));
+  await db.execute(
+    sql.raw(`TRUNCATE TABLE yy_yap_pack_mounts RESTART IDENTITY CASCADE`),
+  );
+  await db.execute(
+    sql.raw(`TRUNCATE TABLE yy_skill_pack_artifacts RESTART IDENTITY CASCADE`),
+  );
+  await db.execute(
+    sql.raw(`TRUNCATE TABLE yy_skill_packs RESTART IDENTITY CASCADE`),
+  );
   await db.execute(sql.raw(`TRUNCATE TABLE yy_yaps RESTART IDENTITY CASCADE`));
 }
 
@@ -152,20 +158,25 @@ describe("YAP Assembly Routes", () => {
       },
       schemaPath: "schemas/variance-review.schema.json",
     });
-    const extensionPack = await createSkillPack(serverContext, ADMIN_JWT, yap.id, {
-      name: "eto-professional-project",
-      packType: "extension",
-      skills: [
-        { name: "project-margin-review", version: "0.7.0", status: "stable" },
-      ],
-      routeSkills: {
-        "project-margin-review": { next_candidates: ["risk-review"] },
+    const extensionPack = await createSkillPack(
+      serverContext,
+      ADMIN_JWT,
+      yap.id,
+      {
+        name: "eto-professional-project",
+        packType: "extension",
+        skills: [
+          { name: "project-margin-review", version: "0.7.0", status: "stable" },
+        ],
+        routeSkills: {
+          "project-margin-review": { next_candidates: ["risk-review"] },
+        },
+        toolMappings: {
+          "finance-calc.project_margin": { tool: "finance_project_margin" },
+        },
+        schemaPath: "schemas/project-margin-review.schema.json",
       },
-      toolMappings: {
-        "finance-calc.project_margin": { tool: "finance_project_margin" },
-      },
-      schemaPath: "schemas/project-margin-review.schema.json",
-    });
+    );
 
     const mountRes = await serverContext.fastify.inject({
       method: "POST",
@@ -198,9 +209,9 @@ describe("YAP Assembly Routes", () => {
       body.corePack.skillPack.id,
       extensionPack.id,
     ]);
-    expect(body.merged.skills.map((skill: { name: string }) => skill.name)).toEqual(
-      ["variance-review", "project-margin-review"],
-    );
+    expect(
+      body.merged.skills.map((skill: { name: string }) => skill.name),
+    ).toEqual(["variance-review", "project-margin-review"]);
     expect(body.merged.routes.skills).toMatchObject({
       "variance-review": { next_candidates: ["management-pack"] },
       "project-margin-review": { next_candidates: ["risk-review"] },
@@ -233,29 +244,34 @@ describe("YAP Assembly Routes", () => {
       },
       schemaPath: "schemas/variance-review.schema.json",
     });
-    const extensionPack = await createSkillPack(serverContext, ADMIN_JWT, yap.id, {
-      name: "eto-professional-projects",
-      packType: "extension",
-      compatibility: { yigthinker: ">=0.3.0 <0.5.0" },
-      skills: [
-        {
-          name: "eto-project-review",
-          version: "0.1.0",
-          status: "stable",
-          description: "Review ETO project margin risk",
+    const extensionPack = await createSkillPack(
+      serverContext,
+      ADMIN_JWT,
+      yap.id,
+      {
+        name: "eto-professional-projects",
+        packType: "extension",
+        compatibility: { yigthinker: ">=0.3.0 <0.5.0" },
+        skills: [
+          {
+            name: "eto-project-review",
+            version: "0.1.0",
+            status: "stable",
+            description: "Review ETO project margin risk",
+          },
+        ],
+        routeSkills: {
+          "eto-project-review": { next_candidates: ["risk-review"] },
         },
-      ],
-      routeSkills: {
-        "eto-project-review": { next_candidates: ["risk-review"] },
-      },
-      toolMappings: {
-        "finance-calc.eto_project_margin": {
-          tool: "finance_eto_project_margin",
-          skill: "eto-project-review",
+        toolMappings: {
+          "finance-calc.eto_project_margin": {
+            tool: "finance_eto_project_margin",
+            skill: "eto-project-review",
+          },
         },
+        schemaPath: "schemas/eto-project-review.schema.json",
       },
-      schemaPath: "schemas/eto-project-review.schema.json",
-    });
+    );
 
     const mountRes = await serverContext.fastify.inject({
       method: "POST",
@@ -296,15 +312,14 @@ describe("YAP Assembly Routes", () => {
         baseUrl: expect.stringMatching(/^https:\/\//),
         endpoints: {
           assembly: expect.stringMatching(
-            /^https:\/\/.+\/v1\/yaps\/yigfinance\/assembly$/,
+            /^https:\/\/.+\/v1\/yaps\/yigfinance\/assembly\?mountKeys=eto$/,
           ),
           runtimePlan: expect.stringMatching(
-            /^https:\/\/.+\/v1\/yaps\/yigfinance\/runtime-plans$/,
+            /^https:\/\/.+\/v1\/yaps\/yigfinance\/runtime-plans\?mountKeys=eto$/,
           ),
-          remoteManifest:
-            expect.stringMatching(
-              /^https:\/\/.+\/v1\/yaps\/yigfinance\/remote-manifest$/,
-            ),
+          remoteManifest: expect.stringMatching(
+            /^https:\/\/.+\/v1\/yaps\/yigfinance\/remote-manifest\?host=yigthinker&hostVersion=0\.3\.1&mountKeys=eto$/,
+          ),
         },
         invocationModes: ["local-plan", "hosted-plan"],
       },
@@ -351,6 +366,21 @@ describe("YAP Assembly Routes", () => {
       },
     });
     expect(cachedRes.statusCode).toBe(304);
+
+    const incompatibleHostRes = await serverContext.fastify.inject({
+      method: "GET",
+      url: `/v1/yaps/${yap.slug}/remote-manifest?host=yigthinker&hostVersion=0.6.0&mountKeys=eto`,
+      headers: { host: "api.test", "x-forwarded-proto": "https" },
+    });
+    expect(incompatibleHostRes.statusCode).toBe(200);
+    const incompatibleHostBody = incompatibleHostRes.json();
+    expect(incompatibleHostBody.host.compatibility.status).toBe("incompatible");
+    expect(
+      incompatibleHostBody.host.compatibility.packs.map(
+        (pack: { compatibility: { status: string } }) =>
+          pack.compatibility.status,
+      ),
+    ).toEqual(["incompatible", "incompatible"]);
   });
 
   it("plans candidate runtime skills from a resolved YAP assembly", async () => {
@@ -370,28 +400,33 @@ describe("YAP Assembly Routes", () => {
       },
       schemaPath: "schemas/variance-review.schema.json",
     });
-    const extensionPack = await createSkillPack(serverContext, ADMIN_JWT, yap.id, {
-      name: "eto-professional-project",
-      packType: "extension",
-      skills: [
-        {
-          name: "project-margin-review",
-          version: "0.7.0",
-          status: "stable",
-          description: "Review ETO project margin and project risk",
+    const extensionPack = await createSkillPack(
+      serverContext,
+      ADMIN_JWT,
+      yap.id,
+      {
+        name: "eto-professional-project",
+        packType: "extension",
+        skills: [
+          {
+            name: "project-margin-review",
+            version: "0.7.0",
+            status: "stable",
+            description: "Review ETO project margin and project risk",
+          },
+        ],
+        routeSkills: {
+          "project-margin-review": { next_candidates: ["variance-review"] },
         },
-      ],
-      routeSkills: {
-        "project-margin-review": { next_candidates: ["variance-review"] },
-      },
-      toolMappings: {
-        "finance-calc.project_margin": {
-          tool: "finance_project_margin",
-          skill: "project-margin-review",
+        toolMappings: {
+          "finance-calc.project_margin": {
+            tool: "finance_project_margin",
+            skill: "project-margin-review",
+          },
         },
+        schemaPath: "schemas/project-margin-review.schema.json",
       },
-      schemaPath: "schemas/project-margin-review.schema.json",
-    });
+    );
 
     const mountRes = await serverContext.fastify.inject({
       method: "POST",
@@ -435,6 +470,136 @@ describe("YAP Assembly Routes", () => {
     });
   });
 
+  it("filters assembly and runtime planning to requested mount keys", async () => {
+    const yap = await createYap(serverContext, ADMIN_JWT);
+    await createSkillPack(serverContext, ADMIN_JWT, yap.id, {
+      name: "yigfinance",
+      packType: "core",
+      skills: [{ name: "variance-review", version: "0.7.0", status: "stable" }],
+      routeSkills: {
+        "variance-review": { next_candidates: ["eto-project-review"] },
+      },
+      toolMappings: {
+        "finance-calc.variance_bridge": {
+          tool: "finance_variance_bridge",
+          skill: "variance-review",
+        },
+      },
+      schemaPath: "schemas/variance-review.schema.json",
+    });
+    const etoPack = await createSkillPack(serverContext, ADMIN_JWT, yap.id, {
+      name: "eto-professional-projects",
+      packType: "extension",
+      skills: [
+        {
+          name: "eto-project-review",
+          version: "0.1.0",
+          status: "stable",
+          description: "Review ETO project margin risk",
+        },
+      ],
+      routeSkills: {
+        "eto-project-review": { next_candidates: ["variance-review"] },
+      },
+      toolMappings: {
+        "finance-calc.eto_project_margin": {
+          tool: "finance_eto_project_margin",
+          skill: "eto-project-review",
+        },
+      },
+      schemaPath: "schemas/eto-project-review.schema.json",
+    });
+    const manufacturingPack = await createSkillPack(
+      serverContext,
+      ADMIN_JWT,
+      yap.id,
+      {
+        name: "manufacturing-projects",
+        packType: "extension",
+        skills: [
+          {
+            name: "manufacturing-cost-review",
+            version: "0.1.0",
+            status: "stable",
+            description: "Review manufacturing project cost risk",
+          },
+        ],
+        routeSkills: {
+          "manufacturing-cost-review": { next_candidates: ["variance-review"] },
+        },
+        toolMappings: {
+          "finance-calc.manufacturing_cost": {
+            tool: "finance_manufacturing_cost",
+            skill: "manufacturing-cost-review",
+          },
+        },
+        schemaPath: "schemas/manufacturing-cost-review.schema.json",
+      },
+    );
+
+    for (const [skillPackId, mountKey, priority] of [
+      [etoPack.id, "eto", 10],
+      [manufacturingPack.id, "manufacturing", 20],
+    ] as const) {
+      const mountRes = await serverContext.fastify.inject({
+        method: "POST",
+        url: `/v1/yaps/${yap.id}/mounts`,
+        headers: { authorization: `Bearer ${ADMIN_JWT}` },
+        payload: { skillPackId, mountKey, priority },
+      });
+      expect(mountRes.statusCode).toBe(201);
+    }
+
+    const assemblyRes = await serverContext.fastify.inject({
+      method: "GET",
+      url: `/v1/yaps/${yap.slug}/assembly?mountKeys=eto`,
+    });
+    expect(assemblyRes.statusCode).toBe(200);
+    const assemblyBody = assemblyRes.json();
+    expect(assemblyBody.mountedPacks).toHaveLength(1);
+    expect(assemblyBody.mountedPacks[0].mount.mountKey).toBe("eto");
+    expect(assemblyBody.mountedPacks[0].skillPack.name).toBe(
+      "eto-professional-projects",
+    );
+    expect(
+      assemblyBody.merged.skills.map((skill: { name: string }) => skill.name),
+    ).not.toContain("manufacturing-cost-review");
+
+    const planRes = await serverContext.fastify.inject({
+      method: "POST",
+      url: `/v1/yaps/${yap.slug}/runtime-plans?mountKeys=eto`,
+      payload: {
+        task: "Review ETO project margin risk",
+        maxCandidates: 5,
+      },
+    });
+    expect(planRes.statusCode).toBe(200);
+    const planBody = planRes.json();
+    expect(planBody.candidates).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          skill: expect.objectContaining({ name: "eto-project-review" }),
+          sourceMountKey: "eto",
+        }),
+      ]),
+    );
+    expect(
+      planBody.candidates.map(
+        (candidate: { skill: { name: string } }) => candidate.skill.name,
+      ),
+    ).not.toContain("manufacturing-cost-review");
+
+    const missingMountRes = await serverContext.fastify.inject({
+      method: "GET",
+      url: `/v1/yaps/${yap.slug}/assembly?mountKeys=missing`,
+    });
+    expect(missingMountRes.statusCode).toBe(422);
+    expect(missingMountRes.json()).toMatchObject({
+      error: "Mount keys not found",
+      missingMountKeys: ["missing"],
+    });
+  });
+
   it("does not activate a mounted pack that would create duplicate route keys", async () => {
     const yap = await createYap(serverContext, ADMIN_JWT);
     await createSkillPack(serverContext, ADMIN_JWT, yap.id, {
@@ -445,14 +610,21 @@ describe("YAP Assembly Routes", () => {
       toolMappings: {},
       schemaPath: "schemas/variance-review.schema.json",
     });
-    const extensionPack = await createSkillPack(serverContext, ADMIN_JWT, yap.id, {
-      name: "override-pack",
-      packType: "extension",
-      skills: [{ name: "variance-review", version: "0.7.0" }],
-      routeSkills: { "variance-review": { next_candidates: ["risk-review"] } },
-      toolMappings: {},
-      schemaPath: "schemas/override.schema.json",
-    });
+    const extensionPack = await createSkillPack(
+      serverContext,
+      ADMIN_JWT,
+      yap.id,
+      {
+        name: "override-pack",
+        packType: "extension",
+        skills: [{ name: "variance-review", version: "0.7.0" }],
+        routeSkills: {
+          "variance-review": { next_candidates: ["risk-review"] },
+        },
+        toolMappings: {},
+        schemaPath: "schemas/override.schema.json",
+      },
+    );
 
     const mountRes = await serverContext.fastify.inject({
       method: "POST",
@@ -469,8 +641,14 @@ describe("YAP Assembly Routes", () => {
       validation: {
         status: "blocked",
         issues: expect.arrayContaining([
-          expect.objectContaining({ code: "duplicate_skill", key: "variance-review" }),
-          expect.objectContaining({ code: "duplicate_route", key: "variance-review" }),
+          expect.objectContaining({
+            code: "duplicate_skill",
+            key: "variance-review",
+          }),
+          expect.objectContaining({
+            code: "duplicate_route",
+            key: "variance-review",
+          }),
         ]),
       },
     });

@@ -14,6 +14,19 @@ const DEFAULT_PLUGIN_DIR = path.join(
 );
 const DEFAULT_COMMANDS_DIR = path.join("generated", "yigthinker", "commands");
 const DEFAULT_SKILLS_DIR = path.join("generated", "claude", "skills");
+const DEFAULT_ETO_MOUNT_KEY = "eto";
+const DEFAULT_ETO_MOUNT_POINT = "extensions";
+const DEFAULT_ETO_MOUNT_PRIORITY = 20;
+const ETO_EXTENSION_SKILLS = [
+  "project-margin-review",
+  "ncc-rootcause-analysis",
+  "contract-asset-liability-review",
+  "functional-cost-review",
+  "sales-coverage-review",
+  "order-intake-review",
+  "pvm-analysis",
+  "cash-conversion-review",
+];
 
 interface JsonArtifactSpec {
   file: string;
@@ -48,6 +61,8 @@ export interface YigfinanceImportPlanOptions {
   pluginDir?: string;
   commandsDir?: string;
   skillsDir?: string;
+  includeDefaultExtensions?: boolean;
+  defaultExtensionMountKey?: string;
 }
 
 export interface YigfinanceImportSummary {
@@ -56,15 +71,34 @@ export interface YigfinanceImportSummary {
   commandsDir: string;
   skillsDir: string;
   skillCount: number;
+  coreSkillCount: number;
   schemaCount: number;
   commandCount: number;
   skillMarkdownCount: number;
   artifactCount: number;
+  extensionPackCount: number;
+  extensionSkillCount: number;
+  defaultMountCount: number;
+}
+
+export interface YigfinanceDefaultMountPlan {
+  skillPackName: string;
+  skillPackVersion: string;
+  mountKey: string;
+  mountPoint: string;
+  displayName: string;
+  priority: number;
+  enabled: boolean;
+  required: boolean;
+  config: Record<string, unknown>;
+  constraints: Record<string, unknown>;
 }
 
 export interface YigfinanceImportPlan {
   yap: CreateYapParams;
   skillPack: CreateSkillPackParams;
+  extensionPacks: CreateSkillPackParams[];
+  defaultMounts: YigfinanceDefaultMountPlan[];
   summary: YigfinanceImportSummary;
 }
 
@@ -102,7 +136,8 @@ export async function planYigfinanceImport(
     "plugin.json",
   );
 
-  const name = readString(skillpackManifest, "name", "skillpack.json") ?? "yigfinance";
+  const name =
+    readString(skillpackManifest, "name", "skillpack.json") ?? "yigfinance";
   const version =
     readString(skillpackManifest, "version", "skillpack.json") ??
     readString(pluginManifest, "version", "plugin.json") ??
@@ -116,15 +151,17 @@ export async function planYigfinanceImport(
     readDisplayName(pluginManifest, "name") ??
     toDisplayName(name);
   const slug = options.slug ?? name;
-  const readme = await readOptionalText(path.join(absoluteSourceDir, "README.md"));
+  const readme = await readOptionalText(
+    path.join(absoluteSourceDir, "README.md"),
+  );
   const compatibility = asRecord(
     skillpackManifest.compatibility ?? {},
     "skillpack.json compatibility",
   );
 
-  const artifacts: CreateSkillPackArtifactParams[] = [];
+  const baseArtifacts: CreateSkillPackArtifactParams[] = [];
   for (const spec of REQUIRED_BRIDGE_JSON) {
-    artifacts.push({
+    baseArtifacts.push({
       artifactType: spec.artifactType,
       artifactPath: spec.artifactPath,
       mediaType: "application/json",
@@ -136,7 +173,7 @@ export async function planYigfinanceImport(
     file.endsWith(".json"),
   );
   for (const file of schemaFiles) {
-    artifacts.push({
+    baseArtifacts.push({
       artifactType: "schema",
       artifactPath: `schemas/${toPosix(path.relative(path.join(pluginDir, "schemas"), file))}`,
       mediaType: "application/schema+json",
@@ -148,7 +185,7 @@ export async function planYigfinanceImport(
     file.endsWith(".md"),
   );
   for (const file of commandFiles) {
-    artifacts.push({
+    baseArtifacts.push({
       artifactType: "command",
       artifactPath: `commands/${toPosix(path.relative(commandsDir, file))}`,
       mediaType: "text/markdown",
@@ -161,7 +198,7 @@ export async function planYigfinanceImport(
     (file) => path.basename(file) === "SKILL.md",
   );
   for (const file of skillFiles) {
-    artifacts.push({
+    baseArtifacts.push({
       artifactType: "skill-md",
       artifactPath: `skills/${toPosix(path.relative(skillsDir, file))}`,
       mediaType: "text/markdown",
@@ -171,7 +208,7 @@ export async function planYigfinanceImport(
 
   const hookFiles = await listFiles(path.join(pluginDir, "hooks"), () => true);
   for (const file of hookFiles) {
-    artifacts.push({
+    baseArtifacts.push({
       artifactType: "other",
       artifactPath: `hooks/${toPosix(path.relative(path.join(pluginDir, "hooks"), file))}`,
       mediaType: mediaTypeFor(file),
@@ -182,6 +219,67 @@ export async function planYigfinanceImport(
   const skillCount = Array.isArray(skillpackManifest.skills)
     ? skillpackManifest.skills.length
     : 0;
+  const allSkillNames = readSkillNames(skillpackManifest);
+  const includeDefaultExtensions = options.includeDefaultExtensions !== false;
+  const etoSkillNames = includeDefaultExtensions
+    ? ETO_EXTENSION_SKILLS.filter((skillName) => allSkillNames.has(skillName))
+    : [];
+  const extensionPacks =
+    etoSkillNames.length > 0
+      ? [
+          buildEtoExtensionPack({
+            sourceName: name,
+            version,
+            description,
+            compatibility,
+            contractVersion:
+              readString(
+                skillpackManifest,
+                "contract_version",
+                "skillpack.json",
+              ) ?? "1.0",
+            sourceManifest: skillpackManifest,
+            sourceArtifacts: baseArtifacts,
+            skillNames: new Set(etoSkillNames),
+            yapSlug: slug,
+          }),
+        ]
+      : [];
+  const defaultMounts =
+    extensionPacks.length > 0
+      ? [
+          {
+            skillPackName: extensionPacks[0].name,
+            skillPackVersion: extensionPacks[0].version,
+            mountKey: options.defaultExtensionMountKey ?? DEFAULT_ETO_MOUNT_KEY,
+            mountPoint: DEFAULT_ETO_MOUNT_POINT,
+            displayName: "ETO Project Pack",
+            priority: DEFAULT_ETO_MOUNT_PRIORITY,
+            enabled: true,
+            required: false,
+            config: {
+              source: "yigfinance-import",
+              defaultPack: "eto-professional-projects",
+            },
+            constraints: {},
+          },
+        ]
+      : [];
+  const coreSkillNames =
+    etoSkillNames.length > 0
+      ? differenceSet(allSkillNames, new Set(etoSkillNames))
+      : allSkillNames;
+  const coreManifest =
+    etoSkillNames.length > 0
+      ? filterSkillpackManifest(skillpackManifest, coreSkillNames)
+      : skillpackManifest;
+  const coreArtifacts =
+    etoSkillNames.length > 0
+      ? filterArtifacts(baseArtifacts, coreSkillNames, {
+          includeToolMap: true,
+          includeHooks: true,
+        })
+      : baseArtifacts;
 
   return {
     yap: {
@@ -197,7 +295,16 @@ export async function planYigfinanceImport(
       assemblyConfig: {
         assemblyKind: "core-plus-mounts",
         corePack: { name, version },
-        mountedPacks: [],
+        mountedPacks: defaultMounts.map((mount) => ({
+          mountKey: mount.mountKey,
+          mountPoint: mount.mountPoint,
+          priority: mount.priority,
+          default: true,
+          pack: {
+            name: mount.skillPackName,
+            version: mount.skillPackVersion,
+          },
+        })),
         bridge: {
           source: "yigfinance",
           pluginDir: toPosix(options.pluginDir ?? DEFAULT_PLUGIN_DIR),
@@ -216,23 +323,222 @@ export async function planYigfinanceImport(
         readString(skillpackManifest, "contract_version", "skillpack.json") ??
         "1.0",
       compatibility,
-      manifest: skillpackManifest,
+      manifest: coreManifest,
       source: "imported",
       status: "active",
-      artifacts,
+      artifacts: coreArtifacts,
     },
+    extensionPacks,
+    defaultMounts,
     summary: {
       sourceDir: absoluteSourceDir,
       pluginDir,
       commandsDir,
       skillsDir,
       skillCount,
+      coreSkillCount: coreSkillNames.size,
       schemaCount: schemaFiles.length,
       commandCount: commandFiles.length,
       skillMarkdownCount: skillFiles.length,
-      artifactCount: artifacts.length + 1,
+      artifactCount: coreArtifacts.length + 1,
+      extensionPackCount: extensionPacks.length,
+      extensionSkillCount: etoSkillNames.length,
+      defaultMountCount: defaultMounts.length,
     },
   };
+}
+
+function buildEtoExtensionPack(params: {
+  sourceName: string;
+  version: string;
+  description: string;
+  compatibility: Record<string, unknown>;
+  contractVersion: string;
+  sourceManifest: Record<string, unknown>;
+  sourceArtifacts: CreateSkillPackArtifactParams[];
+  skillNames: Set<string>;
+  yapSlug: string;
+}): CreateSkillPackParams {
+  const name = `${params.sourceName}-eto-professional-projects`;
+  const compatibility = {
+    ...params.compatibility,
+    [params.yapSlug]: compatibleYapVersionRange(params.version),
+  };
+  const manifest = {
+    ...filterSkillpackManifest(params.sourceManifest, params.skillNames),
+    name,
+    version: params.version,
+    compatibility,
+  };
+
+  return {
+    name,
+    version: params.version,
+    displayName: "Yigfinance ETO Professional Projects",
+    description: `Engineering-to-order project margin and contract asset/liability extension for ${params.description}`,
+    packType: "extension",
+    contractVersion: params.contractVersion,
+    compatibility,
+    manifest,
+    source: "imported",
+    status: "active",
+    artifacts: filterArtifacts(params.sourceArtifacts, params.skillNames, {
+      includeToolMap: false,
+      includeHooks: false,
+      pluginName: name,
+      pluginDescription:
+        "ETO professional project analysis extension for Yigfinance",
+    }),
+  };
+}
+
+function readSkillNames(manifest: Record<string, unknown>): Set<string> {
+  const rawSkills = manifest.skills;
+  if (!Array.isArray(rawSkills)) return new Set();
+
+  return new Set(
+    rawSkills.flatMap((skill) => {
+      if (!skill || typeof skill !== "object" || Array.isArray(skill)) {
+        return [];
+      }
+      const name = (skill as Record<string, unknown>).name;
+      return typeof name === "string" ? [name] : [];
+    }),
+  );
+}
+
+function differenceSet(left: Set<string>, right: Set<string>): Set<string> {
+  return new Set([...left].filter((value) => !right.has(value)));
+}
+
+function filterSkillpackManifest(
+  manifest: Record<string, unknown>,
+  skillNames: Set<string>,
+): Record<string, unknown> {
+  const skills = Array.isArray(manifest.skills)
+    ? manifest.skills.filter((skill) => {
+        if (!skill || typeof skill !== "object" || Array.isArray(skill)) {
+          return false;
+        }
+        const name = (skill as Record<string, unknown>).name;
+        return typeof name === "string" && skillNames.has(name);
+      })
+    : [];
+
+  return {
+    ...manifest,
+    skills,
+  };
+}
+
+function filterArtifacts(
+  artifacts: CreateSkillPackArtifactParams[],
+  skillNames: Set<string>,
+  options: {
+    includeToolMap: boolean;
+    includeHooks: boolean;
+    pluginName?: string;
+    pluginDescription?: string;
+  },
+): CreateSkillPackArtifactParams[] {
+  return artifacts.flatMap((artifact) => {
+    if (artifact.artifactType === "routes") {
+      return [
+        {
+          ...artifact,
+          content: filterSkillsObjectArtifact(artifact.content, skillNames),
+        },
+      ];
+    }
+    if (artifact.artifactType === "feedback") {
+      return [
+        {
+          ...artifact,
+          content: filterSkillsObjectArtifact(artifact.content, skillNames),
+        },
+      ];
+    }
+    if (artifact.artifactType === "tool-map" && !options.includeToolMap) {
+      return [];
+    }
+    if (artifact.artifactPath.startsWith("hooks/") && !options.includeHooks) {
+      return [];
+    }
+    if (
+      artifact.artifactPath === "plugin.json" &&
+      (options.pluginName || options.pluginDescription)
+    ) {
+      return [
+        {
+          ...artifact,
+          content: {
+            ...asRecord(artifact.content, "plugin.json artifact"),
+            ...(options.pluginName ? { name: options.pluginName } : {}),
+            ...(options.pluginDescription
+              ? { description: options.pluginDescription }
+              : {}),
+          },
+        },
+      ];
+    }
+    if (isSkillScopedArtifact(artifact)) {
+      return skillNames.has(skillNameFromArtifactPath(artifact.artifactPath))
+        ? [artifact]
+        : [];
+    }
+    return [artifact];
+  });
+}
+
+function filterSkillsObjectArtifact(
+  content: unknown,
+  skillNames: Set<string>,
+): Record<string, unknown> {
+  const record = asRecord(content, "skill-scoped artifact");
+  const skills = asOptionalRecord(record.skills);
+  if (!skills) return record;
+
+  return {
+    ...record,
+    skills: Object.fromEntries(
+      Object.entries(skills).filter(([skillName]) => skillNames.has(skillName)),
+    ),
+  };
+}
+
+function asOptionalRecord(value: unknown): Record<string, unknown> | undefined {
+  return value && typeof value === "object" && !Array.isArray(value)
+    ? (value as Record<string, unknown>)
+    : undefined;
+}
+
+function isSkillScopedArtifact(
+  artifact: CreateSkillPackArtifactParams,
+): boolean {
+  return (
+    artifact.artifactType === "schema" ||
+    artifact.artifactType === "command" ||
+    artifact.artifactType === "skill-md"
+  );
+}
+
+function skillNameFromArtifactPath(artifactPath: string): string {
+  const normalized = artifactPath.replaceAll("\\", "/");
+  if (normalized.startsWith("skills/")) {
+    return normalized.split("/")[1] ?? "";
+  }
+
+  const fileName = normalized.split("/").at(-1) ?? normalized;
+  return fileName.replace(/\.schema\.json$/, "").replace(/\.[^.]+$/, "");
+}
+
+function compatibleYapVersionRange(version: string): string {
+  const match = /^(\d+)\.(\d+)\.(\d+)(?:[-+].*)?$/.exec(version);
+  if (!match) return `>=${version}`;
+
+  const major = Number(match[1]);
+  const minor = Number(match[2]);
+  return `>=${version} <${major}.${minor + 1}.0`;
 }
 
 async function ensureDirectory(dir: string, label: string): Promise<void> {

@@ -85,3 +85,16 @@ export type {
   RemoteYapManifestPackSummary,
   RemoteYapManifestSchemaVersion,
 } from "./yap-remote-manifest.js";
+
+export type {
+  YapImportExecuteMountResult,
+  YapImportExecutePackResult,
+  YapImportExecuteResult,
+  YapImportFormat,
+  YapImportPreview,
+  YapImportPreviewMount,
+  YapImportPreviewPack,
+  YapImportPreviewSource,
+  YapImportPreviewSummary,
+  YapImportPreviewYap,
+} from "./yap-import.js";

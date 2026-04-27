@@ -84,6 +84,9 @@ export const skillPackArtifactsTable = pgTable(
         | "update"
         | "schema"
         | "command"
+        | "eval"
+        | "fixture"
+        | "quality-report"
         | "skill-md"
         | "other"
       >()
