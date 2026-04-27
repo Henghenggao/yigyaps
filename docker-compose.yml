@@ -28,7 +28,7 @@ services:
       HOST: "0.0.0.0"
       # Generate with: node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"
       # WARNING: This is a dev-only placeholder. Production KMS_KEK is set in Railway dashboard and must NEVER be committed.
-      KMS_KEK: 0000000000000000000000000000000000000000000000000000000000000000
+      KMS_KEK: "0000000000000000000000000000000000000000000000000000000000000000"
       JWT_SECRET: dev-jwt-secret-change-in-production
       SESSION_SECRET: dev-session-secret-change-in-production
       CORS_ORIGIN: "http://localhost:5173"
@@ -50,7 +50,7 @@ services:
       args:
         VITE_API_URL: "http://localhost:3100"
     ports:
-      - "5173:80"
+      - "5173:8080"
     depends_on:
       - api
     restart: unless-stopped
