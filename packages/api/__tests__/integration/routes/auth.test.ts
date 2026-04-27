@@ -23,28 +23,23 @@ import {
   vi,
 } from "vitest";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { Pool } from "pg";
-import path from "path";
-import { fileURLToPath } from "url";
 import {
   createTestServer,
   closeTestServer,
   type TestServerContext,
 } from "../helpers/test-server.js";
+import { getTestDatabaseUrl } from "../helpers/test-db-url.js";
 import { createTestJWT } from "../../unit/helpers/jwt-helpers.js";
 import { sql } from "drizzle-orm";
 import { UserDAL, SessionDAL } from "@yigyaps/db";
 import * as schema from "@yigyaps/db";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const DB_URL = getTestDatabaseUrl();
 
 // ── Resolve database URL ──────────────────────────────────────────────────────
 // TEST_DATABASE_URL points at the deterministic integration test database.
 
-const DB_URL =
-  process.env.TEST_DATABASE_URL ||
-  "postgresql://postgres:password@localhost:5432/yigyaps_test";
 
 // ── Database cleanup ──────────────────────────────────────────────────────────
 
@@ -110,29 +105,6 @@ describe("Auth Routes Integration Tests", () => {
 
     pool = new Pool({ connectionString: DB_URL, max: 5 });
     testDb = drizzle(pool, { schema });
-
-    // Run migrations (idempotent when using a fresh container; skip if tables exist)
-    try {
-      const migrationsPath = path.resolve(__dirname, "../../../../db/migrations");
-      await migrate(testDb, { migrationsFolder: migrationsPath });
-    } catch (err: unknown) {
-      // "already exists" errors are expected when running against a shared/pre-seeded DB
-      if (!(err instanceof Error && err.message.includes("already exists"))) {
-        throw err;
-      }
-    }
-
-    // Belt-and-suspenders: ensure columns added by recent migrations exist even
-    // when the migrator skips them (e.g. running against a shared/pre-seeded DB).
-    try {
-      await testDb.execute(
-        sql.raw(
-          `ALTER TABLE yy_users ADD COLUMN IF NOT EXISTS terms_accepted_at bigint`,
-        ),
-      );
-    } catch {
-      // ignore — column already exists or table not yet created
-    }
 
     serverContext = await createTestServer(DB_URL);
 

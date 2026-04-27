@@ -13,15 +13,13 @@
 
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { Pool } from "pg";
-import path from "path";
-import { fileURLToPath } from "url";
 import {
   createTestServer,
   closeTestServer,
   type TestServerContext,
 } from "../helpers/test-server.js";
+import { getTestDatabaseUrl } from "../helpers/test-db-url.js";
 import {
   createAdminJWT,
   createTestJWT,
@@ -31,18 +29,10 @@ import { SkillPackageFactory } from "../../../../db/__tests__/helpers/factories.
 import { sql } from "drizzle-orm";
 import * as schema from "@yigyaps/db";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-/** Typed wrapper for drizzle's execute() result which returns `{ rows: ... }` */
-interface DrizzleQueryResult {
-  rows: Record<string, unknown>[];
-}
+const DB_URL = getTestDatabaseUrl();
 
 // ── Resolve database URL ───────────────────────────────────────────────────────
 
-const DB_URL =
-  process.env.TEST_DATABASE_URL ||
-  "postgresql://postgres:password@localhost:5432/yigyaps_test";
 
 // ── DB helpers ─────────────────────────────────────────────────────────────────
 
@@ -88,68 +78,37 @@ async function insertUser(
   return userDAL.create(row);
 }
 
-/** Insert a minimal report row directly into the DB.
- *
- * Uses a broad INSERT that handles both the migration-only schema (no
- * updated_at, uses description/admin_note) and the Railway live schema
- * (which has updated_at and uses different column aliases). We do this by
- * detecting which columns actually exist at runtime.
- */
+/** Insert a minimal report row directly into the migrated test DB. */
 async function insertReport(
-  db: ReturnType<typeof drizzle>,
+  db: ReturnType<typeof drizzle<typeof schema>>,
   id: string,
   reporterId: string,
   status: "pending" | "resolved" | "dismissed" = "pending",
 ): Promise<void> {
   const now = Date.now();
 
-  // Probe which optional columns exist in the actual running DB
-  const colResult = await db.execute(
-    sql.raw(
-      `SELECT column_name FROM information_schema.columns WHERE table_name = 'yy_reports'`,
-    ),
-  );
-  const cols = new Set((colResult as DrizzleQueryResult).rows.map((r) => r.column_name as string));
-
-  const hasUpdatedAt = cols.has("updated_at");
-  const hasDescription = cols.has("description");
-  const hasDetails = cols.has("details");
-
-  // Build the description/details column portion
-  const descCol = hasDescription ? "description" : hasDetails ? "details" : null;
-
-  let colList = `id, reporter_id, target_type, target_id, reason, status, created_at`;
-  let valList = `'${id}', '${reporterId}', 'skill_package', 'spkg_target_test', 'other', '${status}', ${now}`;
-
-  if (hasUpdatedAt) {
-    colList += ", updated_at";
-    valList += `, ${now}`;
-  }
-  if (descCol) {
-    colList += `, ${descCol}`;
-    valList += `, NULL`;
-  }
-
-  await db.execute(
-    sql.raw(`INSERT INTO yy_reports (${colList}) VALUES (${valList}) ON CONFLICT (id) DO NOTHING`),
-  );
+  await db
+    .insert(schema.reportsTable)
+    .values({
+      id,
+      reporterId,
+      targetType: "skill_package",
+      targetId: "spkg_target_test",
+      reason: "other",
+      status,
+      description: null,
+      createdAt: now,
+    })
+    .onConflictDoNothing();
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
 
 describe("Admin Routes", () => {
   let pool: Pool;
-  let testDb: ReturnType<typeof drizzle>;
+  let testDb: ReturnType<typeof drizzle<typeof schema>>;
   let serverContext: TestServerContext;
   let packageDAL: SkillPackageDAL;
-  /**
-   * Whether the yy_reports table has the schema the Drizzle ORM expects
-   * (columns: description, admin_note). When running against the live Railway
-   * DB the table was created with different column names (details, resolution)
-   * before the schema was corrected. In that case the reports functional tests
-   * are skipped and the schema drift is noted as a known issue.
-   */
-  let reportsSchemaOk = true;
 
   // JWTs — admin userId "usr_admin_001" matches createAdminJWT() default
   const ADMIN_JWT = createAdminJWT(); // userId: usr_admin_001, role: admin
@@ -164,40 +123,6 @@ describe("Admin Routes", () => {
 
     pool = new Pool({ connectionString: DB_URL, max: 5 });
     testDb = drizzle(pool, { schema });
-
-    try {
-      const migrationsPath = path.resolve(__dirname, "../../../../db/migrations");
-      await migrate(testDb, { migrationsFolder: migrationsPath });
-    } catch (err: unknown) {
-      if (!(err instanceof Error && err.message.includes("already exists"))) throw err;
-    }
-
-    // Ensure columns added by recent migrations exist on shared DBs
-    try {
-      await testDb.execute(
-        sql.raw(`ALTER TABLE yy_users ADD COLUMN IF NOT EXISTS terms_accepted_at bigint`),
-      );
-    } catch { /* ignore */ }
-
-    // Detect schema drift on the live shared DB: the Drizzle ORM for yy_reports
-    // expects columns named "description" and "admin_note". Older deployments of
-    // the Railway DB had "details" and "resolution" instead. When that drift is
-    // detected, functional report tests are skipped.
-    try {
-      const colResult = await testDb.execute(
-        sql.raw(
-          `SELECT column_name FROM information_schema.columns WHERE table_name = 'yy_reports'`,
-        ),
-      );
-      const cols = new Set((colResult as DrizzleQueryResult).rows.map((r) => r.column_name as string));
-      if (!cols.has("description") || !cols.has("admin_note")) {
-        reportsSchemaOk = false;
-        console.warn(
-          "[admin.test] WARNING: yy_reports schema drift detected (missing description/admin_note). " +
-          "Functional report tests will be skipped. This is a known production schema issue.",
-        );
-      }
-    } catch { /* ignore */ }
 
     serverContext = await createTestServer(DB_URL);
     packageDAL = new SkillPackageDAL(testDb);
@@ -544,13 +469,7 @@ describe("Admin Routes", () => {
   // ── GET /v1/admin/reports ───────────────────────────────────────────────────
 
   describe("GET /v1/admin/reports", () => {
-    // Functional tests require matching Drizzle schema (description, admin_note).
-    // Skipped when yy_reports has schema drift on the live shared DB.
     it("returns 200 with reports array for admin (default filter: pending)", async () => {
-      if (!reportsSchemaOk) {
-        console.warn("Skipping: yy_reports schema drift");
-        return;
-      }
       const reporter = await insertUser(testDb, "usr_admintest_reporter_1");
       await insertReport(testDb, "rpt_admintest_001", reporter.id, "pending");
 
@@ -568,10 +487,6 @@ describe("Admin Routes", () => {
     });
 
     it("can filter reports by status=resolved", async () => {
-      if (!reportsSchemaOk) {
-        console.warn("Skipping: yy_reports schema drift");
-        return;
-      }
       const reporter = await insertUser(testDb, "usr_admintest_reporter_2");
       await insertReport(testDb, "rpt_admintest_002", reporter.id, "resolved");
 
@@ -588,10 +503,6 @@ describe("Admin Routes", () => {
     });
 
     it("returns all reports when status=all", async () => {
-      if (!reportsSchemaOk) {
-        console.warn("Skipping: yy_reports schema drift");
-        return;
-      }
       const reporter = await insertUser(testDb, "usr_admintest_reporter_3");
       await insertReport(testDb, "rpt_admintest_003a", reporter.id, "pending");
       await insertReport(testDb, "rpt_admintest_003b", reporter.id, "resolved");
@@ -633,10 +544,6 @@ describe("Admin Routes", () => {
 
   describe("PATCH /v1/admin/reports/:id", () => {
     it("admin can resolve a report", async () => {
-      if (!reportsSchemaOk) {
-        console.warn("Skipping: yy_reports schema drift");
-        return;
-      }
       const reporter = await insertUser(testDb, "usr_admintest_resolve_r");
       await insertReport(testDb, "rpt_admintest_resolve", reporter.id, "pending");
 
@@ -654,10 +561,6 @@ describe("Admin Routes", () => {
     });
 
     it("admin can dismiss a report", async () => {
-      if (!reportsSchemaOk) {
-        console.warn("Skipping: yy_reports schema drift");
-        return;
-      }
       const reporter = await insertUser(testDb, "usr_admintest_dismiss_r");
       await insertReport(testDb, "rpt_admintest_dismiss", reporter.id, "pending");
 
@@ -675,10 +578,6 @@ describe("Admin Routes", () => {
     });
 
     it("returns 400 for invalid action value", async () => {
-      if (!reportsSchemaOk) {
-        console.warn("Skipping test - schema drift");
-        return;
-      }
       const reporter = await insertUser(testDb, "usr_admintest_badact_r");
       await insertReport(testDb, "rpt_admintest_badact", reporter.id, "pending");
 
@@ -693,11 +592,6 @@ describe("Admin Routes", () => {
     });
 
     it("returns 404 when report does not exist", async () => {
-      if (!reportsSchemaOk) {
-        console.warn("Skipping test - schema drift");
-        return;
-      }
-
       const res = await serverContext.fastify.inject({
         method: "PATCH",
         url: "/v1/admin/reports/rpt_admintest_nonexistent_000",

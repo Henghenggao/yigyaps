@@ -19,10 +19,9 @@ import {
   createAdminJWT,
   createTestJWT,
 } from "../../unit/helpers/jwt-helpers.js";
+import { getTestDatabaseUrl } from "../helpers/test-db-url.js";
 
-const DB_URL =
-  process.env.TEST_DATABASE_URL ||
-  "postgresql://postgres:password@localhost:5432/yigyaps_test";
+const DB_URL = getTestDatabaseUrl();
 
 async function clearYapTestData(db: ReturnType<typeof drizzle>) {
   await db.execute(sql.raw(`TRUNCATE TABLE yy_yaps RESTART IDENTITY CASCADE`));
