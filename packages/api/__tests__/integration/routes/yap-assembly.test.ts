@@ -274,7 +274,7 @@ describe("YAP Assembly Routes", () => {
     const manifestRes = await serverContext.fastify.inject({
       method: "GET",
       url: `/v1/yaps/${yap.slug}/remote-manifest?host=yigthinker&hostVersion=0.3.1&mountKeys=eto`,
-      headers: { host: "api.test" },
+      headers: { host: "api.test", "x-forwarded-proto": "https" },
     });
 
     expect(manifestRes.statusCode).toBe(200);
@@ -293,6 +293,22 @@ describe("YAP Assembly Routes", () => {
         version: "0.3.1",
         compatibility: { status: "compatible" },
       },
+      remote: {
+        baseUrl: expect.stringMatching(/^https:\/\//),
+        endpoints: {
+          assembly: expect.stringMatching(
+            /^https:\/\/.+\/v1\/yaps\/yigfinance\/assembly$/,
+          ),
+          runtimePlan: expect.stringMatching(
+            /^https:\/\/.+\/v1\/yaps\/yigfinance\/runtime-plans$/,
+          ),
+          remoteManifest:
+            expect.stringMatching(
+              /^https:\/\/.+\/v1\/yaps\/yigfinance\/remote-manifest$/,
+            ),
+        },
+        invocationModes: ["local-plan", "hosted-plan"],
+      },
       assembly: {
         skillCount: 2,
         routeCount: 2,
@@ -300,10 +316,6 @@ describe("YAP Assembly Routes", () => {
         schemaCount: 2,
         conflictCount: 0,
         warningCount: 0,
-      },
-      remote: {
-        baseUrl: expect.stringMatching(/^https?:\/\//),
-        invocationModes: ["local-plan", "hosted-plan"],
       },
       artifacts: {
         fetchMode: "assembly",

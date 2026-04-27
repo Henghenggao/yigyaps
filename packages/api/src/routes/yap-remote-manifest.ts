@@ -340,9 +340,21 @@ function toolMappings(assembly: ResolvedYapManifest): Record<string, unknown> {
 }
 
 function baseUrlFor(request: FastifyRequest): string {
-  if (env.YIGYAPS_API_URL) return env.YIGYAPS_API_URL.replace(/\/$/, "");
-  const host = request.headers.host ?? "localhost";
-  return `http://${host}`;
+  const configuredBaseUrl = env.YIGYAPS_API_URL?.trim();
+  if (configuredBaseUrl) return configuredBaseUrl.replace(/\/$/, "");
+
+  const host =
+    headerFirstValue(request.headers["x-forwarded-host"]) ??
+    headerFirstValue(request.headers.host) ??
+    "localhost";
+  const protocol =
+    headerFirstValue(request.headers["x-forwarded-proto"]) ?? "http";
+  return `${protocol}://${host}`;
+}
+
+function headerFirstValue(value: string | string[] | undefined): string | null {
+  const raw = Array.isArray(value) ? value[0] : value;
+  return raw?.split(",")[0]?.trim() || null;
 }
 
 function sha256(value: string): string {
