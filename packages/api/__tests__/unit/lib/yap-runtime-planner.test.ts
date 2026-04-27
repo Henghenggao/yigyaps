@@ -5,7 +5,7 @@ import { planYapRuntime } from "../../../src/lib/yap-runtime-planner.js";
 describe("planYapRuntime", () => {
   it("prioritizes an extension-pack skill that matches the task and returns contract artifacts", () => {
     const plan = planYapRuntime(fakeAssembly(), {
-      task: "Review ETC project margin risk using finance calculator",
+      task: "Review ETO project margin risk using finance calculator",
       maxCandidates: 3,
     });
 
@@ -13,7 +13,7 @@ describe("planYapRuntime", () => {
     expect(plan.candidates[0]).toMatchObject({
       skill: { name: "project-margin-review" },
       routeKey: "project-margin-review",
-      sourceMountKey: "etc",
+      sourceMountKey: "eto",
       schemaKeys: ["schemas/project-margin-review.schema.json"],
     });
     expect(plan.candidates[0].toolMappings).toMatchObject({
@@ -45,7 +45,7 @@ describe("planYapRuntime", () => {
     assembly.diagnostics.conflicts.push({
       kind: "route",
       key: "project-margin-review",
-      sourcePackIds: ["spack_core", "spack_etc"],
+      sourcePackIds: ["spack_core", "spack_eto"],
       message: "Route graph entry project-margin-review is declared by multiple packs",
     });
 
@@ -119,12 +119,12 @@ function fakeAssembly(): ResolvedYapManifest {
       {
         role: "mount",
         mount: {
-          id: "mount_etc",
+          id: "mount_eto",
           yapId: "yap_test",
-          skillPackId: "spack_etc",
-          mountKey: "etc",
+          skillPackId: "spack_eto",
+          mountKey: "eto",
           mountPoint: "extensions",
-          displayName: "ETC",
+          displayName: "ETO",
           priority: 20,
           enabled: true,
           required: false,
@@ -134,11 +134,11 @@ function fakeAssembly(): ResolvedYapManifest {
           updatedAt: 1,
         },
         skillPack: {
-          id: "spack_etc",
+          id: "spack_eto",
           yapId: "yap_test",
-          name: "etc-professional-projects",
+          name: "eto-professional-projects",
           version: "1.2.3",
-          displayName: "ETC Professional Projects",
+          displayName: "ETO Professional Projects",
           description: "Project analysis pack",
           packType: "extension",
           contractVersion: "1.0",
@@ -163,7 +163,7 @@ function fakeAssembly(): ResolvedYapManifest {
     ],
     merged: {
       contractVersion: "1.0",
-      packOrder: ["spack_core", "spack_etc"],
+      packOrder: ["spack_core", "spack_eto"],
       skills: [
         {
           name: "variance-review",
@@ -179,12 +179,12 @@ function fakeAssembly(): ResolvedYapManifest {
         {
           name: "project-margin-review",
           version: "1.2.3",
-          sourcePackId: "spack_etc",
-          sourcePackName: "etc-professional-projects",
-          sourceMountKey: "etc",
+          sourcePackId: "spack_eto",
+          sourcePackName: "eto-professional-projects",
+          sourceMountKey: "eto",
           definition: {
             name: "project-margin-review",
-            description: "Review ETC project margin and project risk",
+            description: "Review ETO project margin and project risk",
           },
         },
       ],
@@ -224,9 +224,9 @@ function fakeAssembly(): ResolvedYapManifest {
           artifactPath: "schemas/project-margin-review.schema.json",
           mediaType: "application/schema+json",
           contentSha256: "abcdef1234567890",
-          sourcePackId: "spack_etc",
-          sourcePackName: "etc-professional-projects",
-          sourceMountKey: "etc",
+          sourcePackId: "spack_eto",
+          sourcePackName: "eto-professional-projects",
+          sourceMountKey: "eto",
         },
       ],
     },

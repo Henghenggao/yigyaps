@@ -36,7 +36,7 @@ Idempotency:
 
 Extensibility:
 
-- `assembly_config` is intentionally JSONB and data-driven. ETC can be the default extension pack for `yigfinance` through stored configuration/mount records, not hardcoded product logic.
+- `assembly_config` is intentionally JSONB and data-driven. ETO can be the default extension pack for `yigfinance` through stored configuration/mount records, not hardcoded product logic.
 
 ## M001-S04: SkillPack Artifact API Contract
 
@@ -99,11 +99,11 @@ Idempotency:
 Assembly:
 
 - The YAP `assemblyConfig` records the core pack and an empty `mountedPacks` list.
-- ETC and future extension packs must be added through mount records in S06, not through Yigfinance-specific code constants.
+- ETO and future extension packs must be added through mount records in S06, not through Yigfinance-specific code constants.
 
 ## M001-S06: Configurable Pack Mounts API Contract
 
-Scope: represent extension packs mounted under a YAP as mutable data records so ETC can be the default Yigfinance extension without becoming hardcoded product logic.
+Scope: represent extension packs mounted under a YAP as mutable data records so ETO can be the default Yigfinance extension without becoming hardcoded product logic.
 
 Endpoints:
 
@@ -121,7 +121,7 @@ Auth:
 Validation:
 
 - Mounted packs must belong to the same YAP, must have `packType=extension`, and must not be archived.
-- `(yap_id, mount_key)` is unique. A stable mount key such as `default-project-pack` lets clients switch ETC to another pack with a PATCH, not a code change.
+- `(yap_id, mount_key)` is unique. A stable mount key such as `default-project-pack` lets clients switch ETO to another pack with a PATCH, not a code change.
 
 Versioning:
 
@@ -189,7 +189,7 @@ Endpoint:
 Activation enforcement:
 
 - `POST /v1/yaps/:yapId/mounts` validates when `enabled=true` and returns `409` with `{ error: "Mount validation failed", validation }` when blocked.
-- `PATCH /v1/yaps/:yapId/mounts/:mountId` validates the target state when the result would be enabled. Switching ETC to another project pack is therefore checked before activation.
+- `PATCH /v1/yaps/:yapId/mounts/:mountId` validates the target state when the result would be enabled. Switching ETO to another project pack is therefore checked before activation.
 - Draft mounts can still be stored with `enabled=false`; they are excluded from assembly resolution until enabled.
 
 Blocking issues:
@@ -211,7 +211,7 @@ Compatibility posture:
 
 ## M001-S09: CLI YAP And Pack Workflow Contract
 
-Scope: expose the YAP assembly workflow through CLI commands so Yigfinance can be published as the first canonical YAP and ETC or another extension pack can be mounted and switched without code changes.
+Scope: expose the YAP assembly workflow through CLI commands so Yigfinance can be published as the first canonical YAP and ETO or another extension pack can be mounted and switched without code changes.
 
 Commands:
 
@@ -236,7 +236,7 @@ Auth:
 
 Operational posture:
 
-- ETC is represented as an extension Skill Pack mounted under `yigfinance` through CLI/API data. Replacing ETC with another project pack is a `yap mount switch` operation, not a product-code change.
+- ETO is represented as an extension Skill Pack mounted under `yigfinance` through CLI/API data. Replacing ETO with another project pack is a `yap mount switch` operation, not a product-code change.
 
 ## M001-S10: Web Assembly Experience
 
@@ -256,7 +256,7 @@ Data contract:
 Experience:
 
 - The first viewport is an operational workbench: YAP identity, pack/skill/route/tool/schema counts, pack graph, mounted packs, conflict status, resolved skills, and artifact index.
-- Mounted packs display the stable `mountKey`, source pack, priority, and enabled state. This keeps the ETC default visible as data and makes future pack replacement understandable without product-code branching.
+- Mounted packs display the stable `mountKey`, source pack, priority, and enabled state. This keeps the ETO default visible as data and makes future pack replacement understandable without product-code branching.
 - Conflict status uses `diagnostics.conflicts` from assembly resolution. S10 does not introduce separate Web-only conflict rules.
 - Resolved artifacts are filterable by artifact type using the artifact index returned by the resolver.
 
@@ -301,35 +301,35 @@ Versioning:
 - The endpoint is path-versioned under `/v1`.
 - Future runtime execution should be a separate operation; this planner response should evolve additively so CLI/Web/runtime adapters can keep inspecting candidate resolution.
 
-## M001-S12: Yigfinance Plus ETC End-To-End Demo
+## M001-S12: Yigfinance Plus ETO End-To-End Demo
 
-Scope: close M001 with a runnable product proof that Yigfinance can be represented as a first-class YAP and ETC can be mounted as a default extension Skill Pack without product-code coupling.
+Scope: close M001 with a runnable product proof that Yigfinance can be represented as a first-class YAP and ETO can be mounted as a default extension Skill Pack without product-code coupling.
 
 Demo assets:
 
-- Repo-local ETC extension pack fixture: `examples/skill-packs/etc-professional-projects`.
-- Demo runbook: `.gsd/milestones/M001/S12-YIGFINANCE-ETC-DEMO.md`.
+- Repo-local ETO extension pack fixture: `examples/skill-packs/eto-professional-projects`.
+- Demo runbook: `.gsd/milestones/M001/S12-YIGFINANCE-ETO-DEMO.md`.
 - CLI runtime planner inspection command: `yigyaps yap runtime plan <yap> --task <text>`.
 
 Demo flow:
 
 - Dry-run import from `C:/Users/gaoyu/Documents/GitHub/Yigfinance` verifies the canonical Yigfinance core pack can be discovered from the existing Bridge layout.
-- Dry-run publish of `examples/skill-packs/etc-professional-projects` verifies an extension pack can be read from a generic SkillPack Bridge directory.
-- Live publish creates or reuses the `yigfinance` YAP and publishes ETC as an extension Skill Pack.
-- `yap mount validate` and `yap mount add` attach ETC through a stable mount slot.
+- Dry-run publish of `examples/skill-packs/eto-professional-projects` verifies an extension pack can be read from a generic SkillPack Bridge directory.
+- Live publish creates or reuses the `yigfinance` YAP and publishes ETO as an extension Skill Pack.
+- `yap mount validate` and `yap mount add` attach ETO through a stable mount slot.
 - `yap assembly export` emits the merged core-plus-extension graph.
 - `yap runtime plan` inspects the resolver graph and returns candidate skills/routes/tools for a task, without executing the finance runtime.
 - `/yaps/yigfinance/assembly` exposes the same resolved assembly through the Web workbench.
 
 No-code switch guarantee:
 
-- ETC is selected by data records, not by Yigfinance-specific product constants.
-- The stable mount slot is `mountKey=etc`; replacing the default professional project pack is a `PATCH /v1/yaps/:yapId/mounts/:mountId` or `yigyaps yap mount switch` operation.
+- ETO is selected by data records, not by Yigfinance-specific product constants.
+- The stable mount slot is `mountKey=eto`; replacing the default professional project pack is a `PATCH /v1/yaps/:yapId/mounts/:mountId` or `yigyaps yap mount switch` operation.
 - Future extension packs only need compatible SkillPack Bridge artifacts and passing mount validation.
 
 Boundary:
 
-- S12 proves assembly, compatibility, export, and planning. It does not execute Yigfinance finance calculations or ETC project analysis; runtime execution should remain a later milestone layered on top of the planner contract.
+- S12 proves assembly, compatibility, export, and planning. It does not execute Yigfinance finance calculations or ETO project analysis; runtime execution should remain a later milestone layered on top of the planner contract.
 
 ## M001-H01: Release Gate Hardening After S12
 
@@ -354,7 +354,7 @@ Known local blocker:
 
 ## M002-S01: Remote Host Manifest For YAP Products
 
-Scope: start productizing Yigfinance + ETO/ETC as a remotely callable YAP by giving hosts a compact discovery and integrity contract before they pull the full assembly.
+Scope: start productizing Yigfinance + ETO as a remotely callable YAP by giving hosts a compact discovery and integrity contract before they pull the full assembly.
 
 API shape:
 
@@ -378,13 +378,13 @@ Rationale:
 
 ## M002-S02: SDK Host Runtime Handoff
 
-Scope: give Yigthinker and Yigcore-addins a single SDK entry point for consuming remote YAP products such as Yigfinance plus its mounted ETO/ETC project pack.
+Scope: give Yigthinker and Yigcore-addins a single SDK entry point for consuming remote YAP products such as Yigfinance plus its mounted ETO project pack.
 
 Client shape:
 
 - `prepareYapHostRuntime(client, options)` composes `getYapRemoteManifest`, `planYapRuntime`, and `getYapAssembly`.
 - `options.host` identifies the target host, currently `yigthinker` or `yigcore-addins`.
-- `options.mountKeys` lets the caller select the data-backed extension slot, for example `etc`, without changing Yigfinance product code.
+- `options.mountKeys` lets the caller select the data-backed extension slot, for example `eto`, without changing Yigfinance product code.
 - The returned handoff includes the compact manifest, runtime plan, selected candidate, artifact hash index, selected candidate artifacts, endpoint links, and optionally the full resolved assembly.
 
 Execution boundary:
@@ -395,7 +395,7 @@ Execution boundary:
 
 Rationale:
 
-- Yigfinance plus ETO/ETC needs to be callable by host products before Yigyaps owns hosted execution.
+- Yigfinance plus ETO needs to be callable by host products before Yigyaps owns hosted execution.
 - Keeping the first SDK layer as discovery plus planning avoids prematurely coupling platform API code to Yigthinker or Office add-in runtime details.
 
 ## M002-S03: CLI Remote Host Prepare Smoke Path
@@ -412,6 +412,6 @@ Command:
 
 Rationale:
 
-- This gives Yigfinance plus ETO/ETC a repeatable smoke command before host runtime code lands.
+- This gives Yigfinance plus ETO a repeatable smoke command before host runtime code lands.
 - The command exercises the same route chain expected by Yigthinker and Yigcore-addins: remote manifest, runtime plan, and optional assembly pull.
-- It keeps no-code extension switching visible because `--mount-keys etc` selects the mounted pack data slot rather than a product constant.
+- It keeps no-code extension switching visible because `--mount-keys eto` selects the mounted pack data slot rather than a product constant.

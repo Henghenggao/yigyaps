@@ -4,7 +4,7 @@
 
 Yigyaps becomes the publishing, assembly, governance, and distribution platform for YAPs: skills-pack plugin containers composed from one core pack plus configurable mounted extension packs.
 
-Yigfinance is the first canonical YAP. ETC Professional Project Pack is the default mounted extension pack under Yigfinance, but pack mounting must remain data-driven so another extension pack can replace or supplement it without code changes.
+Yigfinance is the first canonical YAP. ETO Professional Project Pack is the default mounted extension pack under Yigfinance, but pack mounting must remain data-driven so another extension pack can replace or supplement it without code changes.
 
 ## Success Criteria
 
@@ -27,7 +27,7 @@ Yigfinance is the first canonical YAP. ETC Professional Project Pack is the defa
 - [x] **S05: Import Yigfinance As First YAP** `risk:high` `depends:[S04]`
   > After this: importing from `C:/Users/gaoyu/Documents/GitHub/Yigfinance` yields a `yigfinance` YAP with all generated skills and artifacts.
 - [x] **S06: Add Configurable Pack Mounts** `risk:high` `depends:[S05]`
-  > After this: ETC Professional Project Pack can be mounted under `yigfinance`, and another pack can be switched in without code changes.
+  > After this: ETO Professional Project Pack can be mounted under `yigfinance`, and another pack can be switched in without code changes.
 - [x] **S07: Resolve Merged YAP Manifest** `risk:high` `depends:[S06]`
   > After this: API returns a merged graph containing core pack plus mounted packs, including skills, routes, schemas, and tool mappings.
 - [x] **S08: Validate Compatibility And Conflicts** `risk:medium` `depends:[S07]`
@@ -38,15 +38,15 @@ Yigfinance is the first canonical YAP. ETC Professional Project Pack is the defa
   > After this: Web shows a YAP's mounted packs, dependency graph, conflict status, and resolved artifacts.
 - [x] **S11: Add Contract-Aware Runtime Planner Stub** `risk:medium` `depends:[S08]`
   > After this: given a YAP and a task, API can resolve candidate skills/routes without requiring full finance runtime execution.
-- [x] **S12: End-To-End Yigfinance Plus ETC Demo** `risk:medium` `depends:[S09,S10,S11]`
-  > After this: a user can publish Yigfinance, mount ETC Professional Project Pack, export the merged YAP, and inspect the resolver graph.
+- [x] **S12: End-To-End Yigfinance Plus ETO Demo** `risk:medium` `depends:[S09,S10,S11]`
+  > After this: a user can publish Yigfinance, mount ETO Professional Project Pack, export the merged YAP, and inspect the resolver graph.
 
 ## Key Risks
 
 - Legacy plaintext rules behavior can undermine the protected-knowledge product promise.
 - Test database drift can hide migration failures.
 - Flattening SkillPack artifacts into legacy packages would lose routes, schemas, feedback, and tool-map semantics.
-- Hardcoding ETC as special product logic would block future extension pack switching.
+- Hardcoding ETO as special product logic would block future extension pack switching.
 
 ## Proof Strategy
 
@@ -73,7 +73,7 @@ Yigfinance is the first canonical YAP. ETC Professional Project Pack is the defa
 ## Requirement Coverage
 
 - Publish Yigfinance directly as a YAP: S03, S04, S05.
-- Mount ETC by default under Yigfinance: S06, S07, S12.
+- Mount ETO by default under Yigfinance: S06, S07, S12.
 - Switch to other extension packs without code changes: S06, S08, S09, S10.
 - Preserve Yigfinance architecture: S04, S05, S07.
 - Stabilize current platform first: S01, S02.
@@ -110,4 +110,4 @@ S10 produces: Web assembly UI. Consumes: APIs from S03 through S08.
 
 S11 produces: runtime planner stub. Consumes: merged YAP manifest and route artifacts.
 
-S12 produces: integrated demo. Consumes: CLI, Web, resolver, and imported Yigfinance/ETC pack state.
+S12 produces: integrated demo. Consumes: CLI, Web, resolver, and imported Yigfinance/ETO pack state.

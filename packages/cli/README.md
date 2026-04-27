@@ -65,11 +65,11 @@ yigyaps install <package-id>
 # Diagnostics
 yigyaps doctor
 
-# Prepare a Yigfinance+ETO/ETC handoff for a host runtime
+# Prepare a Yigfinance+ETO handoff for a host runtime
 yigyaps yap host prepare yigfinance \
   --host yigthinker \
   --host-version 0.3.1 \
-  --mount-keys etc \
+  --mount-keys eto \
   --task "Review ETO project margin risk" \
   --output handoff.json
 ```

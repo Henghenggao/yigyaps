@@ -1,6 +1,6 @@
-# ETC Project Review
+# ETO Project Review
 
-Use this skill when a finance user asks for estimate-to-complete, project margin, delivery risk, or forecast-to-complete analysis.
+Use this skill when a finance user asks for engineer-to-order project analysis, estimate-to-complete, project margin, delivery risk, or forecast-to-complete analysis.
 
 ## Inputs
 

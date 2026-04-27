@@ -130,7 +130,7 @@ describe("yapPackPublishCommand", () => {
     expect(output).toMatchObject({
       dryRun: true,
       skillPack: {
-        name: "etc-professional-projects",
+        name: "eto-professional-projects",
         packType: "extension",
         status: "active",
       },
@@ -146,8 +146,8 @@ describe("yapPackPublishCommand", () => {
     const root = await createPackFixture();
     const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
     const skillPack = fakeSkillPack({
-      id: "spack_etc",
-      name: "etc-professional-projects",
+      id: "spack_eto",
+      name: "eto-professional-projects",
       packType: "extension",
     });
     const artifact = fakeArtifact(skillPack.id);
@@ -166,7 +166,7 @@ describe("yapPackPublishCommand", () => {
     expect(client.createSkillPack).toHaveBeenCalledWith(
       "yigfinance",
       expect.objectContaining({
-        name: "etc-professional-projects",
+        name: "eto-professional-projects",
         packType: "extension",
         source: "imported",
       }),
@@ -175,7 +175,7 @@ describe("yapPackPublishCommand", () => {
     expect(output).toMatchObject({
       success: true,
       artifactCount: 1,
-      skillPack: { id: "spack_etc" },
+      skillPack: { id: "spack_eto" },
     });
   });
 });
@@ -191,16 +191,16 @@ describe("YAP mount commands", () => {
       client as unknown as YigYapsPublisherClient,
     );
 
-    await yapMountValidateCommand("yigfinance", "spack_etc", {
-      mountKey: "etc",
+    await yapMountValidateCommand("yigfinance", "spack_eto", {
+      mountKey: "eto",
       mountPoint: "extensions",
       priority: 20,
       json: true,
     });
 
     expect(client.validateYapPackMount).toHaveBeenCalledWith("yigfinance", {
-      skillPackId: "spack_etc",
-      mountKey: "etc",
+      skillPackId: "spack_eto",
+      mountKey: "eto",
       mountPoint: "extensions",
       displayName: undefined,
       priority: 20,
@@ -209,7 +209,7 @@ describe("YAP mount commands", () => {
     });
     expect(JSON.parse(String(log.mock.calls[0]?.[0]))).toMatchObject({
       status: "pass",
-      candidate: { mountKey: "etc" },
+      candidate: { mountKey: "eto" },
     });
   });
 
@@ -217,8 +217,8 @@ describe("YAP mount commands", () => {
     const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
     const mount = fakeMount();
     const skillPack = fakeSkillPack({
-      id: "spack_etc",
-      name: "etc-professional-projects",
+      id: "spack_eto",
+      name: "eto-professional-projects",
       packType: "extension",
     });
     const client = {
@@ -228,14 +228,14 @@ describe("YAP mount commands", () => {
       client as unknown as YigYapsPublisherClient,
     );
 
-    await yapMountAddCommand("yigfinance", "spack_etc", {
-      mountKey: "etc",
+    await yapMountAddCommand("yigfinance", "spack_eto", {
+      mountKey: "eto",
       json: true,
     });
 
     expect(client.createYapPackMount).toHaveBeenCalledWith("yigfinance", {
-      skillPackId: "spack_etc",
-      mountKey: "etc",
+      skillPackId: "spack_eto",
+      mountKey: "eto",
       mountPoint: undefined,
       displayName: undefined,
       priority: undefined,
@@ -244,8 +244,8 @@ describe("YAP mount commands", () => {
     });
     expect(JSON.parse(String(log.mock.calls[0]?.[0]))).toMatchObject({
       success: true,
-      mount: { mountKey: "etc" },
-      skillPack: { id: "spack_etc" },
+      mount: { mountKey: "eto" },
+      skillPack: { id: "spack_eto" },
     });
   });
 
@@ -264,18 +264,18 @@ describe("YAP mount commands", () => {
       client as unknown as YigYapsPublisherClient,
     );
 
-    await yapMountSwitchCommand("yigfinance", "mount_etc", "spack_alt", {
-      mountKey: "etc",
+    await yapMountSwitchCommand("yigfinance", "mount_eto", "spack_alt", {
+      mountKey: "eto",
       disabled: true,
       json: true,
     });
 
     expect(client.updateYapPackMount).toHaveBeenCalledWith(
       "yigfinance",
-      "mount_etc",
+      "mount_eto",
       {
         skillPackId: "spack_alt",
-        mountKey: "etc",
+        mountKey: "eto",
         mountPoint: undefined,
         displayName: undefined,
         priority: undefined,
@@ -330,24 +330,24 @@ describe("yapRuntimePlanCommand", () => {
     );
 
     await yapRuntimePlanCommand("yigfinance", {
-      task: "Review ETC project margin risk",
+      task: "Review ETO project margin risk",
       requiredSkills: ["project-margin-review"],
       maxCandidates: 3,
       maxMounts: 5,
-      mountKeys: ["etc"],
+      mountKeys: ["eto"],
       json: true,
     });
 
     expect(client.planYapRuntime).toHaveBeenCalledWith(
       "yigfinance",
       {
-        task: "Review ETC project margin risk",
+        task: "Review ETO project margin risk",
         requiredSkills: ["project-margin-review"],
         expectedContractVersion: undefined,
         maxCandidates: 3,
         hints: {
           skillNames: undefined,
-          mountKeys: ["etc"],
+          mountKeys: ["eto"],
           routeKeys: undefined,
           toolKeys: undefined,
         },
@@ -377,7 +377,7 @@ describe("yapHostPrepareCommand", () => {
       task: "Review ETO project margin risk",
       host: "yigthinker",
       hostVersion: "0.3.1",
-      mountKeys: ["etc"],
+      mountKeys: ["eto"],
       maxCandidates: 3,
       maxMounts: 5,
       json: true,
@@ -386,7 +386,7 @@ describe("yapHostPrepareCommand", () => {
     expect(client.getYapRemoteManifest).toHaveBeenCalledWith("yigfinance", {
       host: "yigthinker",
       hostVersion: "0.3.1",
-      mountKeys: ["etc"],
+      mountKeys: ["eto"],
       maxMounts: 5,
     });
     expect(client.planYapRuntime).toHaveBeenCalledWith(
@@ -394,7 +394,7 @@ describe("yapHostPrepareCommand", () => {
       expect.objectContaining({
         task: "Review ETO project margin risk",
         maxCandidates: 3,
-        hints: { mountKeys: ["etc"] },
+        hints: { mountKeys: ["eto"] },
       }),
       { maxMounts: 5 },
     );
@@ -484,27 +484,27 @@ async function createPackFixture(): Promise<string> {
 
   await fs.ensureDir(path.join(root, "schemas"));
   await fs.ensureDir(path.join(root, "commands"));
-  await fs.ensureDir(path.join(root, "skills", "etc-projects"));
+  await fs.ensureDir(path.join(root, "skills", "eto-projects"));
 
   await fs.writeJson(path.join(root, "skillpack.json"), {
-    name: "etc-professional-projects",
+    name: "eto-professional-projects",
     version: "1.2.3",
     contract_version: "1.0",
     compatibility: { yigfinance: ">=0.7.0 <1.0.0" },
-    skills: [{ name: "etc-projects", version: "1.2.3" }],
+    skills: [{ name: "eto-projects", version: "1.2.3" }],
   });
   await fs.writeJson(path.join(root, "plugin.json"), {
-    name: "etc-professional-projects",
-    description: "ETC professional project analysis pack",
+    name: "eto-professional-projects",
+    description: "ETO professional project analysis pack",
     version: "1.2.3",
   });
-  await fs.writeJson(path.join(root, "schemas", "etc.schema.json"), {
+  await fs.writeJson(path.join(root, "schemas", "eto.schema.json"), {
     type: "object",
   });
-  await fs.writeFile(path.join(root, "commands", "etc.md"), "# ETC\n");
+  await fs.writeFile(path.join(root, "commands", "eto.md"), "# ETO\n");
   await fs.writeFile(
-    path.join(root, "skills", "etc-projects", "SKILL.md"),
-    "# ETC Projects\n",
+    path.join(root, "skills", "eto-projects", "SKILL.md"),
+    "# ETO Projects\n",
   );
 
   return root;
@@ -568,12 +568,12 @@ function fakeArtifact(skillPackId: string): SkillPackArtifact {
 
 function fakeMount(overrides: Partial<YapPackMount> = {}): YapPackMount {
   return {
-    id: "mount_etc",
+    id: "mount_eto",
     yapId: "yap_test",
-    skillPackId: "spack_etc",
-    mountKey: "etc",
+    skillPackId: "spack_eto",
+    mountKey: "eto",
     mountPoint: "extensions",
-    displayName: "ETC",
+    displayName: "ETO",
     priority: 20,
     enabled: true,
     required: false,
@@ -591,13 +591,13 @@ function fakeValidation(): YapMountValidationResult {
     issues: [],
     candidate: {
       yapId: "yap_test",
-      skillPackId: "spack_etc",
-      mountKey: "etc",
+      skillPackId: "spack_eto",
+      mountKey: "eto",
       enabled: true,
       replacingMountId: null,
     },
     summary: {
-      packOrder: ["spack_test", "spack_etc"],
+      packOrder: ["spack_test", "spack_eto"],
       skillCount: 2,
       routeCount: 0,
       toolMappingCount: 0,
@@ -648,21 +648,21 @@ function fakeRuntimePlan(): YapRuntimePlan {
   const assembly = fakeAssembly();
   return {
     yap: assembly.yap,
-    task: "Review ETC project margin risk",
+    task: "Review ETO project margin risk",
     status: "ready",
     candidates: [
       {
         skill: {
           name: "project-margin-review",
           version: "1.2.3",
-          sourcePackId: "spack_etc",
-          sourcePackName: "etc-professional-projects",
-          sourceMountKey: "etc",
+          sourcePackId: "spack_eto",
+          sourcePackName: "eto-professional-projects",
+          sourceMountKey: "eto",
           definition: {},
         },
-        sourcePackId: "spack_etc",
-        sourcePackName: "etc-professional-projects",
-        sourceMountKey: "etc",
+        sourcePackId: "spack_eto",
+        sourcePackName: "eto-professional-projects",
+        sourceMountKey: "eto",
         routeKey: "project-margin-review",
         route: { next_candidates: ["variance-review"] },
         toolMappings: {
@@ -719,13 +719,13 @@ function fakeRemoteManifest(): RemoteYapManifest {
             },
           },
           {
-            id: "spack_etc",
-            name: "etc-professional-projects",
+            id: "spack_eto",
+            name: "eto-professional-projects",
             version: "1.2.3",
             packType: "extension",
             contractVersion: "1.0",
             artifactCount: 1,
-            mountKey: "etc",
+            mountKey: "eto",
             mountPoint: "extensions",
             compatibility: {
               status: "declared",
@@ -763,13 +763,13 @@ function fakeRemoteManifest(): RemoteYapManifest {
       },
       mountedPacks: [
         {
-          id: "spack_etc",
-          name: "etc-professional-projects",
+          id: "spack_eto",
+          name: "eto-professional-projects",
           version: "1.2.3",
           packType: "extension",
           contractVersion: "1.0",
           artifactCount: 1,
-          mountKey: "etc",
+          mountKey: "eto",
           mountPoint: "extensions",
           compatibility: {
             status: "declared",
@@ -777,7 +777,7 @@ function fakeRemoteManifest(): RemoteYapManifest {
           },
         },
       ],
-      packOrder: ["spack_test", "spack_etc"],
+      packOrder: ["spack_test", "spack_eto"],
       skillCount: 2,
       routeCount: 2,
       toolMappingCount: 2,
@@ -794,9 +794,9 @@ function fakeRemoteManifest(): RemoteYapManifest {
           artifactPath: "schemas/project-margin-review.schema.json",
           mediaType: "application/schema+json",
           contentSha256: "hash_schema",
-          sourcePackId: "spack_etc",
-          sourcePackName: "etc-professional-projects",
-          sourceMountKey: "etc",
+          sourcePackId: "spack_eto",
+          sourcePackName: "eto-professional-projects",
+          sourceMountKey: "eto",
         },
       ],
     },

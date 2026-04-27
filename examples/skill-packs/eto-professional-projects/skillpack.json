@@ -1,0 +1,18 @@
+{
+  "name": "eto-professional-projects",
+  "version": "0.1.0",
+  "contract_version": "1.0",
+  "compatibility": {
+    "yigfinance": ">=0.7.0 <1.0.0",
+    "yigthinker": ">=0.3.0 <0.5.0",
+    "yigcore-addins": ">=0.1.0 <1.0.0"
+  },
+  "skills": [
+    {
+      "name": "eto-project-review",
+      "version": "0.1.0",
+      "status": "stable",
+      "description": "Review engineer-to-order project margin, estimate-to-complete position, delivery risk, and variance drivers."
+    }
+  ]
+}

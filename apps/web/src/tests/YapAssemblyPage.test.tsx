@@ -32,10 +32,10 @@ describe("YapAssemblyPage", () => {
 
     expect(await screen.findByText("Yigfinance")).toBeTruthy();
     expect(screen.getByText("Pack Graph")).toBeTruthy();
-    expect(screen.getAllByText("ETC Professional Projects").length).toBe(2);
+    expect(screen.getAllByText("ETO Professional Projects").length).toBe(2);
     expect(screen.getByText("Conflict Status")).toBeTruthy();
     expect(screen.getByText("duplicate route")).toBeTruthy();
-    expect(screen.getByText("schemas/etc.schema.json")).toBeTruthy();
+    expect(screen.getByText("schemas/eto.schema.json")).toBeTruthy();
     expect(mockFetch.mock.calls[0][0]).toContain(
       "/v1/yaps/yigfinance/assembly",
     );
@@ -49,13 +49,13 @@ describe("YapAssemblyPage", () => {
 
     renderAssemblyPage();
 
-    expect(await screen.findByText("commands/etc.md")).toBeTruthy();
+    expect(await screen.findByText("commands/eto.md")).toBeTruthy();
     await userEvent.click(screen.getByRole("button", { name: "Schema" }));
 
     await waitFor(() => {
-      expect(screen.queryByText("commands/etc.md")).toBeNull();
+      expect(screen.queryByText("commands/eto.md")).toBeNull();
     });
-    expect(screen.getByText("schemas/etc.schema.json")).toBeTruthy();
+    expect(screen.getByText("schemas/eto.schema.json")).toBeTruthy();
   });
 });
 
@@ -126,12 +126,12 @@ function fakeAssembly(): ResolvedYapManifest {
       {
         role: "mount",
         mount: {
-          id: "mount_etc",
+          id: "mount_eto",
           yapId: "yap_test",
-          skillPackId: "spack_etc",
-          mountKey: "etc",
+          skillPackId: "spack_eto",
+          mountKey: "eto",
           mountPoint: "extensions",
-          displayName: "ETC",
+          displayName: "ETO",
           priority: 20,
           enabled: true,
           required: false,
@@ -141,11 +141,11 @@ function fakeAssembly(): ResolvedYapManifest {
           updatedAt: 1,
         },
         skillPack: {
-          id: "spack_etc",
+          id: "spack_eto",
           yapId: "yap_test",
-          name: "etc-professional-projects",
+          name: "eto-professional-projects",
           version: "1.2.3",
-          displayName: "ETC Professional Projects",
+          displayName: "ETO Professional Projects",
           description: "Project analysis pack",
           packType: "extension",
           contractVersion: "1.0",
@@ -170,7 +170,7 @@ function fakeAssembly(): ResolvedYapManifest {
     ],
     merged: {
       contractVersion: "1.0",
-      packOrder: ["spack_core", "spack_etc"],
+      packOrder: ["spack_core", "spack_eto"],
       skills: [
         {
           name: "variance-review",
@@ -181,48 +181,48 @@ function fakeAssembly(): ResolvedYapManifest {
           definition: {},
         },
         {
-          name: "etc-projects",
+          name: "eto-projects",
           version: "1.2.3",
-          sourcePackId: "spack_etc",
-          sourcePackName: "etc-professional-projects",
-          sourceMountKey: "etc",
+          sourcePackId: "spack_eto",
+          sourcePackName: "eto-professional-projects",
+          sourceMountKey: "eto",
           definition: {},
         },
       ],
       routes: {
         skills: {
           "variance-review": {},
-          "etc-projects": {},
+          "eto-projects": {},
         },
       },
       toolMap: {
         mappings: {
-          "etc.projects": {},
+          "eto.projects": {},
         },
       },
       schemas: {
-        "schemas/etc.schema.json": {},
+        "schemas/eto.schema.json": {},
       },
       artifactIndex: [
         {
           id: "artifact_command",
           artifactType: "command",
-          artifactPath: "commands/etc.md",
+          artifactPath: "commands/eto.md",
           mediaType: "text/markdown",
           contentSha256: "1234567890abcdef",
-          sourcePackId: "spack_etc",
-          sourcePackName: "etc-professional-projects",
-          sourceMountKey: "etc",
+          sourcePackId: "spack_eto",
+          sourcePackName: "eto-professional-projects",
+          sourceMountKey: "eto",
         },
         {
           id: "artifact_schema",
           artifactType: "schema",
-          artifactPath: "schemas/etc.schema.json",
+          artifactPath: "schemas/eto.schema.json",
           mediaType: "application/schema+json",
           contentSha256: "abcdef1234567890",
-          sourcePackId: "spack_etc",
-          sourcePackName: "etc-professional-projects",
-          sourceMountKey: "etc",
+          sourcePackId: "spack_eto",
+          sourcePackName: "eto-professional-projects",
+          sourceMountKey: "eto",
         },
       ],
     },
@@ -231,7 +231,7 @@ function fakeAssembly(): ResolvedYapManifest {
         {
           kind: "route",
           key: "duplicate route",
-          sourcePackIds: ["spack_core", "spack_etc"],
+          sourcePackIds: ["spack_core", "spack_eto"],
           message: "Route key is defined by multiple packs.",
         },
       ],
