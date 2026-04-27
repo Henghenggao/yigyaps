@@ -347,6 +347,7 @@ describe("YAP Assembly Routes", () => {
       url: `/v1/yaps/${yap.slug}/remote-manifest?host=yigthinker&hostVersion=0.3.1&mountKeys=eto`,
       headers: {
         host: "api.test",
+        "x-forwarded-proto": "https",
         "if-none-match": manifestRes.headers.etag,
       },
     });
