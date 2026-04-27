@@ -37,13 +37,13 @@ export interface YapHostRuntimeClient {
 
   getYapAssembly(
     yapIdOrSlug: string,
-    query?: { maxMounts?: number },
+    query?: { mountKeys?: string[]; maxMounts?: number },
   ): Promise<ResolvedYapManifest>;
 
   planYapRuntime(
     yapIdOrSlug: string,
     params: YapRuntimePlanRequest,
-    query?: { maxMounts?: number },
+    query?: { mountKeys?: string[]; maxMounts?: number },
   ): Promise<YapRuntimePlan>;
 }
 
@@ -101,13 +101,14 @@ export async function prepareYapHostRuntime(
       maxCandidates: options.maxCandidates,
       hints: mergeMountHints(options.hints, options.mountKeys),
     },
-    { maxMounts: options.maxMounts },
+    { mountKeys: options.mountKeys, maxMounts: options.maxMounts },
   );
 
   const assembly =
     options.fetchAssembly === false
       ? null
       : await client.getYapAssembly(options.yap, {
+          mountKeys: options.mountKeys,
           maxMounts: options.maxMounts,
         });
   const selectedCandidate = plan.candidates[0] ?? null;
@@ -175,11 +176,16 @@ function collectHandoffWarnings(
   selectedCandidate: YapRuntimePlanCandidate | null,
 ): string[] {
   const warnings = [...manifest.host.compatibility.packs]
-    .filter((pack) => pack.compatibility.status !== "declared")
-    .map(
-      (pack) =>
-        `Pack ${pack.name}@${pack.version} has not declared compatibility with ${manifest.host.target}.`,
-    );
+    .filter((pack) => pack.compatibility.status !== "compatible")
+    .map((pack) => {
+      if (pack.compatibility.status === "not_declared") {
+        return `Pack ${pack.name}@${pack.version} has not declared compatibility with ${manifest.host.target}.`;
+      }
+      if (pack.compatibility.status === "incompatible") {
+        return `Pack ${pack.name}@${pack.version} is outside the declared compatibility range ${pack.compatibility.range} for ${manifest.host.target}.`;
+      }
+      return `Pack ${pack.name}@${pack.version} compatibility with ${manifest.host.target} is declared but not version-checked.`;
+    });
 
   if (manifest.host.compatibility.status !== "compatible") {
     warnings.push(

@@ -24,9 +24,15 @@ import { getTestDatabaseUrl } from "../helpers/test-db-url.js";
 const DB_URL = getTestDatabaseUrl();
 
 async function clearMountTestData(db: ReturnType<typeof drizzle>) {
-  await db.execute(sql.raw(`TRUNCATE TABLE yy_yap_pack_mounts RESTART IDENTITY CASCADE`));
-  await db.execute(sql.raw(`TRUNCATE TABLE yy_skill_pack_artifacts RESTART IDENTITY CASCADE`));
-  await db.execute(sql.raw(`TRUNCATE TABLE yy_skill_packs RESTART IDENTITY CASCADE`));
+  await db.execute(
+    sql.raw(`TRUNCATE TABLE yy_yap_pack_mounts RESTART IDENTITY CASCADE`),
+  );
+  await db.execute(
+    sql.raw(`TRUNCATE TABLE yy_skill_pack_artifacts RESTART IDENTITY CASCADE`),
+  );
+  await db.execute(
+    sql.raw(`TRUNCATE TABLE yy_skill_packs RESTART IDENTITY CASCADE`),
+  );
   await db.execute(sql.raw(`TRUNCATE TABLE yy_yaps RESTART IDENTITY CASCADE`));
 }
 
@@ -55,6 +61,7 @@ async function createSkillPack(
   packType: "core" | "extension" = "extension",
   options: {
     contractVersion?: string;
+    compatibility?: Record<string, string>;
     skills?: Array<Record<string, unknown>>;
     routeSkills?: Record<string, unknown>;
     toolMappings?: Record<string, unknown>;
@@ -81,6 +88,7 @@ async function createSkillPack(
         contract_version: options.contractVersion ?? "1.0",
         skills: options.skills ?? [],
       },
+      compatibility: options.compatibility ?? {},
       artifacts: [
         {
           artifactType: "routes",
@@ -239,10 +247,17 @@ describe("YAP Pack Mount Routes", () => {
 
   it("validates a mount candidate before activation", async () => {
     const yap = await createYap(serverContext, ADMIN_JWT);
-    await createSkillPack(serverContext, ADMIN_JWT, yap.id, "yigfinance", "core", {
-      routeSkills: { "variance-review": { next_candidates: [] } },
-      toolMappings: { "finance-calc.variance_bridge": { tool: "variance" } },
-    });
+    await createSkillPack(
+      serverContext,
+      ADMIN_JWT,
+      yap.id,
+      "yigfinance",
+      "core",
+      {
+        routeSkills: { "variance-review": { next_candidates: [] } },
+        toolMappings: { "finance-calc.variance_bridge": { tool: "variance" } },
+      },
+    );
     const etoPack = await createSkillPack(
       serverContext,
       ADMIN_JWT,
@@ -285,10 +300,17 @@ describe("YAP Pack Mount Routes", () => {
 
   it("blocks activating an extension with duplicate resolver keys", async () => {
     const yap = await createYap(serverContext, ADMIN_JWT);
-    await createSkillPack(serverContext, ADMIN_JWT, yap.id, "yigfinance", "core", {
-      skills: [{ name: "variance-review", version: "0.7.0" }],
-      routeSkills: { "variance-review": { next_candidates: [] } },
-    });
+    await createSkillPack(
+      serverContext,
+      ADMIN_JWT,
+      yap.id,
+      "yigfinance",
+      "core",
+      {
+        skills: [{ name: "variance-review", version: "0.7.0" }],
+        routeSkills: { "variance-review": { next_candidates: [] } },
+      },
+    );
     const overridePack = await createSkillPack(
       serverContext,
       ADMIN_JWT,
@@ -297,7 +319,9 @@ describe("YAP Pack Mount Routes", () => {
       "extension",
       {
         skills: [{ name: "variance-review", version: "0.7.0" }],
-        routeSkills: { "variance-review": { next_candidates: ["risk-review"] } },
+        routeSkills: {
+          "variance-review": { next_candidates: ["risk-review"] },
+        },
       },
     );
 
@@ -317,8 +341,14 @@ describe("YAP Pack Mount Routes", () => {
       validation: {
         status: "blocked",
         issues: expect.arrayContaining([
-          expect.objectContaining({ code: "duplicate_skill", key: "variance-review" }),
-          expect.objectContaining({ code: "duplicate_route", key: "variance-review" }),
+          expect.objectContaining({
+            code: "duplicate_skill",
+            key: "variance-review",
+          }),
+          expect.objectContaining({
+            code: "duplicate_route",
+            key: "variance-review",
+          }),
         ]),
       },
     });
@@ -326,9 +356,16 @@ describe("YAP Pack Mount Routes", () => {
 
   it("reports contract-version mismatches before activation", async () => {
     const yap = await createYap(serverContext, ADMIN_JWT);
-    await createSkillPack(serverContext, ADMIN_JWT, yap.id, "yigfinance", "core", {
-      contractVersion: "1.0",
-    });
+    await createSkillPack(
+      serverContext,
+      ADMIN_JWT,
+      yap.id,
+      "yigfinance",
+      "core",
+      {
+        contractVersion: "1.0",
+      },
+    );
     const incompatiblePack = await createSkillPack(
       serverContext,
       ADMIN_JWT,
@@ -357,6 +394,54 @@ describe("YAP Pack Mount Routes", () => {
           severity: "error",
         }),
       ],
+    });
+  });
+
+  it("blocks activating an extension outside its declared YAP compatibility range", async () => {
+    const yap = await createYap(serverContext, ADMIN_JWT);
+    await createSkillPack(
+      serverContext,
+      ADMIN_JWT,
+      yap.id,
+      "yigfinance",
+      "core",
+      {
+        contractVersion: "1.0",
+      },
+    );
+    const incompatiblePack = await createSkillPack(
+      serverContext,
+      ADMIN_JWT,
+      yap.id,
+      "legacy-project-pack",
+      "extension",
+      {
+        compatibility: { yigfinance: ">=0.1.0 <0.7.0" },
+      },
+    );
+
+    const res = await serverContext.fastify.inject({
+      method: "POST",
+      url: `/v1/yaps/${yap.id}/mounts`,
+      headers: { authorization: `Bearer ${ADMIN_JWT}` },
+      payload: {
+        skillPackId: incompatiblePack.id,
+        mountKey: "legacy-project-pack",
+      },
+    });
+
+    expect(res.statusCode).toBe(409);
+    expect(res.json()).toMatchObject({
+      error: "Mount validation failed",
+      validation: {
+        status: "blocked",
+        issues: [
+          expect.objectContaining({
+            code: "yap_compatibility_mismatch",
+            severity: "error",
+          }),
+        ],
+      },
     });
   });
 

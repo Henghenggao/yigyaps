@@ -132,9 +132,12 @@ export class YigYapsRegistryClient {
 
   async getYapAssembly(
     yapIdOrSlug: string,
-    query: { maxMounts?: number } = {},
+    query: { mountKeys?: string[]; maxMounts?: number } = {},
   ): Promise<ResolvedYapManifest> {
     const params = new URLSearchParams();
+    if (query.mountKeys?.length) {
+      params.set("mountKeys", query.mountKeys.join(","));
+    }
     if (query.maxMounts !== undefined) {
       params.set("maxMounts", String(query.maxMounts));
     }
@@ -144,7 +147,8 @@ export class YigYapsRegistryClient {
       `${this.baseUrl}/v1/yaps/${encodeURIComponent(yapIdOrSlug)}/assembly${suffix}`,
       { headers: this.headers },
     );
-    if (!res.ok) throw new Error(`YigYaps getYapAssembly failed: ${res.status}`);
+    if (!res.ok)
+      throw new Error(`YigYaps getYapAssembly failed: ${res.status}`);
     return res.json() as Promise<ResolvedYapManifest>;
   }
 
@@ -181,9 +185,12 @@ export class YigYapsRegistryClient {
   async planYapRuntime(
     yapIdOrSlug: string,
     params: YapRuntimePlanRequest,
-    query: { maxMounts?: number } = {},
+    query: { mountKeys?: string[]; maxMounts?: number } = {},
   ): Promise<YapRuntimePlan> {
     const search = new URLSearchParams();
+    if (query.mountKeys?.length) {
+      search.set("mountKeys", query.mountKeys.join(","));
+    }
     if (query.maxMounts !== undefined) {
       search.set("maxMounts", String(query.maxMounts));
     }
@@ -197,7 +204,8 @@ export class YigYapsRegistryClient {
         body: JSON.stringify(params),
       },
     );
-    if (!res.ok) throw new Error(`YigYaps planYapRuntime failed: ${res.status}`);
+    if (!res.ok)
+      throw new Error(`YigYaps planYapRuntime failed: ${res.status}`);
     return res.json() as Promise<YapRuntimePlan>;
   }
 

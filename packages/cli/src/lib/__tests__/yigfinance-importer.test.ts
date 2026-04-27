@@ -40,11 +40,17 @@ describe("planYigfinanceImport", () => {
     });
     expect(plan.summary).toMatchObject({
       skillCount: 2,
+      coreSkillCount: 2,
       schemaCount: 1,
       commandCount: 1,
       skillMarkdownCount: 1,
       artifactCount: 10,
+      extensionPackCount: 0,
+      extensionSkillCount: 0,
+      defaultMountCount: 0,
     });
+    expect(plan.extensionPacks).toEqual([]);
+    expect(plan.defaultMounts).toEqual([]);
     expect(plan.skillPack.artifacts).toEqual(
       expect.arrayContaining([
         expect.objectContaining({
@@ -76,6 +82,91 @@ describe("planYigfinanceImport", () => {
     );
   });
 
+  it("splits the default ETO project pack into a mounted extension plan", async () => {
+    const root = await createFixture({ withEto: true });
+
+    const plan = await planYigfinanceImport(root);
+    const coreSkillNames = readPlanSkillNames(plan.skillPack.manifest);
+    const extension = plan.extensionPacks[0];
+    const extensionSkillNames = readPlanSkillNames(extension.manifest);
+
+    expect(plan.yap.assemblyConfig).toMatchObject({
+      mountedPacks: [
+        {
+          mountKey: "eto",
+          mountPoint: "extensions",
+          default: true,
+          pack: {
+            name: "yigfinance-eto-professional-projects",
+            version: "0.7.0",
+          },
+        },
+      ],
+    });
+    expect(coreSkillNames).toEqual([
+      "finance-context-setup",
+      "variance-review",
+    ]);
+    expect(extension).toMatchObject({
+      name: "yigfinance-eto-professional-projects",
+      displayName: "Yigfinance ETO Professional Projects",
+      packType: "extension",
+      compatibility: {
+        yigfinance: ">=0.7.0 <0.8.0",
+        yigthinker: ">=0.3.0 <0.5.0",
+      },
+    });
+    expect(extensionSkillNames).toEqual([
+      "cash-conversion-review",
+      "contract-asset-liability-review",
+      "project-margin-review",
+    ]);
+    expect(plan.defaultMounts).toEqual([
+      expect.objectContaining({
+        skillPackName: "yigfinance-eto-professional-projects",
+        mountKey: "eto",
+        mountPoint: "extensions",
+        priority: 20,
+      }),
+    ]);
+    expect(plan.skillPack.artifacts).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          artifactPath: "schemas/project-margin-review.schema.json",
+        }),
+      ]),
+    );
+    expect(extension.artifacts).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          artifactType: "schema",
+          artifactPath: "schemas/project-margin-review.schema.json",
+        }),
+        expect.objectContaining({
+          artifactType: "routes",
+          artifactPath: "routes.json",
+          content: expect.objectContaining({
+            skills: expect.objectContaining({
+              "project-margin-review": expect.any(Object),
+            }),
+          }),
+        }),
+      ]),
+    );
+    expect(extension.artifacts).not.toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ artifactType: "tool-map" }),
+      ]),
+    );
+    expect(plan.summary).toMatchObject({
+      skillCount: 5,
+      coreSkillCount: 2,
+      extensionPackCount: 1,
+      extensionSkillCount: 3,
+      defaultMountCount: 1,
+    });
+  });
+
   it("fails fast when required Bridge artifacts are missing", async () => {
     const root = await createFixture();
     await fs.remove(
@@ -94,7 +185,9 @@ describe("planYigfinanceImport", () => {
   });
 });
 
-async function createFixture(): Promise<string> {
+async function createFixture(
+  options: { withEto?: boolean } = {},
+): Promise<string> {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "yigyaps-import-"));
   tempRoots.push(root);
 
@@ -110,6 +203,29 @@ async function createFixture(): Promise<string> {
   await fs.ensureDir(
     path.join(root, "generated", "claude", "skills", "variance-review"),
   );
+  if (options.withEto) {
+    await fs.ensureDir(
+      path.join(root, "generated", "claude", "skills", "project-margin-review"),
+    );
+    await fs.ensureDir(
+      path.join(
+        root,
+        "generated",
+        "claude",
+        "skills",
+        "contract-asset-liability-review",
+      ),
+    );
+    await fs.ensureDir(
+      path.join(
+        root,
+        "generated",
+        "claude",
+        "skills",
+        "cash-conversion-review",
+      ),
+    );
+  }
 
   await fs.writeFile(path.join(root, "README.md"), "# Yigfinance\n");
   await fs.writeJson(path.join(pluginDir, "plugin.json"), {
@@ -125,11 +241,33 @@ async function createFixture(): Promise<string> {
     skills: [
       { name: "finance-context-setup", version: "0.7.0" },
       { name: "variance-review", version: "0.7.0" },
+      ...(options.withEto
+        ? [
+            { name: "cash-conversion-review", version: "0.7.0" },
+            {
+              name: "contract-asset-liability-review",
+              version: "0.7.0",
+            },
+            { name: "project-margin-review", version: "0.7.0" },
+          ]
+        : []),
     ],
   });
   await fs.writeJson(path.join(pluginDir, "routes.json"), {
     contract_version: "1.0",
-    skills: {},
+    skills: options.withEto
+      ? {
+          "project-margin-review": {
+            next_candidates: ["cash-conversion-review"],
+          },
+          "contract-asset-liability-review": {
+            next_candidates: ["project-margin-review"],
+          },
+          "cash-conversion-review": {
+            next_candidates: ["contract-asset-liability-review"],
+          },
+        }
+      : {},
   });
   await fs.writeJson(path.join(pluginDir, "tool-map.json"), {
     contract_version: "1.0",
@@ -137,6 +275,13 @@ async function createFixture(): Promise<string> {
   });
   await fs.writeJson(path.join(pluginDir, "feedback.json"), {
     contract_version: "1.0",
+    skills: options.withEto
+      ? {
+          "project-margin-review": { enabled: true },
+          "contract-asset-liability-review": { enabled: true },
+          "cash-conversion-review": { enabled: true },
+        }
+      : undefined,
   });
   await fs.writeJson(path.join(pluginDir, "update.json"), {
     contract_version: "1.0",
@@ -145,8 +290,40 @@ async function createFixture(): Promise<string> {
     path.join(pluginDir, "schemas", "variance-review.schema.json"),
     { type: "object" },
   );
+  if (options.withEto) {
+    for (const skillName of [
+      "project-margin-review",
+      "contract-asset-liability-review",
+      "cash-conversion-review",
+    ]) {
+      await fs.writeJson(
+        path.join(pluginDir, "schemas", `${skillName}.schema.json`),
+        { type: "object", title: skillName },
+      );
+      await fs.writeFile(
+        path.join(
+          root,
+          "generated",
+          "yigthinker",
+          "commands",
+          `${skillName}.md`,
+        ),
+        `# ${skillName}\n`,
+      );
+      await fs.writeFile(
+        path.join(root, "generated", "claude", "skills", skillName, "SKILL.md"),
+        `# ${skillName}\n`,
+      );
+    }
+  }
   await fs.writeFile(
-    path.join(root, "generated", "yigthinker", "commands", "variance-review.md"),
+    path.join(
+      root,
+      "generated",
+      "yigthinker",
+      "commands",
+      "variance-review.md",
+    ),
     "# variance-review\n",
   );
   await fs.writeFile(
@@ -163,4 +340,19 @@ async function createFixture(): Promise<string> {
   await fs.writeFile(path.join(pluginDir, "hooks", "auto_update.py"), "pass\n");
 
   return root;
+}
+
+function readPlanSkillNames(manifest: Record<string, unknown>): string[] {
+  return Array.isArray(manifest.skills)
+    ? manifest.skills
+        .flatMap((skill) =>
+          skill &&
+          typeof skill === "object" &&
+          !Array.isArray(skill) &&
+          typeof (skill as Record<string, unknown>).name === "string"
+            ? [(skill as Record<string, string>).name]
+            : [],
+        )
+        .sort()
+    : [];
 }

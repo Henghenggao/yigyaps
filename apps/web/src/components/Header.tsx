@@ -17,11 +17,24 @@ export function Header({ user }: { user: User | null }) {
         </Link>
 
         <nav className="site-nav">
-          <Link to="/marketplace" className="nav-link">Marketplace</Link>
-          <Link to="/yaps/yigfinance/assembly" className="nav-link">YAPs</Link>
-          <Link to="/publish" className="nav-link">Publish</Link>
-          <Link to="/blog" className="nav-link">Docs</Link>
-          <a href={`${API_URL}/docs`} target="_blank" rel="noopener noreferrer" className="nav-link">
+          <Link to="/marketplace" className="nav-link">
+            Marketplace
+          </Link>
+          <Link to="/yaps/studio" className="nav-link">
+            YAPs
+          </Link>
+          <Link to="/publish" className="nav-link">
+            Publish
+          </Link>
+          <Link to="/blog" className="nav-link">
+            Docs
+          </Link>
+          <a
+            href={`${API_URL}/docs`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="nav-link"
+          >
             API
           </a>
         </nav>

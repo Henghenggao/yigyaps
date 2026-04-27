@@ -32,6 +32,7 @@ export interface ResolvedYapPackArtifacts {
   feedback: Record<string, unknown> | null;
   update: Record<string, unknown> | null;
   schemas: Record<string, unknown>;
+  qualityReports: Record<string, unknown>[];
   artifactIndex: ResolvedYapArtifactRef[];
 }
 
@@ -70,6 +71,7 @@ export interface ResolvedYapManifest {
     routes: Record<string, unknown>;
     toolMap: Record<string, unknown>;
     schemas: Record<string, unknown>;
+    qualityReports: Record<string, unknown>[];
     artifactIndex: ResolvedYapArtifactRef[];
   };
   diagnostics: {
@@ -87,6 +89,7 @@ export interface YapMountValidationIssue {
   code:
     | "missing_core_pack"
     | "contract_version_mismatch"
+    | "yap_compatibility_mismatch"
     | "duplicate_skill"
     | "duplicate_route"
     | "duplicate_tool_mapping"

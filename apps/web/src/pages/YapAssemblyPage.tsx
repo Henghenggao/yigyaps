@@ -22,8 +22,20 @@ const ARTIFACT_LABELS: Record<ArtifactFilter, string> = {
   update: "Update",
   schema: "Schema",
   command: "Command",
+  eval: "Eval",
+  fixture: "Fixture",
+  "quality-report": "Quality report",
   "skill-md": "Skill MD",
   other: "Other",
+};
+
+type CapabilityStatus = "pass" | "partial" | "missing";
+
+type CapabilityLevel = {
+  code: string;
+  label: string;
+  status: CapabilityStatus;
+  detail: string;
 };
 
 export function YapAssemblyPage() {
@@ -387,6 +399,89 @@ export function YapAssemblyPage() {
           font-size: 0.82rem;
         }
 
+        .yap-capability-list {
+          display: grid;
+          gap: 0.55rem;
+        }
+
+        .yap-capability-item {
+          display: grid;
+          grid-template-columns: 2.45rem minmax(0, 1fr) auto;
+          gap: 0.7rem;
+          align-items: center;
+          border: 1px solid var(--color-border);
+          border-radius: 8px;
+          padding: 0.65rem;
+          background: #fff;
+        }
+
+        .yap-capability-item.pass {
+          border-color: rgba(19, 121, 91, 0.28);
+          background: rgba(19, 121, 91, 0.06);
+        }
+
+        .yap-capability-item.partial {
+          border-color: rgba(181, 116, 19, 0.3);
+          background: rgba(181, 116, 19, 0.07);
+        }
+
+        .yap-capability-code {
+          display: grid;
+          place-items: center;
+          width: 2.2rem;
+          height: 2.2rem;
+          border-radius: 50%;
+          background: #0c2242;
+          color: #fff;
+          font-family: var(--font-mono);
+          font-size: 0.72rem;
+          font-weight: 800;
+        }
+
+        .yap-capability-body {
+          min-width: 0;
+        }
+
+        .yap-capability-label {
+          display: block;
+          color: var(--color-text-main);
+          font-weight: 800;
+          line-height: 1.25;
+        }
+
+        .yap-capability-detail {
+          display: block;
+          margin-top: 0.22rem;
+          color: var(--color-text-muted);
+          font-size: 0.78rem;
+          line-height: 1.35;
+        }
+
+        .yap-capability-status {
+          border: 1px solid var(--color-border);
+          border-radius: 999px;
+          padding: 0.15rem 0.48rem;
+          color: var(--color-text-muted);
+          font-size: 0.7rem;
+          font-weight: 800;
+          white-space: nowrap;
+        }
+
+        .yap-capability-status.pass {
+          color: #13795b;
+          border-color: rgba(19, 121, 91, 0.28);
+        }
+
+        .yap-capability-status.partial {
+          color: #9a5b00;
+          border-color: rgba(181, 116, 19, 0.3);
+        }
+
+        .yap-capability-status.missing {
+          color: #b42318;
+          border-color: rgba(180, 35, 24, 0.26);
+        }
+
         .yap-artifact-toolbar {
           display: flex;
           align-items: center;
@@ -466,6 +561,15 @@ export function YapAssemblyPage() {
           .yap-table {
             table-layout: auto;
           }
+
+          .yap-capability-item {
+            grid-template-columns: 2.45rem minmax(0, 1fr);
+          }
+
+          .yap-capability-status {
+            grid-column: 2;
+            justify-self: start;
+          }
         }
       `}</style>
     </div>
@@ -492,6 +596,15 @@ function AssemblyWorkbench({
   const routeCount = countRecordKeys(assembly.merged.routes, "skills");
   const toolCount = countRecordKeys(assembly.merged.toolMap, "mappings");
   const schemaCount = Object.keys(assembly.merged.schemas).length;
+  const capabilityLevels = buildCapabilityLevels(assembly, {
+    conflictCount,
+    routeCount,
+    toolCount,
+    schemaCount,
+  });
+  const passedCapabilityCount = capabilityLevels.filter(
+    (level) => level.status === "pass",
+  ).length;
 
   return (
     <>
@@ -536,6 +649,15 @@ function AssemblyWorkbench({
               id="conflict-title"
             />
             <ConflictPanel conflicts={assembly.diagnostics.conflicts} />
+          </section>
+
+          <section className="yap-panel" aria-labelledby="capability-title">
+            <PanelHeader
+              title="Capability Level"
+              count={`${passedCapabilityCount}/${capabilityLevels.length} ready`}
+              id="capability-title"
+            />
+            <CapabilityPanel levels={capabilityLevels} />
           </section>
         </div>
 
@@ -721,6 +843,28 @@ function ConflictPanel({ conflicts }: { conflicts: ResolvedYapConflict[] }) {
   );
 }
 
+function CapabilityPanel({ levels }: { levels: CapabilityLevel[] }) {
+  return (
+    <div className="yap-capability-list">
+      {levels.map((level) => (
+        <div
+          key={level.code}
+          className={`yap-capability-item ${level.status}`}
+        >
+          <span className="yap-capability-code">{level.code}</span>
+          <span className="yap-capability-body">
+            <span className="yap-capability-label">{level.label}</span>
+            <span className="yap-capability-detail">{level.detail}</span>
+          </span>
+          <span className={`yap-capability-status ${level.status}`}>
+            {capabilityStatusLabel(level.status)}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
 function ResolvedSkillsTable({
   assembly,
 }: {
@@ -828,4 +972,175 @@ function countRecordKeys(
     return Object.keys(nested).length;
   }
   return Object.keys(value).length;
+}
+
+function buildCapabilityLevels(
+  assembly: ResolvedYapManifest,
+  metrics: {
+    conflictCount: number;
+    routeCount: number;
+    toolCount: number;
+    schemaCount: number;
+  },
+): CapabilityLevel[] {
+  const artifactTypes = new Set(
+    assembly.merged.artifactIndex.map((artifact) => artifact.artifactType),
+  );
+  const skillMdCount = assembly.merged.artifactIndex.filter(
+    (artifact) => artifact.artifactType === "skill-md",
+  ).length;
+  const hasEvalAssets = assembly.merged.artifactIndex.some((artifact) =>
+    artifact.artifactType === "eval" ||
+    artifact.artifactType === "fixture" ||
+    /(^|[/\\])(tests?|evals?|fixtures?)([/\\]|$)|(\.test\.|\.spec\.|eval|fixture)/i.test(
+      artifact.artifactPath,
+    ),
+  );
+  const hasGovernanceArtifacts =
+    artifactTypes.has("feedback") && artifactTypes.has("update");
+  const qualityGate = qualityGateSummary(assembly.merged.qualityReports);
+  const contentDepthScore = [
+    assembly.merged.skills.length >= 20,
+    metrics.schemaCount >= 10,
+    skillMdCount >= 10,
+  ].filter(Boolean).length;
+
+  return [
+    {
+      code: "L0",
+      label: "Product shell",
+      status: assembly.yap.slug ? "pass" : "missing",
+      detail: `${assembly.yap.slug} v${assembly.yap.version}`,
+    },
+    {
+      code: "L1",
+      label: "Core + extension assembly",
+      status:
+        assembly.corePack && assembly.mountedPacks.length > 0
+          ? "pass"
+          : assembly.corePack
+            ? "partial"
+            : "missing",
+      detail: `${assembly.mountedPacks.length} mounted extension pack${assembly.mountedPacks.length === 1 ? "" : "s"}`,
+    },
+    {
+      code: "L2",
+      label: "Host manifest ready",
+      status:
+        metrics.conflictCount === 0 && assembly.merged.artifactIndex.length > 0
+          ? "pass"
+          : metrics.conflictCount === 0
+            ? "partial"
+            : "missing",
+      detail: `${assembly.merged.artifactIndex.length} artifacts, ${metrics.conflictCount} conflicts`,
+    },
+    {
+      code: "L3",
+      label: "Runtime handoff",
+      status:
+        metrics.routeCount > 0 && metrics.toolCount > 0
+          ? "pass"
+          : metrics.routeCount > 0 || metrics.toolCount > 0
+            ? "partial"
+            : "missing",
+      detail: `${metrics.routeCount} routes, ${metrics.toolCount} tools`,
+    },
+    {
+      code: "L4",
+      label: "Content depth",
+      status:
+        contentDepthScore >= 2
+          ? "pass"
+          : assembly.merged.skills.length >= 5
+            ? "partial"
+            : "missing",
+      detail: `${assembly.merged.skills.length} skills, ${metrics.schemaCount} schemas, ${skillMdCount} skill docs`,
+    },
+    {
+      code: "L5",
+      label: "Evaluation assets",
+      status: hasEvalAssets ? "pass" : "missing",
+      detail: hasEvalAssets ? "Tests or eval artifacts present" : "No eval artifacts indexed",
+    },
+    {
+      code: "L6",
+      label: "Release governance",
+      status: hasGovernanceArtifacts ? "pass" : "missing",
+      detail: hasGovernanceArtifacts
+        ? "Feedback and update artifacts present"
+        : "Feedback/update artifacts missing",
+    },
+    {
+      code: "L7",
+      label: "Release quality gate",
+      status:
+        qualityGate.status === "passed"
+          ? "pass"
+          : qualityGate.status
+            ? "partial"
+            : "missing",
+      detail: qualityGate.detail,
+    },
+  ];
+}
+
+function qualityGateSummary(
+  reports: Record<string, unknown>[],
+): { status: string | null; detail: string } {
+  const report = reports[0];
+  if (!report) {
+    return {
+      status: null,
+      detail: "No quality report indexed",
+    };
+  }
+
+  const status = typeof report.status === "string" ? report.status : "unknown";
+  const evidence =
+    report.evidence && typeof report.evidence === "object"
+      ? (report.evidence as Record<string, unknown>)
+      : {};
+  const collectedTestCount =
+    typeof evidence.collectedTestCount === "number"
+      ? evidence.collectedTestCount
+      : null;
+  const failedTestCount =
+    typeof evidence.cachedFailedTestCount === "number"
+      ? evidence.cachedFailedTestCount
+      : null;
+
+  if (status === "passed") {
+    return {
+      status,
+      detail:
+        collectedTestCount !== null
+          ? `${collectedTestCount} tests passed`
+          : "Quality report passed",
+    };
+  }
+  if (status === "failed") {
+    return {
+      status,
+      detail:
+        failedTestCount !== null
+          ? `${failedTestCount} cached test failures need review`
+          : "Quality report failed",
+    };
+  }
+  if (status === "needs-run") {
+    return {
+      status,
+      detail: "Quality report indexed; test run still required",
+    };
+  }
+  return {
+    status,
+    detail: "Quality report indexed with unknown status",
+  };
+}
+
+function capabilityStatusLabel(status: CapabilityStatus): string {
+  if (status === "pass") return "Ready";
+  if (status === "partial") return "Seeded";
+  return "Missing";
 }

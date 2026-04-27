@@ -160,12 +160,21 @@ yap
     "--skills-dir <path>",
     "Generated SKILL.md directory relative to sourceDir",
   )
+  .option(
+    "--no-default-extensions",
+    "Do not split and mount default Yigfinance extension packs",
+  )
+  .option(
+    "--default-extension-mount-key <key>",
+    "Mount key for the default Yigfinance extension pack",
+  )
   .option("--dry-run", "Build the import plan without uploading")
   .option("--json", "Output results in JSON format")
   .action((sourceDir, options) =>
     yapImportCommand(sourceDir, {
       ...options,
       tags: parseCsvOption(options.tags),
+      includeDefaultExtensions: options.defaultExtensions,
     }),
   );
 
@@ -182,8 +191,14 @@ yapPack
   .option("--status <status>", "active or draft", "active")
   .option("--display-name <name>", "SkillPack display name")
   .option("--description <description>", "SkillPack description")
-  .option("--commands-dir <path>", "Command markdown directory relative to sourceDir")
-  .option("--skills-dir <path>", "Generated SKILL.md directory relative to sourceDir")
+  .option(
+    "--commands-dir <path>",
+    "Command markdown directory relative to sourceDir",
+  )
+  .option(
+    "--skills-dir <path>",
+    "Generated SKILL.md directory relative to sourceDir",
+  )
   .option("--dry-run", "Build the publish plan without uploading")
   .option("--json", "Output results in JSON format")
   .action((yapIdOrSlug, sourceDir, options) =>
@@ -282,7 +297,10 @@ yapRuntime
   .argument("<yap>", "YAP ID or slug")
   .requiredOption("--task <text>", "Task to plan against the resolved YAP")
   .option("--required-skills <csv>", "Comma-separated required skill names")
-  .option("--expected-contract-version <version>", "Required assembly contract version")
+  .option(
+    "--expected-contract-version <version>",
+    "Required assembly contract version",
+  )
   .option("--max-candidates <number>", "Maximum candidate skills to return")
   .option("--max-mounts <number>", "Maximum mounted packs to resolve")
   .option("--skill-names <csv>", "Comma-separated skill hint names")
@@ -316,7 +334,10 @@ yapHost
   .option("--host-version <version>", "Host version")
   .option("--mount-keys <csv>", "Comma-separated mount keys to include")
   .option("--required-skills <csv>", "Comma-separated required skill names")
-  .option("--expected-contract-version <version>", "Required assembly contract version")
+  .option(
+    "--expected-contract-version <version>",
+    "Required assembly contract version",
+  )
   .option("--max-candidates <number>", "Maximum candidate skills to return")
   .option("--max-mounts <number>", "Maximum mounted packs to resolve")
   .option("--no-assembly", "Skip fetching the full resolved assembly")
@@ -398,7 +419,10 @@ program
   )
   .argument("<skillId>", "Package ID (e.g. expert/investment-eval)")
   .option("--api-key <key>", "YigYaps API key (defaults to stored key)")
-  .option("--api-url <url>", "YigYaps API URL (defaults to https://api.yigyaps.com)")
+  .option(
+    "--api-url <url>",
+    "YigYaps API URL (defaults to https://api.yigyaps.com)",
+  )
   .action(mcpBridgeCommand);
 
 // ─── Ecosystem Commands ───────────────────────────────────────────────────────

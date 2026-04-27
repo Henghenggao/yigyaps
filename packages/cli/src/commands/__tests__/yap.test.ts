@@ -115,6 +115,92 @@ describe("yapImportCommand", () => {
     });
   });
 
+  it("publishes and mounts the default ETO extension when present", async () => {
+    const root = await createFixture({ withEto: true });
+    const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const yap = fakeYap();
+    const corePack = fakeSkillPack();
+    const etoPack = fakeSkillPack({
+      id: "spack_eto",
+      name: "yigfinance-eto-professional-projects",
+      displayName: "Yigfinance ETO Professional Projects",
+      packType: "extension",
+      compatibility: {
+        yigfinance: ">=0.7.0 <0.8.0",
+        yigthinker: ">=0.3.0 <0.5.0",
+      },
+    });
+    const mount = fakeMount({ skillPackId: etoPack.id });
+    const client = {
+      createYap: vi.fn().mockResolvedValue(yap),
+      createSkillPack: vi.fn().mockImplementation((_yapId, pack) => {
+        const skillPack = pack.name === etoPack.name ? etoPack : corePack;
+        return Promise.resolve({
+          skillPack,
+          artifacts: [fakeArtifact(skillPack.id)],
+        });
+      }),
+      listYapPackMounts: vi.fn().mockResolvedValue({
+        mounts: [],
+        total: 0,
+        limit: 100,
+        offset: 0,
+      }),
+      createYapPackMount: vi.fn().mockResolvedValue({
+        mount,
+        skillPack: etoPack,
+      }),
+    };
+    vi.mocked(registry.createPublisherClient).mockReturnValue(
+      client as unknown as YigYapsPublisherClient,
+    );
+
+    await yapImportCommand(root, { json: true });
+
+    expect(client.createSkillPack).toHaveBeenCalledTimes(2);
+    expect(client.createSkillPack).toHaveBeenNthCalledWith(
+      2,
+      "yap_test",
+      expect.objectContaining({
+        name: "yigfinance-eto-professional-projects",
+        packType: "extension",
+        compatibility: expect.objectContaining({
+          yigfinance: ">=0.7.0 <0.8.0",
+        }),
+      }),
+    );
+    expect(client.createYapPackMount).toHaveBeenCalledWith(
+      "yap_test",
+      expect.objectContaining({
+        skillPackId: "spack_eto",
+        mountKey: "eto",
+        mountPoint: "extensions",
+        priority: 20,
+        enabled: true,
+      }),
+    );
+    const output = JSON.parse(String(log.mock.calls[0]?.[0]));
+    expect(output).toMatchObject({
+      success: true,
+      extensionPacks: [
+        {
+          skillPackCreated: true,
+          skillPack: {
+            id: "spack_eto",
+            name: "yigfinance-eto-professional-projects",
+          },
+        },
+      ],
+      defaultMounts: [
+        {
+          action: "created",
+          mount: { mountKey: "eto" },
+          skillPack: { id: "spack_eto" },
+        },
+      ],
+    });
+  });
+
   it("refreshes an existing core SkillPack when importing the same version", async () => {
     const root = await createFixture();
     const log = vi.spyOn(console, "log").mockImplementation(() => undefined);
@@ -131,13 +217,11 @@ describe("yapImportCommand", () => {
     const artifact = fakeArtifact(refreshed.id);
     const client = {
       createYap: vi.fn().mockResolvedValue(yap),
-      createSkillPack: vi
-        .fn()
-        .mockRejectedValue(
-          new YigYapsApiError("createSkillPack", 409, {
-            error: "Skill Pack version already exists",
-          }),
-        ),
+      createSkillPack: vi.fn().mockRejectedValue(
+        new YigYapsApiError("createSkillPack", 409, {
+          error: "Skill Pack version already exists",
+        }),
+      ),
       listSkillPacks: vi
         .fn()
         .mockResolvedValue({ skillPacks: [existing], total: 1 }),
@@ -418,7 +502,7 @@ describe("yapRuntimePlanCommand", () => {
           toolKeys: undefined,
         },
       },
-      { maxMounts: 5 },
+      { mountKeys: ["eto"], maxMounts: 5 },
     );
     expect(JSON.parse(String(log.mock.calls[0]?.[0]))).toMatchObject({
       status: "ready",
@@ -462,9 +546,10 @@ describe("yapHostPrepareCommand", () => {
         maxCandidates: 3,
         hints: { mountKeys: ["eto"] },
       }),
-      { maxMounts: 5 },
+      { mountKeys: ["eto"], maxMounts: 5 },
     );
     expect(client.getYapAssembly).toHaveBeenCalledWith("yigfinance", {
+      mountKeys: ["eto"],
       maxMounts: 5,
     });
     expect(JSON.parse(String(log.mock.calls[0]?.[0]))).toMatchObject({
@@ -479,7 +564,9 @@ describe("yapHostPrepareCommand", () => {
   });
 });
 
-async function createFixture(): Promise<string> {
+async function createFixture(
+  options: { withEto?: boolean } = {},
+): Promise<string> {
   const root = await fs.mkdtemp(path.join(os.tmpdir(), "yigyaps-yap-"));
   tempRoots.push(root);
 
@@ -494,6 +581,11 @@ async function createFixture(): Promise<string> {
   await fs.ensureDir(
     path.join(root, "generated", "claude", "skills", "variance-review"),
   );
+  if (options.withEto) {
+    await fs.ensureDir(
+      path.join(root, "generated", "claude", "skills", "project-margin-review"),
+    );
+  }
 
   await fs.writeJson(path.join(pluginDir, "plugin.json"), {
     name: "yigfinance",
@@ -508,11 +600,22 @@ async function createFixture(): Promise<string> {
       yigthinker: ">=0.3.0 <0.5.0",
       "yigcore-addins": ">=0.1.0 <1.0.0",
     },
-    skills: [{ name: "variance-review", version: "0.7.0" }],
+    skills: [
+      { name: "variance-review", version: "0.7.0" },
+      ...(options.withEto
+        ? [{ name: "project-margin-review", version: "0.7.0" }]
+        : []),
+    ],
   });
   await fs.writeJson(path.join(pluginDir, "routes.json"), {
     contract_version: "1.0",
-    skills: {},
+    skills: options.withEto
+      ? {
+          "project-margin-review": {
+            next_candidates: ["variance-review"],
+          },
+        }
+      : {},
   });
   await fs.writeJson(path.join(pluginDir, "tool-map.json"), {
     contract_version: "1.0",
@@ -528,8 +631,41 @@ async function createFixture(): Promise<string> {
     path.join(pluginDir, "schemas", "variance-review.schema.json"),
     { type: "object" },
   );
+  if (options.withEto) {
+    await fs.writeJson(
+      path.join(pluginDir, "schemas", "project-margin-review.schema.json"),
+      { type: "object" },
+    );
+    await fs.writeFile(
+      path.join(
+        root,
+        "generated",
+        "yigthinker",
+        "commands",
+        "project-margin-review.md",
+      ),
+      "# project-margin-review\n",
+    );
+    await fs.writeFile(
+      path.join(
+        root,
+        "generated",
+        "claude",
+        "skills",
+        "project-margin-review",
+        "SKILL.md",
+      ),
+      "# Project Margin Review\n",
+    );
+  }
   await fs.writeFile(
-    path.join(root, "generated", "yigthinker", "commands", "variance-review.md"),
+    path.join(
+      root,
+      "generated",
+      "yigthinker",
+      "commands",
+      "variance-review.md",
+    ),
     "# variance-review\n",
   );
   await fs.writeFile(
@@ -692,6 +828,7 @@ function fakeAssembly(): ResolvedYapManifest {
         feedback: null,
         update: null,
         schemas: {},
+        qualityReports: [],
         artifactIndex: [],
       },
     },
@@ -703,6 +840,7 @@ function fakeAssembly(): ResolvedYapManifest {
       routes: {},
       toolMap: {},
       schemas: {},
+      qualityReports: [],
       artifactIndex: [],
     },
     diagnostics: {
@@ -783,7 +921,7 @@ function fakeRemoteManifest(): RemoteYapManifest {
             mountKey: null,
             mountPoint: null,
             compatibility: {
-              status: "declared",
+              status: "compatible",
               range: ">=0.3.0 <0.5.0",
             },
           },
@@ -797,7 +935,7 @@ function fakeRemoteManifest(): RemoteYapManifest {
             mountKey: "eto",
             mountPoint: "extensions",
             compatibility: {
-              status: "declared",
+              status: "compatible",
               range: ">=0.3.0 <0.5.0",
             },
           },
@@ -826,7 +964,7 @@ function fakeRemoteManifest(): RemoteYapManifest {
         mountKey: null,
         mountPoint: null,
         compatibility: {
-          status: "declared",
+          status: "compatible",
           range: ">=0.3.0 <0.5.0",
         },
       },
@@ -841,7 +979,7 @@ function fakeRemoteManifest(): RemoteYapManifest {
           mountKey: "eto",
           mountPoint: "extensions",
           compatibility: {
-            status: "declared",
+            status: "compatible",
             range: ">=0.3.0 <0.5.0",
           },
         },
@@ -851,6 +989,8 @@ function fakeRemoteManifest(): RemoteYapManifest {
       routeCount: 2,
       toolMappingCount: 2,
       schemaCount: 2,
+      qualityReportCount: 0,
+      qualityGateStatus: null,
       conflictCount: 0,
       warningCount: 0,
     },

@@ -19,6 +19,9 @@ export type SkillPackArtifactType =
   | "update"
   | "schema"
   | "command"
+  | "eval"
+  | "fixture"
+  | "quality-report"
   | "skill-md"
   | "other";
 

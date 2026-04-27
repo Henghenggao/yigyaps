@@ -30,6 +30,7 @@ import { optionalAuth } from "../middleware/auth-v2.js";
 import { resolveYapAssembly } from "../lib/yap-assembly-resolver.js";
 import { selectCoreSkillPack } from "../lib/yap-core-pack.js";
 import { env } from "../lib/env.js";
+import { satisfiesVersionRange } from "../lib/semver-compat.js";
 
 const yapParamsSchema = z.object({
   yapId: z.string().min(1),
@@ -61,7 +62,10 @@ function canReadYap(yap: YapRow, user?: AccessUser): boolean {
   return yap.status === "active" && yap.visibility !== "private";
 }
 
-async function resolveYap(yapId: string, yapDAL: YapDAL): Promise<YapRow | null> {
+async function resolveYap(
+  yapId: string,
+  yapDAL: YapDAL,
+): Promise<YapRow | null> {
   return yapId.startsWith("yap_")
     ? await yapDAL.getById(yapId)
     : await yapDAL.getBySlug(yapId);
@@ -182,13 +186,11 @@ export async function yapRemoteManifestRoutes(fastify: FastifyInstance) {
         assembly,
         targetHost: queryParsed.data.host,
         hostVersion: queryParsed.data.hostVersion ?? null,
+        mountKeys: queryParsed.data.mountKeys ?? [],
       });
 
       if (request.headers["if-none-match"] === manifest.integrity.etag) {
-        return reply
-          .code(304)
-          .header("ETag", manifest.integrity.etag)
-          .send();
+        return reply.code(304).header("ETag", manifest.integrity.etag).send();
       }
 
       reply.header("ETag", manifest.integrity.etag);
@@ -207,13 +209,20 @@ function buildRemoteManifest(input: {
   assembly: ResolvedYapManifest;
   targetHost: string;
   hostVersion: string | null;
+  mountKeys: string[];
 }): RemoteYapManifest {
   const baseUrl = baseUrlFor(input.request);
-  const remoteManifestPath = `/v1/yaps/${encodeURIComponent(input.yap.slug)}/remote-manifest`;
+  const remoteManifestPath = endpointPath(
+    input.yap.slug,
+    "remote-manifest",
+    input.mountKeys,
+    input.targetHost,
+    input.hostVersion,
+  );
   const packSummaries = [
-    packSummary(input.assembly.corePack, input.targetHost),
+    packSummary(input.assembly.corePack, input.targetHost, input.hostVersion),
     ...input.assembly.mountedPacks.map((pack) =>
-      packSummary(pack, input.targetHost),
+      packSummary(pack, input.targetHost, input.hostVersion),
     ),
   ];
   const assemblyVersionAt = Math.max(
@@ -249,8 +258,8 @@ function buildRemoteManifest(input: {
     remote: {
       baseUrl,
       endpoints: {
-        assembly: `${baseUrl}/v1/yaps/${encodeURIComponent(input.yap.slug)}/assembly`,
-        runtimePlan: `${baseUrl}/v1/yaps/${encodeURIComponent(input.yap.slug)}/runtime-plans`,
+        assembly: `${baseUrl}${endpointPath(input.yap.slug, "assembly", input.mountKeys)}`,
+        runtimePlan: `${baseUrl}${endpointPath(input.yap.slug, "runtime-plans", input.mountKeys)}`,
         remoteManifest: `${baseUrl}${remoteManifestPath}`,
       },
       invocationModes: ["local-plan", "hosted-plan"] as Array<
@@ -267,6 +276,8 @@ function buildRemoteManifest(input: {
       routeCount: Object.keys(routeSkills(input.assembly)).length,
       toolMappingCount: Object.keys(toolMappings(input.assembly)).length,
       schemaCount: Object.keys(input.assembly.merged.schemas).length,
+      qualityReportCount: input.assembly.merged.qualityReports.length,
+      qualityGateStatus: qualityGateStatus(input.assembly.merged.qualityReports),
       conflictCount: input.assembly.diagnostics.conflicts.length,
       warningCount: input.assembly.diagnostics.warnings.length,
     },
@@ -290,6 +301,7 @@ function buildRemoteManifest(input: {
 function packSummary(
   pack: ResolvedYapPack,
   targetHost: string,
+  hostVersion: string | null,
 ): RemoteYapManifestPackSummary {
   const range = compatibilityRange(pack.skillPack, targetHost);
   return {
@@ -302,7 +314,7 @@ function packSummary(
     mountKey: pack.mount?.mountKey ?? null,
     mountPoint: pack.mount?.mountPoint ?? null,
     compatibility: {
-      status: range ? "declared" : "not_declared",
+      status: packCompatibilityStatus(range, hostVersion),
       range: range ?? null,
     },
   };
@@ -321,12 +333,42 @@ function compatibilityStatus(
   targetHost: string,
 ): RemoteHostCompatibilityStatus {
   if (targetHost === "generic") return "unknown";
-  const declaredCount = packs.filter(
-    (pack) => pack.compatibility.status === "declared",
+  if (packs.some((pack) => pack.compatibility.status === "incompatible")) {
+    return "incompatible";
+  }
+
+  const compatibleCount = packs.filter(
+    (pack) => pack.compatibility.status === "compatible",
   ).length;
-  if (declaredCount === packs.length) return "compatible";
-  if (declaredCount > 0) return "partial";
+  if (compatibleCount === packs.length) return "compatible";
+  if (compatibleCount > 0) return "partial";
   return "unknown";
+}
+
+function packCompatibilityStatus(
+  range: string | undefined,
+  hostVersion: string | null,
+): RemoteYapManifestPackSummary["compatibility"]["status"] {
+  if (!range) return "not_declared";
+  if (!hostVersion) return "declared";
+  return satisfiesVersionRange(hostVersion, range)
+    ? "compatible"
+    : "incompatible";
+}
+
+function endpointPath(
+  yapSlug: string,
+  endpoint: "assembly" | "runtime-plans" | "remote-manifest",
+  mountKeys: string[],
+  host?: string,
+  hostVersion?: string | null,
+): string {
+  const params = new URLSearchParams();
+  if (host) params.set("host", host);
+  if (hostVersion) params.set("hostVersion", hostVersion);
+  if (mountKeys.length > 0) params.set("mountKeys", mountKeys.join(","));
+  const suffix = params.toString() ? `?${params.toString()}` : "";
+  return `/v1/yaps/${encodeURIComponent(yapSlug)}/${endpoint}${suffix}`;
 }
 
 function routeSkills(assembly: ResolvedYapManifest): Record<string, unknown> {
@@ -337,6 +379,15 @@ function routeSkills(assembly: ResolvedYapManifest): Record<string, unknown> {
 function toolMappings(assembly: ResolvedYapManifest): Record<string, unknown> {
   const value = assembly.merged.toolMap.mappings;
   return isRecord(value) ? value : {};
+}
+
+function qualityGateStatus(
+  reports: Record<string, unknown>[],
+): string | null {
+  const status = reports
+    .map((report) => report.status)
+    .find((value): value is string => typeof value === "string" && value.trim().length > 0);
+  return status ?? null;
 }
 
 function baseUrlFor(request: FastifyRequest): string {
