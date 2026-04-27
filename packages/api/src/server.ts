@@ -62,6 +62,7 @@ const { Pool } = pg;
 
 async function buildServer() {
   const fastify = Fastify({
+    bodyLimit: env.API_BODY_LIMIT_BYTES,
     logger: {
       level: env.LOG_LEVEL,
     },

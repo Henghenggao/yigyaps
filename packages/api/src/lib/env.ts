@@ -39,6 +39,11 @@ const envSchema = z.object({
   // Optional with defaults
   PORT: z.coerce.number().default(3100),
   HOST: z.string().default("0.0.0.0"),
+  API_BODY_LIMIT_BYTES: z.coerce
+    .number()
+    .int()
+    .positive()
+    .default(8 * 1024 * 1024),
   LOG_LEVEL: z
     .enum(["trace", "debug", "info", "warn", "error", "fatal"])
     .default("info"),
@@ -110,6 +115,7 @@ export const env = parsed.data || {
   GOOGLE_CLIENT_SECRET: "UNCONFIGURED_GOOGLE_CLIENT_SECRET",
   PORT: 3100,
   HOST: "0.0.0.0",
+  API_BODY_LIMIT_BYTES: 8 * 1024 * 1024,
   LOG_LEVEL: "info" as const,
   NODE_ENV: "test" as const,
   CORS_ORIGIN: "",
