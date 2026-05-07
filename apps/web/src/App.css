@@ -1,2 +1,5 @@
-/* Main App container specific styles if any. 
-Global styles moved to index.css for cleaner architecture. */
+/* Global app layout — Win98 desktop shell */
+.app-desktop {
+  min-height: 100vh;
+  background: var(--w98-desktop);
+}

@@ -4,6 +4,7 @@ import { BrowserRouter } from "react-router-dom";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ToastProvider } from "./contexts/ToastContext";
 import "./index.css";
+import "./win98.css";
 import App from "./App.tsx";
 
 createRoot(document.getElementById("root")!).render(

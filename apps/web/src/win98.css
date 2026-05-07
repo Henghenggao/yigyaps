@@ -1,0 +1,987 @@
+/*
+ * Yig — Win98 Chrome Stylesheet
+ * Layer: marketing site only (yig.com)
+ * Spec: brand/2026-05-07-yig-brand-identity.md §8
+ *
+ * Load order:
+ *   1. tokens.css   (defines --w98-* variables)
+ *   2. brand.css    (clean brand layer)
+ *   3. win98.css    (this file — Win98 chrome layer)
+ *
+ * Two Yig overrides (everything else stays authentic Win98):
+ *   --w98-titlebar-active → #C8321B  (cinnabar, not navy)
+ *   --w98-desktop         → #1A1A1A  (Yig black, not teal)
+ *
+ * IP compliance: §9 red lines observed. No Microsoft assets.
+ * Footer disclaimer required: "Visual style inspired by Windows 98
+ * (© Microsoft). Yig is not affiliated with Microsoft."
+ *
+ * Font: Tahoma / MS Sans Serif via OS fallback only.
+ *       Never ship Tahoma.ttf. See §9 red line 4.
+ */
+
+/* ── Raised / Sunken bevel mixins (via custom properties) ── */
+/*
+ * Classic Win98 4-layer inset shadow:
+ *   Layer 1 (outermost): highlight top-left / deep-shadow bottom-right
+ *   Layer 2 (inner):     face top-left / shadow bottom-right
+ *
+ * Raised:
+ *   box-shadow: inset 1px 1px var(--w98-highlight),
+ *               inset -1px -1px var(--w98-deep-shadow),
+ *               inset 2px 2px #dfdfdf,
+ *               inset -2px -2px var(--w98-shadow);
+ *
+ * Sunken (pressed / input field):
+ *   box-shadow: inset -1px -1px var(--w98-highlight),
+ *               inset 1px 1px var(--w98-deep-shadow),
+ *               inset -2px -2px #dfdfdf,
+ *               inset 2px 2px var(--w98-shadow);
+ */
+
+/* ── Desktop ──────────────────────────────────────── */
+
+.w98-desktop {
+  background: var(--w98-desktop);   /* #1A1A1A — Yig black override */
+  min-height: 100vh;
+  font-family: var(--yig-font-w98);
+  font-size: 11px;
+  color: var(--yig-ink);
+}
+
+/* ── Taskbar ──────────────────────────────────────── */
+
+.w98-taskbar {
+  position:        fixed;
+  top:             0;
+  left:            0;
+  right:           0;
+  height:          28px;
+  background:      var(--w98-face);
+  display:         flex;
+  align-items:     center;
+  gap:             2px;
+  padding:         2px 4px;
+  z-index:         9000;
+  box-shadow:
+    inset 0 -1px var(--w98-deep-shadow),
+    inset 0 1px  var(--w98-highlight);
+}
+
+/* Start button */
+.w98-start-btn {
+  display:         inline-flex;
+  align-items:     center;
+  gap:             4px;
+  height:          22px;
+  padding:         0 6px;
+  font-family:     var(--yig-font-w98);
+  font-size:       11px;
+  font-weight:     700;
+  background:      var(--w98-face);
+  border:          none;
+  cursor:          pointer;
+  user-select:     none;
+  box-shadow:
+    inset 1px 1px var(--w98-highlight),
+    inset -1px -1px var(--w98-deep-shadow),
+    inset 2px 2px #dfdfdf,
+    inset -2px -2px var(--w98-shadow);
+}
+
+.w98-start-btn:active {
+  box-shadow:
+    inset -1px -1px var(--w98-highlight),
+    inset 1px 1px var(--w98-deep-shadow),
+    inset -2px -2px #dfdfdf,
+    inset 2px 2px var(--w98-shadow);
+  padding-left: 7px;
+  padding-top: 1px;
+}
+
+/* The ∴ icon inside the Start button */
+.w98-start-btn__mark {
+  font-size:   14px;
+  line-height: 1;
+  color:       var(--yig-cinnabar);
+}
+
+/* Taskbar button (running window) */
+.w98-taskbar-btn {
+  display:         inline-flex;
+  align-items:     center;
+  gap:             4px;
+  height:          22px;
+  min-width:       100px;
+  max-width:       160px;
+  padding:         0 8px;
+  font-family:     var(--yig-font-w98);
+  font-size:       11px;
+  background:      var(--w98-face);
+  border:          none;
+  cursor:          pointer;
+  overflow:        hidden;
+  text-overflow:   ellipsis;
+  white-space:     nowrap;
+  box-shadow:
+    inset 1px 1px var(--w98-highlight),
+    inset -1px -1px var(--w98-deep-shadow),
+    inset 2px 2px #dfdfdf,
+    inset -2px -2px var(--w98-shadow);
+}
+
+.w98-taskbar-btn--active {
+  box-shadow:
+    inset -1px -1px var(--w98-highlight),
+    inset 1px 1px var(--w98-deep-shadow),
+    inset -2px -2px #dfdfdf,
+    inset 2px 2px var(--w98-shadow);
+  background: #B8B8B8;
+}
+
+/* System tray */
+.w98-tray {
+  margin-left: auto;
+  display:     flex;
+  align-items: center;
+  gap:         4px;
+  height:      22px;
+  padding:     0 6px;
+  box-shadow:
+    inset -1px -1px var(--w98-highlight),
+    inset 1px 1px var(--w98-shadow);
+}
+
+.w98-clock {
+  font-family: var(--yig-font-w98);
+  font-size:   11px;
+  color:       var(--yig-ink);
+  white-space: nowrap;
+  letter-spacing: 0.03em;
+}
+
+/* Tray ∴ icon */
+.w98-tray__mark {
+  font-size:  12px;
+  color:      var(--yig-cinnabar);
+  cursor:     default;
+}
+
+/* ── Window ───────────────────────────────────────── */
+
+/*
+ * Typical structure:
+ *   <div class="w98-window">
+ *     <div class="w98-titlebar">…</div>
+ *     <div class="w98-menubar">…</div>
+ *     <div class="w98-body">…</div>
+ *     <div class="w98-statusbar">…</div>
+ *   </div>
+ */
+
+.w98-window {
+  background:  var(--w98-face);
+  padding:     3px;
+  box-shadow:
+    inset 1px 1px var(--w98-highlight),
+    inset -1px -1px var(--w98-deep-shadow),
+    inset 2px 2px #dfdfdf,
+    inset -2px -2px var(--w98-shadow);
+}
+
+/* Stacked page layout: windows fill content column */
+.w98-window--page {
+  width: 100%;
+}
+
+/* ── Title bar ────────────────────────────────────── */
+
+.w98-titlebar {
+  display:        flex;
+  align-items:    center;
+  height:         18px;
+  padding:        0 2px;
+  background:     var(--w98-titlebar-active); /* cinnabar #C8321B */
+  user-select:    none;
+}
+
+.w98-titlebar--inactive {
+  background: var(--w98-titlebar-inactive);
+}
+
+.w98-titlebar__icon {
+  width:       16px;
+  height:      16px;
+  flex-shrink: 0;
+  margin-right: 2px;
+  display:     flex;
+  align-items: center;
+  justify-content: center;
+  color:       var(--w98-titletext);
+  font-size:   11px;
+}
+
+.w98-titlebar__title {
+  flex:        1;
+  font-family: var(--yig-font-w98);
+  font-size:   11px;
+  font-weight: 700;
+  color:       var(--w98-titletext);
+  white-space: nowrap;
+  overflow:    hidden;
+  text-overflow: ellipsis;
+}
+
+/* Title bar control buttons (min/max/close) */
+.w98-titlebar__controls {
+  display:     flex;
+  align-items: center;
+  gap:         2px;
+  flex-shrink: 0;
+}
+
+.w98-ctrl-btn {
+  width:       16px;
+  height:      14px;
+  padding:     0;
+  background:  var(--w98-face);
+  border:      none;
+  cursor:      pointer;
+  display:     flex;
+  align-items: center;
+  justify-content: center;
+  font-size:   9px;
+  box-shadow:
+    inset 1px 1px var(--w98-highlight),
+    inset -1px -1px var(--w98-deep-shadow),
+    inset 2px 2px #dfdfdf,
+    inset -2px -2px var(--w98-shadow);
+}
+
+.w98-ctrl-btn:active {
+  box-shadow:
+    inset -1px -1px var(--w98-highlight),
+    inset 1px 1px var(--w98-deep-shadow),
+    inset -2px -2px #dfdfdf,
+    inset 2px 2px var(--w98-shadow);
+}
+
+.w98-ctrl-btn--close:hover { background: var(--yig-cinnabar); color: #FFF; }
+
+/* ── Menu bar ─────────────────────────────────────── */
+
+.w98-menubar {
+  display:     flex;
+  align-items: center;
+  height:      20px;
+  padding:     0 2px;
+  background:  var(--w98-face);
+  border-bottom: 1px solid var(--w98-shadow);
+}
+
+.w98-menu-item {
+  padding:         0 6px;
+  height:          18px;
+  display:         inline-flex;
+  align-items:     center;
+  font-family:     var(--yig-font-w98);
+  font-size:       11px;
+  cursor:          default;
+  white-space:     nowrap;
+  user-select:     none;
+}
+
+.w98-menu-item:hover,
+.w98-menu-item--active {
+  background: var(--w98-titlebar-active);
+  color:      var(--w98-titletext);
+}
+
+/* Menu keyboard shortcut underline */
+.w98-menu-item__key {
+  text-decoration: underline;
+}
+
+/* ── Toolbar ──────────────────────────────────────── */
+
+.w98-toolbar {
+  display:      flex;
+  align-items:  center;
+  gap:          2px;
+  padding:      2px 4px;
+  background:   var(--w98-face);
+  border-bottom: 1px solid var(--w98-shadow);
+}
+
+.w98-toolbar__sep {
+  width:        1px;
+  height:       18px;
+  background:   var(--w98-shadow);
+  margin:       0 2px;
+  box-shadow:   1px 0 0 var(--w98-highlight);
+}
+
+/* ── Window body (content area) ───────────────────── */
+
+.w98-body {
+  background: var(--yig-paper);   /* brand content inside — NOT Win98 face */
+  padding:    var(--yig-space-8);
+  font-family: var(--yig-font-sans);
+  color:       var(--yig-ink);
+  /* Inset sunken border */
+  box-shadow:
+    inset -1px -1px var(--w98-highlight),
+    inset 1px 1px var(--w98-deep-shadow),
+    inset -2px -2px #dfdfdf,
+    inset 2px 2px var(--w98-shadow);
+}
+
+/* ── Tab strip (below hero body) ─────────────────── */
+
+.w98-tabs {
+  display:      flex;
+  align-items:  flex-end;
+  gap:          2px;
+  padding:      0 4px;
+  background:   var(--w98-face);
+  border-bottom: 2px solid var(--w98-shadow);
+}
+
+.w98-tab {
+  padding:      4px 12px 3px;
+  font-family:  var(--yig-font-w98);
+  font-size:    11px;
+  cursor:       pointer;
+  user-select:  none;
+  background:   var(--w98-face);
+  position:     relative;
+  top:          1px;
+  box-shadow:
+    inset 1px 1px var(--w98-highlight),
+    inset -1px 0 var(--w98-deep-shadow),
+    inset 2px 2px #dfdfdf,
+    inset -2px 0 var(--w98-shadow);
+}
+
+.w98-tab--active {
+  padding-bottom: 5px;
+  background:     var(--yig-paper);
+  font-weight:    700;
+  box-shadow:
+    inset 1px 0 var(--w98-highlight),
+    inset -1px 0 var(--w98-deep-shadow),
+    inset 1px 1px var(--w98-highlight),
+    0 2px var(--yig-paper);    /* covers bottom border */
+}
+
+/* Sub-product tab accent */
+.w98-tab__dot {
+  display:       inline-block;
+  width:         6px;
+  height:        6px;
+  border-radius: 50%;
+  background:    var(--yig-cinnabar);
+  margin-right:  5px;
+  vertical-align: middle;
+  position:      relative;
+  top:           -1px;
+}
+
+/* ── Status bar ───────────────────────────────────── */
+
+.w98-statusbar {
+  display:      flex;
+  align-items:  center;
+  height:       20px;
+  padding:      0 4px;
+  gap:          2px;
+  background:   var(--w98-face);
+  border-top:   1px solid var(--w98-shadow);
+  font-family:  var(--yig-font-w98);
+  font-size:    11px;
+}
+
+.w98-statusbar__panel {
+  display:     flex;
+  align-items: center;
+  gap:         4px;
+  padding:     0 6px;
+  height:      16px;
+  box-shadow:
+    inset -1px -1px var(--w98-highlight),
+    inset 1px 1px var(--w98-shadow);
+  white-space: nowrap;
+  overflow:    hidden;
+  text-overflow: ellipsis;
+}
+
+.w98-statusbar__panel--grow { flex: 1; }
+
+/* Phosphor status dot in statusbar */
+.w98-statusbar .yig-status::before { font-size: 0.5em; }
+
+/* ── Button (general Win98 button) ────────────────── */
+
+.w98-btn {
+  display:         inline-flex;
+  align-items:     center;
+  justify-content: center;
+  gap:             4px;
+  min-width:       75px;
+  height:          23px;
+  padding:         0 12px;
+  font-family:     var(--yig-font-w98);
+  font-size:       11px;
+  background:      var(--w98-face);
+  border:          none;
+  cursor:          pointer;
+  user-select:     none;
+  white-space:     nowrap;
+  box-shadow:
+    inset 1px 1px var(--w98-highlight),
+    inset -1px -1px var(--w98-deep-shadow),
+    inset 2px 2px #dfdfdf,
+    inset -2px -2px var(--w98-shadow);
+}
+
+.w98-btn:active {
+  box-shadow:
+    inset -1px -1px var(--w98-highlight),
+    inset 1px 1px var(--w98-deep-shadow),
+    inset -2px -2px #dfdfdf,
+    inset 2px 2px var(--w98-shadow);
+  padding-top: 1px;
+}
+
+.w98-btn:focus-visible {
+  outline:        1px dotted var(--yig-ink);
+  outline-offset: -4px;
+}
+
+/* Default button indicator (double border) */
+.w98-btn--default {
+  box-shadow:
+    0 0 0 1px var(--yig-ink),
+    inset 1px 1px var(--w98-highlight),
+    inset -1px -1px var(--w98-deep-shadow),
+    inset 2px 2px #dfdfdf,
+    inset -2px -2px var(--w98-shadow);
+}
+
+/* ── Start menu ───────────────────────────────────── */
+
+.w98-startmenu {
+  position:   absolute;
+  top:        28px;
+  left:       0;
+  width:      180px;
+  background: var(--w98-face);
+  box-shadow:
+    inset 1px 1px var(--w98-highlight),
+    inset -1px -1px var(--w98-deep-shadow),
+    inset 2px 2px #dfdfdf,
+    inset -2px -2px var(--w98-shadow);
+  z-index:    9500;
+  display:    none;
+  padding:    2px;
+}
+
+.w98-startmenu.is-open {
+  display:          block;
+  transform-origin: 0% 100%;  /* scale from bottom-left (Start button corner) */
+  animation:        w98-menu-appear 110ms ease-out both;
+}
+
+/* Vertical branding strip */
+.w98-startmenu__brand {
+  position:   absolute;
+  left:       0;
+  top:        0;
+  bottom:     0;
+  width:      20px;
+  background: var(--yig-ink);
+  display:    flex;
+  align-items: flex-end;
+  padding:    4px 3px;
+}
+
+.w98-startmenu__brand-text {
+  writing-mode: vertical-rl;
+  transform:    rotate(180deg);
+  font-family:  var(--yig-font-w98);
+  font-size:    11px;
+  font-weight:  700;
+  color:        var(--w98-face);
+  letter-spacing: 0.08em;
+  white-space:  nowrap;
+}
+
+.w98-startmenu__items {
+  margin-left: 20px;
+  padding:     2px 0;
+}
+
+.w98-startmenu__item {
+  display:       flex;
+  align-items:   center;
+  gap:           8px;
+  padding:       3px 6px;
+  font-family:   var(--yig-font-w98);
+  font-size:     11px;
+  cursor:        default;
+  user-select:   none;
+  white-space:   nowrap;
+}
+
+.w98-startmenu__item:hover {
+  background: var(--w98-titlebar-active);
+  color:      var(--w98-titletext);
+}
+
+.w98-startmenu__item--has-sub::after {
+  content:     '▶';
+  font-size:   8px;
+  margin-left: auto;
+  padding-left: 8px;
+}
+
+.w98-startmenu__sep {
+  height:          1px;
+  background:      var(--w98-shadow);
+  box-shadow:      0 1px var(--w98-highlight);
+  margin:          2px 0;
+}
+
+/* ── Scrollbar ────────────────────────────────────── */
+
+.w98-body ::-webkit-scrollbar       { width: 16px; height: 16px; }
+.w98-body ::-webkit-scrollbar-track { background: #C0C0C0; }
+.w98-body ::-webkit-scrollbar-thumb {
+  background: var(--w98-face);
+  box-shadow:
+    inset 1px 1px var(--w98-highlight),
+    inset -1px -1px var(--w98-deep-shadow);
+}
+.w98-body ::-webkit-scrollbar-button {
+  background: var(--w98-face);
+  box-shadow:
+    inset 1px 1px var(--w98-highlight),
+    inset -1px -1px var(--w98-deep-shadow);
+}
+.w98-body ::-webkit-scrollbar-corner { background: var(--w98-face); }
+
+/* ── Dialog / Modal ───────────────────────────────── */
+
+.w98-dialog-backdrop {
+  position:   fixed;
+  inset:      0;
+  background: transparent;
+  z-index:    8000;
+  display:    flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.w98-dialog {
+  background: var(--w98-face);
+  padding:    3px;
+  min-width:  280px;
+  box-shadow:
+    inset 1px 1px var(--w98-highlight),
+    inset -1px -1px var(--w98-deep-shadow),
+    inset 2px 2px #dfdfdf,
+    inset -2px -2px var(--w98-shadow),
+    4px 4px 0 rgba(0, 0, 0, 0.4);
+}
+
+.w98-dialog__body {
+  background: var(--w98-face);
+  padding:    12px 16px;
+  font-family: var(--yig-font-w98);
+  font-size:  11px;
+}
+
+.w98-dialog__footer {
+  display:     flex;
+  justify-content: center;
+  gap:         8px;
+  padding:     6px 8px;
+}
+
+/* ── Input / Textbox ──────────────────────────────── */
+
+.w98-input {
+  height:       21px;
+  padding:      0 4px;
+  font-family:  var(--yig-font-w98);
+  font-size:    11px;
+  background:   #FFFFFF;
+  border:       none;
+  outline:      none;
+  box-shadow:
+    inset -1px -1px var(--w98-highlight),
+    inset 1px 1px var(--w98-deep-shadow),
+    inset -2px -2px #dfdfdf,
+    inset 2px 2px var(--w98-shadow);
+}
+
+/* ── Run dialog ───────────────────────────────────── */
+
+.w98-run-label {
+  display:     flex;
+  align-items: flex-start;
+  gap:         8px;
+  padding:     8px;
+}
+
+.w98-run-label__icon {
+  font-size: 24px;
+  flex-shrink: 0;
+}
+
+.w98-run-label__text {
+  font-family: var(--yig-font-w98);
+  font-size:   11px;
+  line-height: 1.4;
+}
+
+/* ── BSOD ─────────────────────────────────────────── */
+
+.w98-bsod {
+  background: var(--yig-cinnabar);  /* cinnabar, NOT blue — §8 easter egg */
+  color:      #FFFFFF;
+  font-family: var(--yig-font-mono);
+  font-size:   16px;
+  line-height: 1.6;
+  padding:     4rem;
+  min-height:  100vh;
+  display:     flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.w98-bsod__title {
+  background: #FFFFFF;
+  color:      var(--yig-cinnabar);
+  display:    inline-block;
+  padding:    0 8px;
+  font-weight: 700;
+  margin-bottom: 1.5rem;
+}
+
+.w98-bsod__code {
+  font-size:     1.25em;
+  font-weight:   700;
+  margin-bottom: 1rem;
+}
+
+.w98-bsod__body {
+  max-width: 600px;
+  opacity:   0.9;
+}
+
+/* ── Page layout for stacked windows ─────────────── */
+
+.w98-page {
+  /* Offset for fixed top taskbar */
+  padding-top:    36px;
+  min-height:     100vh;
+  background:     var(--w98-desktop);
+}
+
+.w98-page__col {
+  max-width:      900px;
+  margin:         0 auto;
+  padding:        0 16px 48px;
+  display:        flex;
+  flex-direction: column;
+  gap:            8px;
+}
+
+/* Window divider between stacked sections */
+.w98-window + .w98-window { margin-top: 8px; }
+
+/* ── Micro-transitions (interactive elements) ─────── */
+
+/* Buttons: box-shadow inverts in ~60 ms — feels mechanical, not springy */
+.w98-btn,
+.w98-start-btn,
+.w98-ctrl-btn,
+.w98-taskbar-btn {
+  transition: box-shadow 55ms linear;
+}
+
+/* Menu items: background swap is instant in real Win98; 50ms softens it */
+.w98-menu-item,
+.w98-startmenu__item,
+.w98-tab {
+  transition: background 50ms linear, color 50ms linear;
+}
+
+/* ── Animations ───────────────────────────────────── */
+
+/*
+ * Window opens by growing downward from its title bar edge.
+ * Transform-origin: top center mirrors how Win98 windows "dropped" from
+ * the title bar position. Scale 0.96 → 1 over 170 ms is quick but
+ * readable; easing is linear-start / ease-out (ease-out approximation).
+ */
+@keyframes w98-window-appear {
+  0%   { opacity: 0; transform: scaleY(0.88); }
+  60%  { opacity: 1; transform: scaleY(1.01); }
+  100% { opacity: 1; transform: scaleY(1);    }
+}
+
+/*
+ * Taskbar slides down from the top edge of the viewport on page load.
+ * Short (180 ms) so it doesn't delay first meaningful paint perception.
+ */
+@keyframes w98-taskbar-in {
+  from { transform: translateY(-100%); opacity: 0; }
+  to   { transform: translateY(0);     opacity: 1; }
+}
+
+/*
+ * Start menu grows up and slightly toward the viewer from the
+ * bottom-left corner of the Start button.
+ */
+@keyframes w98-menu-appear {
+  from { opacity: 0; transform: scaleY(0.82) translateY(4px); }
+  to   { opacity: 1; transform: scaleY(1)    translateY(0);   }
+}
+
+/* ── Apply animations ─────────────────────────────── */
+
+/* Taskbar enters on page load */
+.w98-taskbar {
+  animation: w98-taskbar-in 180ms ease-out both;
+}
+
+/*
+ * Each Win98 window in the page column appears sequentially.
+ * Transform-origin at top so the window "drops" from the title bar.
+ * Stagger by 90 ms per window — matches Win98 cascade open behavior.
+ */
+.w98-page__col .w98-window {
+  transform-origin: 50% 0;
+  animation: w98-window-appear 200ms ease-out both;
+}
+
+.w98-page__col .w98-window:nth-child(1) { animation-delay:  60ms; }
+.w98-page__col .w98-window:nth-child(2) { animation-delay: 150ms; }
+.w98-page__col .w98-window:nth-child(3) { animation-delay: 240ms; }
+.w98-page__col .w98-window:nth-child(4) { animation-delay: 330ms; }
+.w98-page__col .w98-window:nth-child(5) { animation-delay: 400ms; }
+
+/* ── Responsive ───────────────────────────────────── */
+
+@media (max-width: 600px) {
+  .w98-menubar       { flex-wrap: wrap; height: auto; padding: 2px; }
+  .w98-taskbar-btn   { min-width: 60px; }
+  .w98-startmenu     { width: 160px; }
+  .w98-body          { padding: var(--yig-space-6); }
+}
+
+/* More stagger delays for the new portal windows */
+.w98-page__col .w98-window:nth-child(6) { animation-delay: 480ms; }
+.w98-page__col .w98-window:nth-child(7) { animation-delay: 540ms; }
+.w98-page__col .w98-window:nth-child(8) { animation-delay: 590ms; }
+
+/* ── Win98 Form Elements ──────────────────────────── */
+
+/* Radio button item */
+.w98-radio-item {
+  display:     flex;
+  align-items: flex-start;
+  gap:         6px;
+  cursor:      pointer;
+  padding:     2px 0;
+}
+
+.w98-radio-item input[type="radio"] {
+  width:       13px;
+  height:      13px;
+  flex-shrink: 0;
+  margin:      2px 0 0;
+  cursor:      pointer;
+  accent-color: var(--yig-ink);
+}
+
+.w98-radio-item label {
+  font-family: var(--yig-font-w98);
+  font-size:   11px;
+  line-height: 1.45;
+  cursor:      pointer;
+}
+
+/* Radio group container */
+.w98-radio-group {
+  display:        flex;
+  flex-direction: column;
+  gap:            4px;
+}
+
+/* Groupbox (fieldset without reset) */
+.w98-groupbox {
+  border:  1px solid;
+  border-color: var(--w98-shadow) var(--w98-highlight)
+                var(--w98-highlight) var(--w98-shadow);
+  padding: 8px 10px 10px;
+  margin:  0;
+}
+
+.w98-groupbox__legend {
+  font-family: var(--yig-font-w98);
+  font-size:   11px;
+  font-weight: 700;
+  padding:     0 4px;
+  margin-left: 4px;
+}
+
+/* Win98 progress bar (segmented cinnabar blocks) */
+.w98-progress {
+  height:     20px;
+  background: #FFFFFF;
+  box-shadow: inset 1px 1px var(--w98-deep-shadow),
+              inset -1px -1px var(--w98-highlight);
+  overflow:   hidden;
+  flex:       1;
+}
+
+.w98-progress__fill {
+  height:     100%;
+  background: repeating-linear-gradient(
+    90deg,
+    var(--yig-cinnabar) 0px,  var(--yig-cinnabar) 10px,
+    transparent        10px,  transparent        12px
+  );
+  transition: width 500ms ease-out;
+}
+
+/* ── Wizard layout ────────────────────────────────── */
+
+.w98-wizard {
+  display:        grid;
+  grid-template-columns: 180px 1fr;
+  grid-template-rows:    1fr auto;
+  min-height:     320px;
+}
+
+/* Left sidebar — Ink background, white text */
+.w98-wizard__sidebar {
+  background:    var(--yig-ink);
+  color:         #FFFFFF;
+  grid-row:      1 / 3;
+  padding:       24px 16px;
+  display:       flex;
+  flex-direction: column;
+  gap:           16px;
+}
+
+.w98-wizard__sidebar-mark {
+  width:  56px;
+  height: 56px;
+}
+
+.w98-wizard__sidebar-title {
+  font-family: var(--yig-font-sans);
+  font-weight: 700;
+  font-size:   14px;
+  color:       #FFFFFF;
+  line-height: 1.3;
+}
+
+.w98-wizard__sidebar-steps {
+  margin-top:  auto;
+  display:     flex;
+  flex-direction: column;
+  gap:         4px;
+}
+
+.w98-wizard__step-item {
+  font-family: var(--yig-font-w98);
+  font-size:   11px;
+  color:       rgba(255,255,255,0.45);
+  padding:     2px 6px;
+}
+
+.w98-wizard__step-item--active {
+  color:       #FFFFFF;
+  background:  var(--yig-cinnabar);
+}
+
+/* Right content */
+.w98-wizard__content {
+  padding:     20px 20px 12px;
+  font-family: var(--yig-font-w98);
+  font-size:   11px;
+  display:     flex;
+  flex-direction: column;
+  gap:         12px;
+}
+
+.w98-wizard__heading {
+  font-family: var(--yig-font-sans);
+  font-size:   15px;
+  font-weight: 700;
+  color:       var(--yig-ink);
+  margin:      0;
+  line-height: 1.3;
+}
+
+.w98-wizard__sub {
+  color:       var(--yig-ink);
+  opacity:     0.6;
+  margin:      0;
+  font-size:   11px;
+}
+
+/* Footer button bar */
+.w98-wizard__footer {
+  grid-column: 2;
+  padding:     10px 20px;
+  display:     flex;
+  justify-content: flex-end;
+  gap:         6px;
+  border-top:  1px solid var(--w98-shadow);
+}
+
+/* Completion state */
+.w98-wizard__done {
+  display:       flex;
+  flex-direction: column;
+  align-items:   center;
+  justify-content: center;
+  gap:           12px;
+  padding:       32px 20px;
+  text-align:    center;
+}
+
+.w98-wizard__done-icon {
+  font-size: 32px;
+  color:     var(--yig-cinnabar);
+}
+
+@media (max-width: 600px) {
+  .w98-wizard { grid-template-columns: 1fr; }
+  .w98-wizard__sidebar { grid-row: auto; flex-direction: row; align-items: center; padding: 12px; }
+  .w98-wizard__sidebar-steps { display: none; }
+  .w98-wizard__footer { grid-column: 1; }
+}
+
+/* Honor user preference — disable all motion */
+@media (prefers-reduced-motion: reduce) {
+  .w98-taskbar,
+  .w98-page__col .w98-window,
+  .w98-startmenu.is-open,
+  .w98-btn,
+  .w98-start-btn,
+  .w98-ctrl-btn,
+  .w98-taskbar-btn,
+  .w98-menu-item,
+  .w98-startmenu__item,
+  .w98-tab {
+    animation:  none !important;
+    transition: none !important;
+  }
+}
