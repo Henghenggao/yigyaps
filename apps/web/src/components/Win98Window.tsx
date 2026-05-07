@@ -48,7 +48,10 @@ export function Win98Window({
           {menuItems.map((item) => (
             <span key={item.label} className="w98-menu-item">
               {item.accessKey ? (
-                <><u>{item.accessKey}</u>{item.label.slice(item.accessKey.length)}</>
+                <>
+                  <span className="w98-menu-item__key">{item.accessKey}</span>
+                  {item.label.slice(item.accessKey.length)}
+                </>
               ) : item.label}
             </span>
           ))}

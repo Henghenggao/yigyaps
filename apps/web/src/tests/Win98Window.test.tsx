@@ -51,4 +51,23 @@ describe('Win98Window', () => {
     const { container } = render(<Win98Window title="T">body</Win98Window>);
     expect(container.querySelector('.w98-statusbar')).toBeNull();
   });
+
+  it('applies w98-tab--active class to active tab', () => {
+    const tabs = [
+      { label: 'Active Tab', active: true },
+      { label: 'Inactive Tab', active: false },
+    ];
+    const { container } = render(<Win98Window title="T" tabs={tabs}>body</Win98Window>);
+    const tabDivs = container.querySelectorAll('.w98-tab');
+    expect(tabDivs[0].classList.contains('w98-tab--active')).toBe(true);
+    expect(tabDivs[1].classList.contains('w98-tab--active')).toBe(false);
+  });
+
+  it('renders w98-tab__dot with dotColor when provided', () => {
+    const tabs = [{ label: 'Colored', dotColor: '#C8321B' }];
+    const { container } = render(<Win98Window title="T" tabs={tabs}>body</Win98Window>);
+    const dot = container.querySelector('.w98-tab__dot') as HTMLElement;
+    expect(dot).toBeTruthy();
+    expect(dot.style.background).toBe('rgb(200, 50, 27)');
+  });
 });
