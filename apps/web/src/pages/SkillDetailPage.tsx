@@ -9,6 +9,7 @@ import { ReviewList } from "../components/ReviewList";
 import { ReviewForm } from "../components/ReviewForm";
 import { InstallButton } from "../components/InstallButton";
 import { QuickStartModal } from "../components/QuickStartModal";
+import { Win98Window } from "../components/Win98Window";
 import { fetchApi } from "../lib/api";
 import type { User } from "../contexts/AuthContext";
 import type { SkillPackage } from "@yigyaps/types";
@@ -35,7 +36,7 @@ function SubscribeButton({ packageId, priceUsd }: { packageId: string; priceUsd:
 
   return (
     <button
-      className="btn btn-primary"
+      className="w98-btn"
       onClick={handleSubscribe}
       disabled={loading}
       style={{ minWidth: "140px" }}
@@ -52,285 +53,190 @@ export function SkillDetailPage() {
   const { user } = useAuth();
   const [showQuickStart, setShowQuickStart] = useState(false);
 
-  if (loading) {
-    return (
-      <div className="detail-layout">
-        <main className="container">
-          <div className="skeleton-loading">
-            <div className="skeleton-line" style={{ width: '40%', height: '3rem' }} />
-            <div className="skeleton-line" style={{ width: '60%', height: '1.5rem' }} />
-          </div>
-        </main>
-      </div>
-    );
-  }
-
-  if (error || !skillDetail) {
-    return (
-      <div className="detail-layout">
-        <main className="container error-page">
-          <h2>{error || "Skill not found"}</h2>
-          <Link to="/" className="clear-link">Back to Marketplace</Link>
-        </main>
-      </div>
-    );
-  }
-
-  const displayName = skillDetail.displayName || skillDetail.packageId;
-  const detailData = skillDetail as unknown as Record<string, unknown>;
-
   return (
-    <div className="detail-layout">
-      <main className="detail-main">
-        {/* Header Section */}
-        <section className="detail-hero animate-fade-in">
-          <div className="container">
-            <div className="hero-top">
-              <div className="hero-info">
-                <h1 className="hero-title">{displayName}</h1>
-                <div className="hero-meta">
-                  <span className="meta-author">by @{String(detailData.authorUsername || detailData.authorName || skillDetail.authorName || "anonymous")}</span>
-                  <span className="meta-dot">·</span>
-                  <span className="meta-installs">{skillDetail.installCount.toLocaleString()} installations</span>
+    <>
+      {/* Loading state */}
+      {loading && (
+        <Win98Window title="Loading Skill..." icon="📦" statusBar="Fetching skill details...">
+          <div className="empty-state"><p>Loading...</p></div>
+        </Win98Window>
+      )}
+
+      {/* Error state */}
+      {!loading && (error || !skillDetail) && (
+        <Win98Window title="Error — Skill Not Found" icon="📦" statusBar="Error">
+          <div className="empty-state">
+            <p>{error || "Skill not found"}</p>
+            <Link to="/" className="w98-btn" style={{ display: "inline-block", marginTop: 8 }}>
+              Back to Marketplace
+            </Link>
+          </div>
+        </Win98Window>
+      )}
+
+      {/* Skill loaded */}
+      {!loading && !error && skillDetail && (
+        <>
+          {/* Window 1: Detail */}
+          <Win98Window
+            title={`${skillDetail.displayName || skillDetail.packageId} — Skill Detail`}
+            icon="📦"
+            menuItems={[{ label: "File" }, { label: "View" }, { label: "Help" }]}
+            statusBar={
+              <>
+                <div className="w98-statusbar__panel w98-statusbar__panel--grow">
+                  <span style={{ color: "var(--yig-phosphor)" }}>●</span>
+                  {` ${skillDetail.maturity} · v${skillDetail.version}`}
+                </div>
+                {skillDetail.category && (
+                  <div className="w98-statusbar__panel">{skillDetail.category}</div>
+                )}
+              </>
+            }
+          >
+            <div className="skill-detail-body">
+              <div>
+                <p
+                  style={{
+                    fontFamily: "var(--yig-font-sans)",
+                    fontSize: "var(--yig-text-base)",
+                    color: "#333",
+                    lineHeight: 1.7,
+                    margin: "0 0 var(--yig-space-4)",
+                  }}
+                >
+                  {skillDetail.description}
+                </p>
+                <div className="skill-detail-meta">
+                  <div className="meta-row">
+                    <span className="meta-label">Author</span>
+                    <span className="meta-value">
+                      @{String((skillDetail as unknown as Record<string, unknown>).authorUsername || skillDetail.authorName || "anonymous")}
+                    </span>
+                  </div>
+                  {skillDetail.category && (
+                    <div className="meta-row">
+                      <span className="meta-label">Category</span>
+                      <span className="meta-value">{skillDetail.category}</span>
+                    </div>
+                  )}
+                  <div className="meta-row">
+                    <span className="meta-label">License</span>
+                    <span className="meta-value">{skillDetail.license}</span>
+                  </div>
+                  <div className="meta-row">
+                    <span className="meta-label">Transport</span>
+                    <span className="meta-value">{skillDetail.mcpTransport}</span>
+                  </div>
+                  <div className="meta-row">
+                    <span className="meta-label">Installs</span>
+                    <span className="meta-value">{skillDetail.installCount.toLocaleString()}</span>
+                  </div>
+                  {Number(skillDetail.rating) > 0 && (
+                    <div className="meta-row">
+                      <span className="meta-label">Rating</span>
+                      <span className="meta-value skill-rating">
+                        ★ {Number(skillDetail.rating).toFixed(1)}
+                      </span>
+                    </div>
+                  )}
                 </div>
               </div>
-              <div className="hero-action" style={{ display: "flex", gap: "0.75rem", alignItems: "center" }}>
+              <div className="skill-install-panel">
+                <div className="skill-price-large">
+                  {Number(skillDetail.priceUsd || 0) === 0
+                    ? "Free"
+                    : `$${Number(skillDetail.priceUsd).toFixed(2)}`}
+                </div>
                 <InstallButton
                   skill={skillDetail}
                   onInstallSuccess={() => setShowQuickStart(true)}
                 />
-
                 <SubscribeButton
                   packageId={skillDetail.packageId}
                   priceUsd={parseFloat(String(skillDetail.priceUsd ?? "0"))}
                 />
+                <div>
+                  <p
+                    style={{
+                      fontFamily: "var(--yig-font-w98)",
+                      fontSize: "var(--yig-text-xs)",
+                      color: "#666",
+                      margin: "0 0 4px",
+                    }}
+                  >
+                    CLI install:
+                  </p>
+                  <input
+                    className="w98-input"
+                    style={{ width: "100%", fontFamily: "var(--yig-font-mono)", fontSize: 10 }}
+                    readOnly
+                    value={`yig install ${skillDetail.packageId}`}
+                    onFocus={(e) => e.target.select()}
+                  />
+                </div>
               </div>
             </div>
+          </Win98Window>
 
-            <div className="hero-pills">
-              {skillDetail.category && (
-                <span className="pill category">{skillDetail.category}</span>
+          {/* Window 2: Documentation */}
+          <Win98Window title="📋 Documentation" statusBar="Scroll to read">
+            <div className="md-body">
+              {skillDetail.readme || (skillDetail as unknown as Record<string, unknown>).longDescription ? (
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {String(skillDetail.readme || (skillDetail as unknown as Record<string, unknown>).longDescription)}
+                </ReactMarkdown>
+              ) : (
+                <p>{skillDetail.description || "No detailed documentation available."}</p>
               )}
-              {skillDetail.tags?.map((tag) => (
-                <span key={tag} className="pill tag">#{tag}</span>
-              ))}
             </div>
-          </div>
-        </section>
+          </Win98Window>
 
-        {/* Content Body */}
-        <div className="container detail-content-grid">
-          <div className="detail-primary">
-            {/* Description */}
-            <section className="content-section card">
-              <h2 className="section-title">Overview</h2>
-              <div className="markdown-body">
-                {skillDetail.readme || detailData.longDescription ? (
-                  <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                    {String(skillDetail.readme || detailData.longDescription)}
-                  </ReactMarkdown>
-                ) : (
-                  <p>{skillDetail.description || "No detailed description available."}</p>
-                )}
-              </div>
-            </section>
+          {/* Window 3: Simulation Sandbox */}
+          <Win98Window
+            title="🔬 Simulation Sandbox"
+            statusBar={
+              <>
+                <div className="w98-statusbar__panel w98-statusbar__panel--grow">
+                  Test how an external AI sees when invoking this secure skill
+                </div>
+                <div className="w98-statusbar__panel">EVR Secure</div>
+              </>
+            }
+          >
+            <SimulationSandbox packageId={packageId!} user={user} skill={skillDetail} />
+          </Win98Window>
 
-            {/* Sandbox */}
-            <section className="content-section card">
-              <div className="section-header-flex">
-                <h2 className="section-title">Simulation Sandbox</h2>
-                <span className="badge-secure">EVR Secure</span>
-              </div>
-              <p className="section-desc">Test how an external AI sees when invoking this secure skill.</p>
-              <SimulationSandbox packageId={packageId!} user={user} skill={skillDetail} />
-            </section>
-
-            {/* Reviews */}
-            <section className="content-section card">
-              <h2 className="section-title">Community Voice</h2>
-              <ReviewList reviews={reviews} />
-              <div className="review-form-box">
-                <h3 className="sub-title">Share your experience</h3>
-                <ReviewForm
-                  skill={skillDetail}
-                  onReviewSubmitted={refreshReviews}
-                />
-              </div>
-            </section>
-          </div>
-
-          <aside className="detail-sidebar">
-            <div className="sidebar-card card">
-              <h3 className="sidebar-title">Technical Specs</h3>
-              <div className="spec-list">
-                <div className="spec-item">
-                  <span className="spec-label">Version</span>
-                  <span className="spec-value">{skillDetail.version}</span>
-                </div>
-                <div className="spec-item">
-                  <span className="spec-label">License</span>
-                  <span className="spec-value">{skillDetail.license}</span>
-                </div>
-                <div className="spec-item">
-                  <span className="spec-label">Transport</span>
-                  <span className="spec-value">{skillDetail.mcpTransport}</span>
-                </div>
-                <div className="spec-item">
-                  <span className="spec-label">Rating</span>
-                  <span className="spec-value">★ {Number(skillDetail.rating || 0).toFixed(1) || "N/A"}</span>
-                </div>
-              </div>
+          {/* Window 4: Reviews */}
+          <Win98Window
+            title="⭐ Reviews"
+            statusBar={`${reviews.length} reviews`}
+          >
+            <ReviewList reviews={reviews} />
+            <div style={{ marginTop: "var(--yig-space-6)", paddingTop: "var(--yig-space-4)", borderTop: "1px solid #ddd" }}>
+              <p
+                style={{
+                  fontFamily: "var(--yig-font-w98)",
+                  fontSize: "var(--yig-text-xs)",
+                  fontWeight: 700,
+                  margin: "0 0 var(--yig-space-3)",
+                }}
+              >
+                Share your experience
+              </p>
+              <ReviewForm skill={skillDetail} onReviewSubmitted={refreshReviews} />
             </div>
-          </aside>
-        </div>
-      </main>
+          </Win98Window>
 
-      {showQuickStart && (
-        <QuickStartModal
-          packageId={skillDetail.packageId}
-          onClose={() => setShowQuickStart(false)}
-        />
+          {showQuickStart && (
+            <QuickStartModal
+              packageId={skillDetail.packageId}
+              onClose={() => setShowQuickStart(false)}
+            />
+          )}
+        </>
       )}
-
-      <footer className="site-footer">
-        <div className="container">
-          <p>&copy; {new Date().getFullYear()} YigYaps. Shared Wisdom for AI Agents.</p>
-        </div>
-      </footer>
-
-      <style>{`
-        .detail-layout {
-          min-height: 100vh;
-        }
-        .detail-hero {
-          padding: 4rem 0 3rem;
-          border-bottom: 1px solid var(--color-border);
-          background: var(--color-surface);
-        }
-        .hero-top {
-          display: flex;
-          justify-content: space-between;
-          align-items: flex-start;
-          margin-bottom: 2rem;
-        }
-        .hero-title {
-          font-size: 3.5rem;
-          margin-bottom: 0.5rem;
-        }
-        .hero-meta {
-          color: var(--color-text-sub);
-          font-weight: 500;
-        }
-        .meta-dot {
-          margin: 0 0.75rem;
-        }
-        .hero-pills {
-          display: flex;
-          gap: 0.75rem;
-          flex-wrap: wrap;
-        }
-        .pill {
-          padding: 0.25rem 0.75rem;
-          border-radius: 20px;
-          font-size: 0.85rem;
-          font-weight: 600;
-        }
-        .pill.category {
-          background: var(--color-accent-bg);
-          color: var(--color-primary);
-        }
-        .pill.tag {
-          background: #F3F4F6;
-          color: var(--color-text-sub);
-        }
-
-        .detail-content-grid {
-          display: grid;
-          grid-template-columns: 1fr 320px;
-          gap: 3rem;
-          padding-top: 4rem;
-          padding-bottom: 6rem;
-        }
-
-        .content-section {
-          margin-bottom: 3rem;
-        }
-        .section-title {
-          font-size: 1.75rem;
-          margin-bottom: 1.5rem;
-        }
-        .section-desc {
-          color: var(--color-text-sub);
-          margin-bottom: 1.5rem;
-        }
-        .section-header-flex {
-          display: flex;
-          justify-content: space-between;
-          align-items: center;
-        }
-        .badge-secure {
-          background: #EEF2FF;
-          color: #4338CA;
-          font-size: 0.75rem;
-          font-weight: 700;
-          padding: 0.25rem 0.6rem;
-          border-radius: 6px;
-        }
-
-        .markdown-body {
-          line-height: 1.8;
-          color: var(--color-text-main);
-          font-size: 1.1rem;
-        }
-        .markdown-body h1, .markdown-body h2 {
-          font-family: var(--font-sans);
-          font-size: 1.5rem;
-          margin-top: 2rem;
-          margin-bottom: 1rem;
-        }
-
-        .sidebar-title {
-          font-size: 1.25rem;
-          margin-bottom: 1.5rem;
-        }
-        .spec-list {
-          display: flex;
-          flex-direction: column;
-          gap: 1rem;
-        }
-        .spec-item {
-          display: flex;
-          justify-content: space-between;
-          font-size: 0.95rem;
-        }
-        .spec-label {
-          color: var(--color-text-sub);
-        }
-        .spec-value {
-          font-weight: 600;
-          color: var(--color-text-main);
-        }
-
-        .review-form-box {
-          margin-top: 3rem;
-          padding-top: 2rem;
-          border-top: 1px solid var(--color-border);
-        }
-        .sub-title {
-          font-size: 1.25rem;
-          margin-bottom: 1.5rem;
-        }
-
-        @media (max-width: 1024px) {
-          .detail-content-grid {
-            grid-template-columns: 1fr;
-          }
-          .hero-title {
-            font-size: 2.5rem;
-          }
-        }
-      `}</style>
-    </div>
+    </>
   );
 }
 
@@ -414,7 +320,7 @@ function SimulationSandbox({
   if (!user) {
     return (
       <div className="sandbox-box">
-        <button onClick={openAuthModal} className="btn-primary" style={{ width: "auto", minWidth: "220px" }}>
+        <button onClick={openAuthModal} className="w98-btn" style={{ minWidth: "220px" }}>
           Sign In to Simulate
         </button>
         <p style={{ marginTop: "0.75rem", color: "var(--color-text-sub)", fontSize: "0.9rem" }}>
@@ -468,8 +374,8 @@ function SimulationSandbox({
       <button
         onClick={handleSimulate}
         disabled={loading}
-        className="btn-primary"
-        style={{ width: "auto", minWidth: "220px" }}
+        className="w98-btn"
+        style={{ minWidth: "220px" }}
       >
         {loading ? "Evaluating…" : "Run Security Simulation"}
       </button>
