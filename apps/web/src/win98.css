@@ -4,9 +4,8 @@
  * Spec: brand/2026-05-07-yig-brand-identity.md §8
  *
  * Load order:
- *   1. tokens.css   (defines --w98-* variables)
- *   2. brand.css    (clean brand layer)
- *   3. win98.css    (this file — Win98 chrome layer)
+ *   1. index.css   (defines --yig-* and --w98-* variables)
+ *   2. win98.css   (this file — Win98 chrome layer)
  *
  * Two Yig overrides (everything else stays authentic Win98):
  *   --w98-titlebar-active → #C8321B  (cinnabar, not navy)
@@ -654,7 +653,10 @@
   font-size:   16px;
   line-height: 1.6;
   padding:     4rem;
-  min-height:  100vh;
+  position:    fixed;
+  inset:       0;
+  z-index:     99999;
+  cursor:      pointer;
   display:     flex;
   flex-direction: column;
   justify-content: center;
