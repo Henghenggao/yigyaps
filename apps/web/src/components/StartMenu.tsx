@@ -40,13 +40,13 @@ export function StartMenu({ onClose, user, onAuthClick }: StartMenuProps) {
             👤&nbsp;{user.displayName || 'Account'}
           </Link>
         ) : (
-          <div
+          <button
             className="w98-startmenu__item"
-            style={{ cursor: 'pointer' }}
+            style={{ cursor: 'pointer', border: 'none', background: 'transparent', width: '100%', textAlign: 'left', padding: 0 }}
             onClick={() => { onAuthClick(); onClose(); }}
           >
             🔑&nbsp;Sign In
-          </div>
+          </button>
         )}
       </div>
     </div>

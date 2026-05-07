@@ -1,7 +1,6 @@
 import { Link } from "react-router-dom";
 
 export function TermsPage() {
-
   const sectionStyle = { marginBottom: "2rem" };
   const headingStyle = { fontSize: "1.1rem", fontWeight: 600, marginBottom: "0.75rem" };
   const paraStyle = { color: "var(--color-text-muted)", lineHeight: 1.7, fontSize: "0.9rem", marginBottom: "0.75rem" };

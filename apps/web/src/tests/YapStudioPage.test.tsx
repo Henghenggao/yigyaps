@@ -8,10 +8,6 @@ import { YapStudioPage } from "../pages/YapStudioPage";
 
 const addToast = vi.fn();
 
-vi.mock("../components/Header", () => ({
-  Header: () => <header>Header</header>,
-}));
-
 vi.mock("../contexts/AuthContext", () => ({
   useAuth: () => ({
     user: {

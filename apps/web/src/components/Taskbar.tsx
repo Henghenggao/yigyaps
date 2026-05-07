@@ -7,10 +7,12 @@ function getPageTitle(pathname: string): string {
   if (pathname === '/') return 'Yig Yaps — Registry';
   if (pathname === '/marketplace') return 'Marketplace';
   if (pathname === '/publish') return 'Publish Skill';
+  if (pathname.startsWith('/my-packages/') && pathname.includes('/edit')) return 'Edit Package';
   if (pathname === '/my-packages') return 'My Packages';
   if (pathname === '/settings') return 'Settings';
   if (pathname === '/admin') return 'Admin';
   if (pathname === '/blog') return 'Docs';
+  if (pathname.startsWith('/auth/')) return 'Yig Yaps — Auth';
   if (pathname.startsWith('/yaps/studio')) return 'YAP Studio';
   if (pathname.startsWith('/yaps/')) return 'YAP Assembly';
   if (pathname.startsWith('/skill/')) return 'Skill Detail';
