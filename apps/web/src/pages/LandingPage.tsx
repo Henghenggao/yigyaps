@@ -1,14 +1,11 @@
 import { Link } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { Header } from "../components/Header";
 
 export function LandingPage() {
   const { user, openAuthModal } = useAuth();
 
   return (
     <div className="landing-layout">
-      <Header user={user} />
-
       <main>
         {/* ── Hero ────────────────────────────────────────── */}
         <section className="landing-hero animate-fade-in">

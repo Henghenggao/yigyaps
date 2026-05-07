@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
-import { Header } from "../components/Header";
 import { fetchApi } from "../lib/api";
 import { sanitizeUrl } from "../utils/sanitizeUrl";
 
@@ -119,8 +118,6 @@ export function SettingsPage() {
 
   return (
     <div className="app-container">
-      <Header user={user} />
-
       <main className="main-content" style={{ maxWidth: "800px", margin: "0 auto" }}>
         <h1 style={{ fontSize: "1.75rem", marginBottom: "1.5rem" }}>Settings</h1>
 

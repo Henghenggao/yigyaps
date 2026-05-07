@@ -10,6 +10,7 @@ import { ErrorBoundary } from "./components/ErrorBoundary";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AuthModal } from "./components/AuthModal";
 import { BlogPage } from "./pages/BlogPage";
+import { Taskbar } from "./components/Taskbar";
 import "./App.css";
 
 const MyPackagesPage = lazy(() =>
@@ -61,36 +62,43 @@ const ResetPasswordPage = lazy(() =>
 function App() {
   return (
     <ErrorBoundary>
-      <AuthModal />
-      <Suspense fallback={null}>
-        <Routes>
-          <Route path="/" element={<LandingPage />} />
-          <Route path="/marketplace" element={<HomePage />} />
-          <Route path="/blog" element={<BlogPage />} />
-          <Route path="/yaps/:yapId" element={<YapAssemblyPage />} />
-          <Route path="/yaps/:yapId/assembly" element={<YapAssemblyPage />} />
+      <div className="app-desktop w98-desktop">
+        <Taskbar />
+        <AuthModal />
+        <div className="w98-page">
+          <div className="w98-page__col">
+            <Suspense fallback={null}>
+              <Routes>
+                <Route path="/" element={<LandingPage />} />
+                <Route path="/marketplace" element={<HomePage />} />
+                <Route path="/blog" element={<BlogPage />} />
+                <Route path="/yaps/:yapId" element={<YapAssemblyPage />} />
+                <Route path="/yaps/:yapId/assembly" element={<YapAssemblyPage />} />
 
-          {/* Protected Routes */}
-          <Route element={<ProtectedRoute />}>
-            <Route path="/publish" element={<PublishSkillPage />} />
-            <Route path="/yaps/studio" element={<YapStudioPage />} />
-            <Route path="/my-packages" element={<MyPackagesPage />} />
-            <Route path="/my-packages/:id/edit" element={<EditPackagePage />} />
-            <Route path="/settings" element={<SettingsPage />} />
-            <Route path="/admin" element={<AdminPage />} />
-            <Route path="/lab/:packageId" element={<EvolutionLabPage />} />
-          </Route>
+                {/* Protected Routes */}
+                <Route element={<ProtectedRoute />}>
+                  <Route path="/publish" element={<PublishSkillPage />} />
+                  <Route path="/yaps/studio" element={<YapStudioPage />} />
+                  <Route path="/my-packages" element={<MyPackagesPage />} />
+                  <Route path="/my-packages/:id/edit" element={<EditPackagePage />} />
+                  <Route path="/settings" element={<SettingsPage />} />
+                  <Route path="/admin" element={<AdminPage />} />
+                  <Route path="/lab/:packageId" element={<EvolutionLabPage />} />
+                </Route>
 
-          <Route path="/skill/:packageId" element={<SkillDetailPage />} />
-          <Route path="/auth/success" element={<AuthCallback />} />
-          <Route path="/auth/error" element={<AuthCallback />} />
-          <Route path="/auth/verify-email" element={<VerifyEmailPage />} />
-          <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
-          <Route path="/terms" element={<TermsPage />} />
-          <Route path="/privacy" element={<PrivacyPage />} />
-          <Route path="*" element={<NotFoundPage />} />
-        </Routes>
-      </Suspense>
+                <Route path="/skill/:packageId" element={<SkillDetailPage />} />
+                <Route path="/auth/success" element={<AuthCallback />} />
+                <Route path="/auth/error" element={<AuthCallback />} />
+                <Route path="/auth/verify-email" element={<VerifyEmailPage />} />
+                <Route path="/auth/reset-password" element={<ResetPasswordPage />} />
+                <Route path="/terms" element={<TermsPage />} />
+                <Route path="/privacy" element={<PrivacyPage />} />
+                <Route path="*" element={<NotFoundPage />} />
+              </Routes>
+            </Suspense>
+          </div>
+        </div>
+      </div>
     </ErrorBoundary>
   );
 }

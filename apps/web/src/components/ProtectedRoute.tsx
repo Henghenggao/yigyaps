@@ -1,7 +1,5 @@
 import { Outlet } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
-import { Header } from "./Header";
-
 export function ProtectedRoute() {
   const { user, loading, openAuthModal } = useAuth();
 
@@ -22,7 +20,6 @@ export function ProtectedRoute() {
   if (!user) {
     return (
       <div className="app-container">
-        <Header user={null} />
         <main className="main-content">
           <div
             style={{

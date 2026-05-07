@@ -7,8 +7,6 @@ import type {
   ResolvedYapPack,
   SkillPackArtifactType,
 } from "@yigyaps/types";
-import { Header } from "../components/Header";
-import { useAuth } from "../contexts/AuthContext";
 import { useYapAssembly } from "../hooks/useYapAssembly";
 
 type ArtifactFilter = SkillPackArtifactType | "all";
@@ -39,7 +37,6 @@ type CapabilityLevel = {
 };
 
 export function YapAssemblyPage() {
-  const { user } = useAuth();
   const { yapId = "yigfinance" } = useParams();
   const { assembly, loading, error } = useYapAssembly(yapId);
   const [artifactFilter, setArtifactFilter] = useState<ArtifactFilter>("all");
@@ -62,8 +59,6 @@ export function YapAssemblyPage() {
 
   return (
     <div className="app-container">
-      <Header user={user} />
-
       <main className="yap-assembly-page">
         {loading && <LoadingAssembly />}
         {!loading && error && <ErrorState message={error} />}

@@ -1,9 +1,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useParams, Link } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
 import { fetchApi } from "../lib/api";
-import { Header } from "../components/Header";
 import { MarkdownEditor } from "../components/MarkdownEditor";
 
 const CATEGORIES = [
@@ -61,7 +59,6 @@ interface Package {
 
 export function EditPackagePage() {
   const { id } = useParams<{ id: string }>();
-  const { user } = useAuth();
   const { addToast } = useToast();
   const navigate = useNavigate();
 
@@ -205,8 +202,6 @@ export function EditPackagePage() {
 
   return (
     <div className="app-container">
-      <Header user={user} />
-
       <main className="main-content" style={{ maxWidth: "760px", margin: "0 auto" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "2rem" }}>
           <Link to="/my-packages" style={{ color: "var(--color-text-muted)", textDecoration: "none", fontSize: "0.875rem" }}>

@@ -3,7 +3,6 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
 import { fetchApi } from "../lib/api";
-import { Header } from "../components/Header";
 import { MarkdownEditor } from "../components/MarkdownEditor";
 import { TemplateEditor } from "../components/TemplateEditor";
 
@@ -100,7 +99,6 @@ export function PublishSkillPage() {
   if (!user) {
     return (
       <div className="app-container">
-        <Header user={user} />
         <main className="main-content auth-required-panel">
           <h2>Authentication Required</h2>
           <p>You must be signed in to publish a new secure skill.</p>
@@ -247,8 +245,6 @@ export function PublishSkillPage() {
 
   return (
     <div className="app-container">
-      <Header user={user} />
-
       <main className="main-content" style={{ maxWidth: "720px", margin: "0 auto" }}>
         <h1 style={{ fontSize: "1.75rem", marginBottom: "0.5rem" }}>Publish Skill</h1>
         <p style={{ color: "var(--color-text-muted)", fontSize: "0.875rem", marginBottom: "2rem" }}>

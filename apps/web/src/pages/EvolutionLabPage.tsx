@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
-import { Header } from "../components/Header";
 import { fetchApi } from "../lib/api";
 import {
   ConsentModal,
@@ -20,7 +18,6 @@ const SESSION_KEY = "yigyaps_lab_api_key";
 
 export function EvolutionLabPage() {
   const { packageId } = useParams<{ packageId: string }>();
-  const { user } = useAuth();
   const { addToast } = useToast();
 
   const [rules, setRules] = useState("");
@@ -168,8 +165,6 @@ export function EvolutionLabPage() {
 
   return (
     <div className="app-container">
-      <Header user={user} />
-
       <ConsentModal
         isOpen={showConsentModal}
         hasApiKey={!!labApiKey}

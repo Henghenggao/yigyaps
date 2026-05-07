@@ -5,7 +5,6 @@ import remarkGfm from "remark-gfm";
 import { useSkillDetail } from "../hooks/useSkillDetail";
 import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
-import { Header } from "../components/Header";
 import { ReviewList } from "../components/ReviewList";
 import { ReviewForm } from "../components/ReviewForm";
 import { InstallButton } from "../components/InstallButton";
@@ -56,7 +55,6 @@ export function SkillDetailPage() {
   if (loading) {
     return (
       <div className="detail-layout">
-        <Header user={user} />
         <main className="container">
           <div className="skeleton-loading">
             <div className="skeleton-line" style={{ width: '40%', height: '3rem' }} />
@@ -70,7 +68,6 @@ export function SkillDetailPage() {
   if (error || !skillDetail) {
     return (
       <div className="detail-layout">
-        <Header user={user} />
         <main className="container error-page">
           <h2>{error || "Skill not found"}</h2>
           <Link to="/" className="clear-link">Back to Marketplace</Link>
@@ -84,8 +81,6 @@ export function SkillDetailPage() {
 
   return (
     <div className="detail-layout">
-      <Header user={user} />
-
       <main className="detail-main">
         {/* Header Section */}
         <section className="detail-hero animate-fade-in">

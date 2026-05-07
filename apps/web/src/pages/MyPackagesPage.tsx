@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
-import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
-import { Header } from "../components/Header";
 import { fetchApi } from "../lib/api";
 
 interface PackageSummary {
@@ -28,7 +26,6 @@ interface Earnings {
 }
 
 export function MyPackagesPage() {
-  const { user } = useAuth();
   const { addToast } = useToast();
   const [packages, setPackages] = useState<PackageSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -74,8 +71,6 @@ export function MyPackagesPage() {
 
   return (
     <div className="app-container">
-      <Header user={user} />
-
       <main className="main-content dashboard-container">
         <div className="dashboard-header fade-in">
           <div className="header-titles">

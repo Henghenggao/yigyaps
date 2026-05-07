@@ -22,8 +22,6 @@ import type {
   YapStatus,
   YapVisibility,
 } from "@yigyaps/types";
-import { Header } from "../components/Header";
-import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
 import { API_URL, fetchApi } from "../lib/api";
 
@@ -87,7 +85,6 @@ const EMPTY_MOUNT_FORM: MountForm = {
 };
 
 export function YapStudioPage() {
-  const { user } = useAuth();
   const { addToast } = useToast();
   const navigate = useNavigate();
   const [yaps, setYaps] = useState<Yap[]>([]);
@@ -474,8 +471,6 @@ export function YapStudioPage() {
 
   return (
     <div className="app-container">
-      <Header user={user} />
-
       <main className="studio-shell">
         <section className="studio-hero">
           <div>

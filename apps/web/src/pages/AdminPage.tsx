@@ -1,8 +1,6 @@
 import { useEffect, useState } from "react";
-import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
 import { fetchApi } from "../lib/api";
-import { Header } from "../components/Header";
 import { Link } from "react-router-dom";
 
 type AdminTab = "overview" | "packages" | "users" | "reports";
@@ -48,7 +46,6 @@ interface Report {
 }
 
 export function AdminPage() {
-  const { user } = useAuth();
   const { addToast } = useToast();
   const [tab, setTab] = useState<AdminTab>("overview");
   const [stats, setStats] = useState<Stats | null>(null);
@@ -151,8 +148,6 @@ export function AdminPage() {
 
   return (
     <div className="app-container">
-      <Header user={user} />
-
       <main className="main-content" style={{ maxWidth: "960px", margin: "0 auto" }}>
         <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1.5rem" }}>
           <h1 style={{ fontSize: "1.75rem", margin: 0 }}>Admin Dashboard</h1>
