@@ -3,7 +3,6 @@ import { useParams } from "react-router-dom";
 import { useToast } from "../contexts/ToastContext";
 import { fetchApi } from "../lib/api";
 import {
-  ConsentModal,
   LabApiKeyPanel,
   ChatInterface,
   RulesEditor,
@@ -12,6 +11,8 @@ import {
   EmptyRulesState,
 } from "../components/lab";
 import type { ChatMessage } from "../components/lab";
+import { Win98Window } from "../components/Win98Window";
+import { Win98Dialog } from "../components/Win98Dialog";
 
 // Session-scoped storage key — cleared when tab closes
 const SESSION_KEY = "yigyaps_lab_api_key";
@@ -164,17 +165,53 @@ export function EvolutionLabPage() {
   const isDirty = rules !== initialRules;
 
   return (
-    <div className="app-container">
-      <ConsentModal
-        isOpen={showConsentModal}
-        hasApiKey={!!labApiKey}
-        onAccept={handleConsentAccept}
-        onDecline={handleConsentDecline}
-      />
+    <>
+      {showConsentModal && (
+        <Win98Dialog
+          title="⚠️ Lab Preview — Data Notice"
+          icon="⚠️"
+          onClose={handleConsentDecline}
+          footer={
+            <div style={{ display: "flex", gap: "0.75rem" }}>
+              <button className="w98-btn w98-btn--default" onClick={handleConsentAccept}>
+                I understand — proceed
+              </button>
+              <button className="w98-btn" onClick={handleConsentDecline}>
+                Cancel
+              </button>
+            </div>
+          }
+        >
+          <p style={{ lineHeight: 1.7, marginBottom: "0.75rem" }}>
+            This is a <strong>lab testing mode</strong>. When you click "Test",
+            your skill's plaintext rules will be transmitted to{" "}
+            <strong>api.anthropic.com</strong> as an LLM system prompt.
+          </p>
+          <p style={{ lineHeight: 1.7, marginBottom: "1rem" }}>
+            {labApiKey
+              ? "You are using your own API key — the data agreement is between you and Anthropic."
+              : "You are using the YigYaps platform key. This is for testing only and is not the production security model."}
+          </p>
+          <p
+            style={{
+              fontSize: "0.8rem",
+              padding: "0.75rem",
+              background: "rgba(230,126,34,0.08)",
+              border: "1px solid rgba(230,126,34,0.2)",
+              borderRadius: "4px",
+              marginBottom: 0,
+            }}
+          >
+            Production agent invocations will use a TEE-isolated compute
+            environment (Phase 3). The lab is for author tuning only.
+          </p>
+        </Win98Dialog>
+      )}
 
-      <main
-        className="main-content"
-        style={{ maxWidth: "1400px", margin: "0 auto" }}
+      <Win98Window
+        title={`🧪 Evolution Lab — ${packageId ?? ""}`}
+        icon="🧪"
+        statusBar="Experimental · API key required"
       >
         <LabPageHeader packageId={packageId} />
 
@@ -224,7 +261,7 @@ export function EvolutionLabPage() {
             />
           </div>
         )}
-      </main>
-    </div>
+      </Win98Window>
+    </>
   );
 }

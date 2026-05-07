@@ -24,6 +24,7 @@ import type {
 } from "@yigyaps/types";
 import { useToast } from "../contexts/ToastContext";
 import { API_URL, fetchApi } from "../lib/api";
+import { Win98Window } from "../components/Win98Window";
 
 type CreateYapForm = {
   slug: string;
@@ -470,7 +471,11 @@ export function YapStudioPage() {
     : "";
 
   return (
-    <div className="app-container">
+    <Win98Window
+      title="🔧 YAP Studio — Assemble Skills"
+      icon="🔧"
+      statusBar="Build · Preview · Deploy"
+    >
       <main className="studio-shell">
         <section className="studio-hero">
           <div>
@@ -481,12 +486,12 @@ export function YapStudioPage() {
             {selectedYap && (
               <>
                 <Link
-                  className="studio-button secondary"
+                  className="w98-btn"
                   to={`/yaps/${selectedYap.slug}/assembly`}
                 >
                   Preview assembly
                 </Link>
-                <a className="studio-button" href={remoteManifestUrl}>
+                <a className="w98-btn w98-btn--default" href={remoteManifestUrl}>
                   Remote manifest
                 </a>
               </>
@@ -569,6 +574,7 @@ export function YapStudioPage() {
                     <label>
                       Repository path
                       <input
+                        className="w98-input"
                         value={repoImportPath}
                         onChange={(event) =>
                           setRepoImportPath(event.target.value)
@@ -596,7 +602,8 @@ export function YapStudioPage() {
                     ) : null}
                     <button
                       type="button"
-                      className="studio-button full"
+                      className="w98-btn"
+                      style={{ width: "100%" }}
                       onClick={previewRepoImport}
                       disabled={previewingImport}
                     >
@@ -604,7 +611,8 @@ export function YapStudioPage() {
                     </button>
                     <button
                       type="button"
-                      className="studio-button full"
+                      className="w98-btn w98-btn--default"
+                      style={{ width: "100%" }}
                       onClick={executeRepoImport}
                       disabled={!repoPreview || executingImport}
                     >
@@ -612,7 +620,8 @@ export function YapStudioPage() {
                     </button>
                     <button
                       type="button"
-                      className="studio-button secondary full"
+                      className="w98-btn"
+                      style={{ width: "100%" }}
                       onClick={stageRepoImportShell}
                     >
                       Stage import shell
@@ -638,6 +647,7 @@ export function YapStudioPage() {
                 <label>
                   Slug
                   <input
+                    className="w98-input"
                     value={yapForm.slug}
                     onChange={(event) =>
                       setYapForm((current) => ({
@@ -652,6 +662,7 @@ export function YapStudioPage() {
                 <label>
                   Display name
                   <input
+                    className="w98-input"
                     value={yapForm.displayName}
                     onChange={(event) =>
                       setYapForm((current) => ({
@@ -666,6 +677,7 @@ export function YapStudioPage() {
                 <label>
                   Description
                   <textarea
+                    className="w98-input"
                     value={yapForm.description}
                     onChange={(event) =>
                       setYapForm((current) => ({
@@ -681,6 +693,7 @@ export function YapStudioPage() {
                   <label>
                     Version
                     <input
+                      className="w98-input"
                       value={yapForm.version}
                       onChange={(event) =>
                         setYapForm((current) => ({
@@ -693,6 +706,7 @@ export function YapStudioPage() {
                   <label>
                     Category
                     <input
+                      className="w98-input"
                       value={yapForm.category}
                       onChange={(event) =>
                         setYapForm((current) => ({
@@ -708,6 +722,7 @@ export function YapStudioPage() {
                   <label>
                     Visibility
                     <select
+                      className="w98-input"
                       value={yapForm.visibility}
                       onChange={(event) =>
                         setYapForm((current) => ({
@@ -724,6 +739,7 @@ export function YapStudioPage() {
                   <label>
                     Status
                     <select
+                      className="w98-input"
                       value={yapForm.status}
                       onChange={(event) =>
                         setYapForm((current) => ({
@@ -743,6 +759,7 @@ export function YapStudioPage() {
                 <label>
                   Tags
                   <input
+                    className="w98-input"
                     value={yapForm.tags}
                     onChange={(event) =>
                       setYapForm((current) => ({
@@ -756,6 +773,7 @@ export function YapStudioPage() {
                 <label>
                   Readme
                   <textarea
+                    className="w98-input"
                     value={yapForm.readme}
                     onChange={(event) =>
                       setYapForm((current) => ({
@@ -767,7 +785,7 @@ export function YapStudioPage() {
                     placeholder="Product positioning, default packs, and host integration notes."
                   />
                 </label>
-                <button className="studio-button full" disabled={submittingYap}>
+                <button className="w98-btn w98-btn--default" style={{ width: "100%" }} disabled={submittingYap}>
                   {submittingYap ? "Creating..." : "Create YAP"}
                 </button>
               </form>
@@ -797,7 +815,7 @@ export function YapStudioPage() {
 
           <section className="studio-main">
             {!selectedYap ? (
-              <div className="studio-empty-state">
+              <div className="empty-state">
                 <h2>Select or create a YAP.</h2>
               </div>
             ) : (
@@ -868,14 +886,15 @@ export function YapStudioPage() {
                         </button>
                       </div>
                       <textarea
-                        className="studio-json"
+                        className="w98-input studio-json"
                         value={packJson}
                         onChange={(event) => setPackJson(event.target.value)}
                         spellCheck={false}
                         rows={18}
                       />
                       <button
-                        className="studio-button full"
+                        className="w98-btn w98-btn--default"
+                        style={{ width: "100%" }}
                         disabled={submittingPack}
                       >
                         {submittingPack ? "Publishing..." : "Publish SkillPack"}
@@ -892,6 +911,7 @@ export function YapStudioPage() {
                       <label>
                         Extension pack
                         <select
+                          className="w98-input"
                           value={mountForm.skillPackId}
                           onChange={(event) =>
                             setMountForm((current) => ({
@@ -913,6 +933,7 @@ export function YapStudioPage() {
                         <label>
                           Mount key
                           <input
+                            className="w98-input"
                             value={mountForm.mountKey}
                             onChange={(event) =>
                               setMountForm((current) => ({
@@ -926,6 +947,7 @@ export function YapStudioPage() {
                         <label>
                           Priority
                           <input
+                            className="w98-input"
                             type="number"
                             value={mountForm.priority}
                             onChange={(event) =>
@@ -940,6 +962,7 @@ export function YapStudioPage() {
                       <label>
                         Mount point
                         <input
+                          className="w98-input"
                           value={mountForm.mountPoint}
                           onChange={(event) =>
                             setMountForm((current) => ({
@@ -950,7 +973,8 @@ export function YapStudioPage() {
                         />
                       </label>
                       <button
-                        className="studio-button full"
+                        className="w98-btn w98-btn--default"
+                        style={{ width: "100%" }}
                         disabled={
                           submittingMount || extensionPacks.length === 0
                         }
@@ -1084,29 +1108,12 @@ export function YapStudioPage() {
           color: var(--color-text-sub);
         }
 
-        .studio-form input,
-        .studio-form select,
-        .studio-form textarea {
-          width: 100%;
-          border: 1px solid var(--color-border);
-          border-radius: 8px;
-          background: var(--color-bg);
-          color: var(--color-text-main);
-          padding: 0.65rem 0.75rem;
-          font: inherit;
-          text-transform: none;
-          letter-spacing: 0;
-        }
-
-        .studio-form textarea {
-          resize: vertical;
-        }
-
         .studio-json {
           font-family: var(--font-mono);
           font-size: 0.78rem;
           line-height: 1.55;
           min-height: 28rem;
+          resize: vertical;
         }
 
         .studio-row {
@@ -1284,37 +1291,19 @@ export function YapStudioPage() {
           line-height: 1.35;
         }
 
-        .studio-button,
         .studio-chip {
           display: inline-flex;
           align-items: center;
           justify-content: center;
-          border: 1px solid #0d3158;
+          border: 1px solid var(--color-border);
           border-radius: 8px;
           min-height: 2.5rem;
           padding: 0 0.9rem;
-          background: #0d3158;
-          color: #fff;
-          font-weight: 800;
-          font-size: 0.82rem;
-          text-decoration: none;
-          cursor: pointer;
-        }
-
-        .studio-button.secondary,
-        .studio-chip {
           background: transparent;
           color: var(--color-text-main);
-          border-color: var(--color-border);
-        }
-
-        .studio-button.full {
-          width: 100%;
-        }
-
-        .studio-button:disabled {
-          opacity: 0.55;
-          cursor: not-allowed;
+          font-weight: 800;
+          font-size: 0.82rem;
+          cursor: pointer;
         }
 
         .studio-list {
@@ -1449,16 +1438,8 @@ export function YapStudioPage() {
           padding-left: 1.2rem;
         }
 
-        .studio-empty,
-        .studio-empty-state {
+        .studio-empty {
           color: var(--color-text-muted);
-        }
-
-        .studio-empty-state {
-          border: 1px dashed var(--color-border);
-          border-radius: 8px;
-          padding: 3rem;
-          text-align: center;
         }
 
         @media (max-width: 1120px) {
@@ -1495,7 +1476,7 @@ export function YapStudioPage() {
           }
         }
       `}</style>
-    </div>
+    </Win98Window>
   );
 }
 
@@ -1641,6 +1622,7 @@ function MountTable({
             <td>
               <div className="studio-toolbar">
                 <select
+                  className="w98-input"
                   value={switchTargets[mount.id] ?? mount.skillPackId}
                   onChange={(event) =>
                     onSwitchTargetChange(mount.id, event.target.value)
@@ -1654,7 +1636,7 @@ function MountTable({
                   ))}
                 </select>
                 <button
-                  className="studio-button secondary"
+                  className="w98-btn"
                   onClick={() => onSwitch(mount.id)}
                   disabled={switchingMountId === mount.id}
                 >

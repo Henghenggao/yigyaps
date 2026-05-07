@@ -3,6 +3,7 @@ import { useAuth } from "../contexts/AuthContext";
 import { useToast } from "../contexts/ToastContext";
 import { fetchApi } from "../lib/api";
 import { sanitizeUrl } from "../utils/sanitizeUrl";
+import { Win98Window } from "../components/Win98Window";
 
 interface ApiKey {
   id: string;
@@ -117,416 +118,286 @@ export function SettingsPage() {
   const safeAvatar = user ? sanitizeUrl(user.avatarUrl) : null;
 
   return (
-    <div className="app-container">
-      <main className="main-content" style={{ maxWidth: "800px", margin: "0 auto" }}>
-        <h1 style={{ fontSize: "1.75rem", marginBottom: "1.5rem" }}>Settings</h1>
+    <Win98Window
+      title="⚙ Settings — Yig Yaps"
+      icon="⚙"
+      tabs={[
+        { label: "API Keys", active: tab === "api-keys", onClick: () => setTab("api-keys") },
+        { label: "Payout", active: tab === "payout", onClick: () => setTab("payout") },
+        { label: "Profile", active: tab === "profile", onClick: () => setTab("profile") },
+      ]}
+    >
+      {tab === "api-keys" && (
+        <fieldset className="settings-groupbox">
+          <legend className="settings-legend">API Keys</legend>
 
-        {/* Tabs */}
-        <div
-          style={{
-            display: "flex",
-            gap: "0",
-            borderBottom: "1px solid var(--color-border)",
-            marginBottom: "2rem",
-          }}
-        >
-          {(["api-keys", "payout", "profile"] as const).map((t) => (
-            <button
-              key={t}
-              onClick={() => setTab(t)}
-              style={{
-                background: "none",
-                border: "none",
-                borderBottom: tab === t ? "2px solid var(--color-primary)" : "2px solid transparent",
-                padding: "0.75rem 1.25rem",
-                cursor: "pointer",
-                color: tab === t ? "var(--color-primary)" : "var(--color-text-muted)",
-                fontWeight: tab === t ? 600 : 400,
-                fontSize: "0.95rem",
-              }}
-            >
-              {t === "api-keys" ? "API Keys" : t === "payout" ? "Payout" : "Profile"}
-            </button>
-          ))}
-        </div>
-
-        {tab === "api-keys" && (
-          <div>
-            {/* Generated key banner */}
-            {generatedKey && (
-              <div
-                style={{
-                  background: "#1e3a2f",
-                  border: "1px solid #2ecc71",
-                  borderRadius: "10px",
-                  padding: "1.25rem",
-                  marginBottom: "1.5rem",
-                }}
-              >
-                <div
-                  style={{
-                    fontWeight: 600,
-                    marginBottom: "0.5rem",
-                    color: "#2ecc71",
-                  }}
-                >
-                  Your new API key — copy it now, it won&apos;t be shown again
-                </div>
-                <div
-                  style={{
-                    display: "flex",
-                    alignItems: "center",
-                    gap: "0.75rem",
-                    background: "rgba(0,0,0,0.3)",
-                    borderRadius: "6px",
-                    padding: "0.75rem",
-                  }}
-                >
-                  <code style={{ flex: 1, wordBreak: "break-all", fontSize: "0.85rem", color: "rgba(255,255,255,0.9)", fontFamily: "monospace" }}>
-                    {generatedKey}
-                  </code>
-                  <button className="btn btn-outline" onClick={handleCopy} style={{ flexShrink: 0 }}>
-                    {copied ? "Copied!" : "Copy"}
-                  </button>
-                </div>
-                <div
-                  style={{ fontSize: "0.8rem", color: "#2ecc71", marginTop: "0.75rem" }}
-                >
-                  Use with CLI: <code>yigyaps login</code> — paste this key when prompted
-                </div>
-                <button
-                  style={{
-                    background: "none",
-                    border: "none",
-                    color: "rgba(255,255,255,0.5)",
-                    cursor: "pointer",
-                    fontSize: "0.8rem",
-                    marginTop: "0.5rem",
-                    padding: 0,
-                  }}
-                  onClick={() => setGeneratedKey(null)}
-                >
-                  Dismiss
-                </button>
-              </div>
-            )}
-
+          {/* Generated key banner */}
+          {generatedKey && (
             <div
               style={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
+                background: "#1e3a2f",
+                border: "1px solid #2ecc71",
+                borderRadius: "4px",
+                padding: "1rem",
                 marginBottom: "1rem",
               }}
             >
-              <h2 style={{ margin: 0, fontSize: "1.1rem" }}>API Keys</h2>
+              <div style={{ fontWeight: 600, marginBottom: "0.5rem", color: "#2ecc71" }}>
+                Your new API key — copy it now, it won&apos;t be shown again
+              </div>
+              <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", background: "rgba(0,0,0,0.3)", borderRadius: "4px", padding: "0.5rem 0.75rem" }}>
+                <code style={{ flex: 1, wordBreak: "break-all", fontSize: "0.85rem", color: "rgba(255,255,255,0.9)", fontFamily: "monospace" }}>
+                  {generatedKey}
+                </code>
+                <button className="w98-btn" onClick={handleCopy} style={{ flexShrink: 0 }}>
+                  {copied ? "Copied!" : "Copy"}
+                </button>
+              </div>
+              <div style={{ fontSize: "0.8rem", color: "#2ecc71", marginTop: "0.5rem" }}>
+                Use with CLI: <code>yigyaps login</code> — paste this key when prompted
+              </div>
               <button
-                className="btn btn-primary"
-                onClick={() => setShowNewKeyForm(!showNewKeyForm)}
-                style={{ fontSize: "0.875rem" }}
+                className="w98-btn"
+                style={{ marginTop: "0.5rem", fontSize: "0.8rem" }}
+                onClick={() => setGeneratedKey(null)}
               >
-                + Generate New Key
+                Dismiss
               </button>
             </div>
+          )}
 
-            {showNewKeyForm && (
-              <div
-                style={{
-                  background: "var(--color-card)",
-                  border: "1px solid var(--color-border)",
-                  borderRadius: "10px",
-                  padding: "1.25rem",
-                  marginBottom: "1.5rem",
-                  display: "flex",
-                  gap: "0.75rem",
-                  alignItems: "flex-end",
-                }}
-              >
-                <div style={{ flex: 1 }}>
-                  <label style={{ display: "block", marginBottom: "0.4rem", fontSize: "0.85rem" }}>
-                    Key name (e.g. "My Laptop", "CI Pipeline")
-                  </label>
-                  <input
-                    className="publish-input"
-                    value={newKeyName}
-                    onChange={(e) => setNewKeyName(e.target.value)}
-                    placeholder="My development key"
-                    onKeyDown={(e) => e.key === "Enter" && handleGenerate()}
-                    style={{ width: "100%" }}
-                  />
-                </div>
+          <div className="settings-row" style={{ marginBottom: "1rem" }}>
+            <span className="settings-label">
+              API keys allow the CLI and external tools to authenticate on your behalf.
+              To use the CLI: <code>yigyaps login</code>
+            </span>
+            <button
+              className="w98-btn w98-btn--default"
+              onClick={() => setShowNewKeyForm(!showNewKeyForm)}
+            >
+              + Generate New Key
+            </button>
+          </div>
+
+          {showNewKeyForm && (
+            <fieldset className="settings-groupbox" style={{ marginBottom: "1rem" }}>
+              <legend className="settings-legend">New Key</legend>
+              <div className="settings-row">
+                <label className="settings-label">
+                  Key name (e.g. "My Laptop", "CI Pipeline")
+                </label>
+                <input
+                  className="w98-input"
+                  value={newKeyName}
+                  onChange={(e) => setNewKeyName(e.target.value)}
+                  placeholder="My development key"
+                  onKeyDown={(e) => e.key === "Enter" && handleGenerate()}
+                  style={{ flex: 1 }}
+                />
                 <button
-                  className="btn btn-primary"
+                  className="w98-btn w98-btn--default"
                   onClick={handleGenerate}
                   disabled={generating}
                 >
                   {generating ? "Generating..." : "Generate"}
                 </button>
                 <button
-                  className="btn btn-outline"
+                  className="w98-btn"
                   onClick={() => setShowNewKeyForm(false)}
                 >
                   Cancel
                 </button>
               </div>
-            )}
+            </fieldset>
+          )}
 
-            <p style={{ fontSize: "0.85rem", color: "var(--color-text-muted)", marginBottom: "1.25rem" }}>
-              API keys allow the CLI and external tools to authenticate on your behalf.
-              To use the CLI: <code>yigyaps login</code>
-            </p>
-
-            {loading ? (
-              <div style={{ color: "var(--color-text-muted)", padding: "1rem 0" }}>
-                Loading keys...
-              </div>
-            ) : apiKeys.length === 0 ? (
-              <div
-                style={{
-                  textAlign: "center",
-                  padding: "2.5rem",
-                  background: "var(--color-card)",
-                  border: "1px solid var(--color-border)",
-                  borderRadius: "10px",
-                }}
-              >
-                <p style={{ color: "var(--color-text-muted)", marginBottom: "1rem" }}>
-                  No API keys yet. Generate one to use the CLI.
-                </p>
-              </div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-                {apiKeys.map((key) => (
-                  <div
-                    key={key.id}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "1rem",
-                      background: "var(--color-card)",
-                      border: "1px solid var(--color-border)",
-                      borderRadius: "8px",
-                      padding: "1rem 1.25rem",
-                      opacity: key.revokedAt ? 0.5 : 1,
-                    }}
-                  >
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 600 }}>{key.name}</div>
-                      <div
-                        style={{
-                          fontFamily: "monospace",
-                          fontSize: "0.85rem",
-                          color: "var(--color-text-muted)",
-                          marginTop: "0.2rem",
-                        }}
-                      >
-                        {key.keyPrefix}••••••••
-                      </div>
-                      <div
-                        style={{
-                          fontSize: "0.78rem",
-                          color: "var(--color-text-muted)",
-                          marginTop: "0.2rem",
-                        }}
-                      >
-                        Created {formatDate(key.createdAt)} · Last used{" "}
-                        {formatDate(key.lastUsedAt)}
-                        {key.revokedAt ? " · REVOKED" : ""}
-                      </div>
-                    </div>
-                    {!key.revokedAt && (
-                      <button
-                        className="btn btn-outline"
-                        style={{ fontSize: "0.8rem", color: "#e74c3c" }}
-                        disabled={revoking === key.id}
-                        onClick={() => handleRevoke(key)}
-                      >
-                        {revoking === key.id ? "Revoking..." : "Revoke"}
-                      </button>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {tab === "payout" && (
-          <div>
-            <h2 style={{ margin: "0 0 0.5rem", fontSize: "1.1rem" }}>Payout Settings</h2>
-            <p style={{ fontSize: "0.85rem", color: "var(--color-text-muted)", marginBottom: "1.5rem" }}>
-              Connect your Stripe account to receive your 70% creator royalties.
-              Stripe handles all payouts — funds arrive T+2 business days.
-            </p>
-
-            {payoutLoading ? (
-              <div style={{ color: "var(--color-text-muted)" }}>Loading…</div>
-            ) : (
-              <div
-                style={{
-                  background: "var(--color-card)",
-                  border: "1px solid var(--color-border)",
-                  borderRadius: "10px",
-                  padding: "1.5rem",
-                }}
-              >
-                {payoutStatus?.connected ? (
-                  <>
-                    <div style={{ display: "flex", alignItems: "center", gap: "0.75rem", marginBottom: "1rem" }}>
-                      <span style={{ fontSize: "1.5rem" }}>✅</span>
-                      <div>
-                        <div style={{ fontWeight: 600 }}>Stripe account connected</div>
-                        <div style={{ fontSize: "0.8rem", color: "var(--color-text-muted)", fontFamily: "monospace" }}>
-                          {payoutStatus.stripeAccountId}
-                        </div>
-                      </div>
-                    </div>
-                    <div style={{ display: "flex", gap: "1rem", flexWrap: "wrap", marginBottom: "1.25rem" }}>
-                      <span
-                        style={{
-                          padding: "0.3rem 0.75rem",
-                          borderRadius: "20px",
-                          fontSize: "0.8rem",
-                          background: payoutStatus.details_submitted ? "#1e3a2f" : "#3a1e1e",
-                          color: payoutStatus.details_submitted ? "#2ecc71" : "#e74c3c",
-                          border: `1px solid ${payoutStatus.details_submitted ? "#2ecc71" : "#e74c3c"}`,
-                        }}
-                      >
-                        {payoutStatus.details_submitted ? "Details submitted" : "Details pending"}
-                      </span>
-                      <span
-                        style={{
-                          padding: "0.3rem 0.75rem",
-                          borderRadius: "20px",
-                          fontSize: "0.8rem",
-                          background: payoutStatus.payouts_enabled ? "#1e3a2f" : "#3a1e1e",
-                          color: payoutStatus.payouts_enabled ? "#2ecc71" : "#e74c3c",
-                          border: `1px solid ${payoutStatus.payouts_enabled ? "#2ecc71" : "#e74c3c"}`,
-                        }}
-                      >
-                        {payoutStatus.payouts_enabled ? "Payouts enabled" : "Payouts not yet enabled"}
-                      </span>
-                    </div>
-                    {!payoutStatus.payouts_enabled && (
-                      <a
-                        href="/v1/stripe/connect/onboard"
-                        className="btn btn-outline"
-                        style={{ fontSize: "0.875rem" }}
-                      >
-                        Complete Stripe onboarding →
-                      </a>
-                    )}
-                  </>
-                ) : (
-                  <>
-                    <p style={{ marginBottom: "1rem", color: "var(--color-text-muted)", fontSize: "0.9rem" }}>
-                      You haven't connected a Stripe account yet. Connect now to receive payouts when users subscribe to your skills.
-                    </p>
-                    <a
-                      href="/v1/stripe/connect/onboard"
-                      className="btn btn-primary"
-                      style={{ fontSize: "0.875rem" }}
-                    >
-                      Connect with Stripe →
-                    </a>
-                  </>
-                )}
-              </div>
-            )}
-
-            <div
-              style={{
-                marginTop: "1.5rem",
-                padding: "1rem 1.25rem",
-                background: "rgba(var(--color-primary-rgb, 99, 102, 241), 0.06)",
-                border: "1px solid var(--color-border)",
-                borderRadius: "8px",
-                fontSize: "0.82rem",
-                color: "var(--color-text-muted)",
-              }}
-            >
-              <strong>Revenue split:</strong> 70% to you · 30% platform fee.
-              Stripe settles T+2 business days. Monthly aggregation via Stripe Connect Standard.
+          {loading ? (
+            <div style={{ color: "var(--color-text-muted)", padding: "0.5rem 0" }}>
+              Loading keys...
             </div>
-          </div>
-        )}
-
-        {tab === "profile" && user && (
-          <div
-            style={{
-              background: "var(--color-card)",
-              border: "1px solid var(--color-border)",
-              borderRadius: "10px",
-              padding: "2rem",
-            }}
-          >
-            <div
-              style={{ display: "flex", alignItems: "center", gap: "1.5rem", marginBottom: "2rem" }}
-            >
-              {safeAvatar ? (
-                <img
-                  src={safeAvatar}
-                  alt={user.displayName}
-                  style={{ width: "80px", height: "80px", borderRadius: "50%", objectFit: "cover" }}
-                />
-              ) : (
+          ) : apiKeys.length === 0 ? (
+            <div className="empty-state">
+              No API keys yet. Generate one to use the CLI.
+            </div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
+              {apiKeys.map((key) => (
                 <div
+                  key={key.id}
+                  className="settings-row"
                   style={{
-                    width: "80px",
-                    height: "80px",
-                    borderRadius: "50%",
-                    background: "var(--color-primary)",
-                    display: "flex",
-                    alignItems: "center",
-                    justifyContent: "center",
-                    fontSize: "2rem",
-                    fontWeight: 700,
+                    border: "1px solid var(--color-border)",
+                    padding: "0.75rem",
+                    opacity: key.revokedAt ? 0.5 : 1,
                   }}
                 >
-                  {user.displayName.charAt(0).toUpperCase()}
+                  <div style={{ flex: 1, minWidth: 0 }}>
+                    <div style={{ fontWeight: 600 }}>{key.name}</div>
+                    <div style={{ fontFamily: "monospace", fontSize: "0.85rem", color: "var(--color-text-muted)", marginTop: "0.2rem" }}>
+                      {key.keyPrefix}••••••••
+                    </div>
+                    <div style={{ fontSize: "0.78rem", color: "var(--color-text-muted)", marginTop: "0.2rem" }}>
+                      Created {formatDate(key.createdAt)} · Last used{" "}
+                      {formatDate(key.lastUsedAt)}
+                      {key.revokedAt ? " · REVOKED" : ""}
+                    </div>
+                  </div>
+                  {!key.revokedAt && (
+                    <button
+                      className="w98-btn"
+                      style={{ fontSize: "0.8rem", color: "#e74c3c" }}
+                      disabled={revoking === key.id}
+                      onClick={() => handleRevoke(key)}
+                    >
+                      {revoking === key.id ? "Revoking..." : "Revoke"}
+                    </button>
+                  )}
                 </div>
-              )}
-              <div>
-                <div style={{ fontWeight: 700, fontSize: "1.2rem" }}>{user.displayName}</div>
-                {user.githubUsername && (
-                  <div style={{ color: "var(--color-text-muted)" }}>@{user.githubUsername}</div>
-                )}
-                {user.email && !user.githubUsername && (
-                  <div style={{ color: "var(--color-text-muted)" }}>{user.email}</div>
-                )}
-                <span
-                  style={{
-                    display: "inline-block",
-                    marginTop: "0.5rem",
-                    padding: "0.2rem 0.6rem",
-                    borderRadius: "20px",
-                    background: "var(--color-primary)",
-                    color: "#fff",
-                    fontSize: "0.75rem",
-                    textTransform: "uppercase",
-                    fontWeight: 600,
-                  }}
-                >
-                  {user.tier} tier
-                </span>
-              </div>
+              ))}
             </div>
-            {user.githubUsername ? (
-              <p style={{ color: "var(--color-text-muted)", fontSize: "0.875rem" }}>
-                Profile information is sourced from GitHub. Update your profile at{" "}
-                <a href="https://github.com/settings/profile" target="_blank" rel="noopener noreferrer">
-                  github.com/settings/profile
-                </a>
-                .
-              </p>
-            ) : (
-              <p style={{ color: "var(--color-text-muted)", fontSize: "0.875rem" }}>
-                Signed in with email. Profile settings coming soon.
-              </p>
-            )}
+          )}
+        </fieldset>
+      )}
+
+      {tab === "payout" && (
+        <fieldset className="settings-groupbox">
+          <legend className="settings-legend">Payout Settings</legend>
+          <p className="settings-label" style={{ marginBottom: "1rem" }}>
+            Connect your Stripe account to receive your 70% creator royalties.
+            Stripe handles all payouts — funds arrive T+2 business days.
+          </p>
+
+          {payoutLoading ? (
+            <div style={{ color: "var(--color-text-muted)" }}>Loading…</div>
+          ) : (
+            <div style={{ border: "1px solid var(--color-border)", padding: "1.25rem" }}>
+              {payoutStatus?.connected ? (
+                <>
+                  <div className="settings-row" style={{ marginBottom: "1rem" }}>
+                    <span style={{ fontSize: "1.5rem" }}>✅</span>
+                    <div>
+                      <div style={{ fontWeight: 600 }}>Stripe account connected</div>
+                      <div style={{ fontSize: "0.8rem", color: "var(--color-text-muted)", fontFamily: "monospace" }}>
+                        {payoutStatus.stripeAccountId}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="settings-row" style={{ marginBottom: "1rem" }}>
+                    <span
+                      style={{
+                        padding: "0.2rem 0.6rem",
+                        fontSize: "0.8rem",
+                        background: payoutStatus.details_submitted ? "#1e3a2f" : "#3a1e1e",
+                        color: payoutStatus.details_submitted ? "#2ecc71" : "#e74c3c",
+                        border: `1px solid ${payoutStatus.details_submitted ? "#2ecc71" : "#e74c3c"}`,
+                      }}
+                    >
+                      {payoutStatus.details_submitted ? "Details submitted" : "Details pending"}
+                    </span>
+                    <span
+                      style={{
+                        padding: "0.2rem 0.6rem",
+                        fontSize: "0.8rem",
+                        background: payoutStatus.payouts_enabled ? "#1e3a2f" : "#3a1e1e",
+                        color: payoutStatus.payouts_enabled ? "#2ecc71" : "#e74c3c",
+                        border: `1px solid ${payoutStatus.payouts_enabled ? "#2ecc71" : "#e74c3c"}`,
+                      }}
+                    >
+                      {payoutStatus.payouts_enabled ? "Payouts enabled" : "Payouts not yet enabled"}
+                    </span>
+                  </div>
+                  {!payoutStatus.payouts_enabled && (
+                    <a href="/v1/stripe/connect/onboard" className="w98-btn">
+                      Complete Stripe onboarding →
+                    </a>
+                  )}
+                </>
+              ) : (
+                <>
+                  <p style={{ marginBottom: "1rem", color: "var(--color-text-muted)", fontSize: "0.9rem" }}>
+                    You haven't connected a Stripe account yet. Connect now to receive payouts when users subscribe to your skills.
+                  </p>
+                  <a href="/v1/stripe/connect/onboard" className="w98-btn w98-btn--default">
+                    Connect with Stripe →
+                  </a>
+                </>
+              )}
+            </div>
+          )}
+
+          <div style={{ marginTop: "1rem", padding: "0.75rem", border: "1px solid var(--color-border)", fontSize: "0.82rem", color: "var(--color-text-muted)" }}>
+            <strong>Revenue split:</strong> 70% to you · 30% platform fee.
+            Stripe settles T+2 business days. Monthly aggregation via Stripe Connect Standard.
           </div>
-        )}
-      </main>
-    </div>
+        </fieldset>
+      )}
+
+      {tab === "profile" && user && (
+        <fieldset className="settings-groupbox">
+          <legend className="settings-legend">Profile</legend>
+          <div className="settings-row" style={{ marginBottom: "1.5rem", alignItems: "center" }}>
+            {safeAvatar ? (
+              <img
+                src={safeAvatar}
+                alt={user.displayName}
+                style={{ width: "64px", height: "64px", borderRadius: "50%", objectFit: "cover" }}
+              />
+            ) : (
+              <div
+                style={{
+                  width: "64px",
+                  height: "64px",
+                  borderRadius: "50%",
+                  background: "var(--color-primary)",
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "center",
+                  fontSize: "1.75rem",
+                  fontWeight: 700,
+                }}
+              >
+                {user.displayName.charAt(0).toUpperCase()}
+              </div>
+            )}
+            <div>
+              <div style={{ fontWeight: 700, fontSize: "1.1rem" }}>{user.displayName}</div>
+              {user.githubUsername && (
+                <div style={{ color: "var(--color-text-muted)" }}>@{user.githubUsername}</div>
+              )}
+              {user.email && !user.githubUsername && (
+                <div style={{ color: "var(--color-text-muted)" }}>{user.email}</div>
+              )}
+              <span
+                style={{
+                  display: "inline-block",
+                  marginTop: "0.4rem",
+                  padding: "0.2rem 0.5rem",
+                  background: "var(--color-primary)",
+                  color: "#fff",
+                  fontSize: "0.75rem",
+                  textTransform: "uppercase",
+                  fontWeight: 600,
+                }}
+              >
+                {user.tier} tier
+              </span>
+            </div>
+          </div>
+          {user.githubUsername ? (
+            <p style={{ color: "var(--color-text-muted)", fontSize: "0.875rem" }}>
+              Profile information is sourced from GitHub. Update your profile at{" "}
+              <a href="https://github.com/settings/profile" target="_blank" rel="noopener noreferrer">
+                github.com/settings/profile
+              </a>
+              .
+            </p>
+          ) : (
+            <p style={{ color: "var(--color-text-muted)", fontSize: "0.875rem" }}>
+              Signed in with email. Profile settings coming soon.
+            </p>
+          )}
+        </fieldset>
+      )}
+    </Win98Window>
   );
 }

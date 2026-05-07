@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useToast } from "../contexts/ToastContext";
 import { fetchApi } from "../lib/api";
 import { Link } from "react-router-dom";
+import { Win98Window } from "../components/Win98Window";
 
 type AdminTab = "overview" | "packages" | "users" | "reports";
 
@@ -130,13 +131,6 @@ export function AdminPage() {
     }
   };
 
-  const tabs: { key: AdminTab; label: string; badge?: number }[] = [
-    { key: "overview", label: "Overview" },
-    { key: "packages", label: "Packages" },
-    { key: "users", label: "Users" },
-    { key: "reports", label: "Reports", badge: stats?.reports.pending },
-  ];
-
   const formatDate = (ts: number) => new Date(ts).toLocaleDateString();
 
   const statusColor = (s: string) => {
@@ -147,375 +141,303 @@ export function AdminPage() {
   };
 
   return (
-    <div className="app-container">
-      <main className="main-content" style={{ maxWidth: "960px", margin: "0 auto" }}>
-        <div style={{ display: "flex", alignItems: "center", gap: "1rem", marginBottom: "1.5rem" }}>
-          <h1 style={{ fontSize: "1.75rem", margin: 0 }}>Admin Dashboard</h1>
-          <span
-            style={{
-              padding: "0.2rem 0.6rem",
-              background: "#e74c3c",
-              color: "#fff",
-              borderRadius: "4px",
-              fontSize: "0.7rem",
-              fontWeight: 700,
-              textTransform: "uppercase",
-            }}
-          >
-            Admin
-          </span>
-        </div>
-
-        {/* Tabs */}
-        <div style={{ display: "flex", borderBottom: "1px solid var(--color-border)", marginBottom: "2rem" }}>
-          {tabs.map((t) => (
-            <button
-              key={t.key}
-              onClick={() => setTab(t.key)}
-              style={{
-                background: "none",
-                border: "none",
-                borderBottom: tab === t.key ? "2px solid var(--color-primary)" : "2px solid transparent",
-                padding: "0.75rem 1.25rem",
-                cursor: "pointer",
-                color: tab === t.key ? "var(--color-primary)" : "var(--color-text-muted)",
-                fontWeight: tab === t.key ? 600 : 400,
-                fontSize: "0.9rem",
-                display: "flex",
-                alignItems: "center",
-                gap: "0.4rem",
-              }}
-            >
-              {t.label}
-              {t.badge != null && t.badge > 0 && (
-                <span
+    <Win98Window
+      title="🛡 Admin — Yig Yaps Registry"
+      icon="🛡"
+      tabs={[
+        { label: "Overview", active: tab === "overview", onClick: () => setTab("overview") },
+        {
+          label: `Packages`,
+          active: tab === "packages",
+          onClick: () => setTab("packages"),
+        },
+        { label: "Users", active: tab === "users", onClick: () => setTab("users") },
+        {
+          label: stats?.reports.pending ? `Reports (${stats.reports.pending})` : "Reports",
+          active: tab === "reports",
+          dotColor: stats?.reports.pending ? "#e74c3c" : undefined,
+          onClick: () => setTab("reports"),
+        },
+      ]}
+    >
+      {/* Overview */}
+      {tab === "overview" && (
+        <div>
+          {loadingStats ? (
+            <div style={{ color: "var(--color-text-muted)" }}>Loading stats...</div>
+          ) : stats ? (
+            <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(160px, 1fr))", gap: "0.75rem", marginBottom: "1.5rem" }}>
+              {[
+                { label: "Total Users", value: stats.users.total, sub: `+${stats.users.newToday} today` },
+                { label: "Total Packages", value: stats.packages.total, sub: `${stats.packages.active} active` },
+                { label: "Banned Packages", value: stats.packages.banned, sub: "banned", color: stats.packages.banned > 0 ? "#e74c3c" : undefined },
+                { label: "Total Installs", value: stats.installations.total, sub: "all time" },
+                { label: "Pending Reports", value: stats.reports.pending, sub: "need review", color: stats.reports.pending > 0 ? "#e74c3c" : undefined },
+              ].map((card) => (
+                <div
+                  key={card.label}
                   style={{
-                    display: "inline-block",
-                    minWidth: "18px",
-                    height: "18px",
-                    lineHeight: "18px",
-                    textAlign: "center",
-                    background: "#e74c3c",
-                    color: "#fff",
-                    borderRadius: "9px",
-                    fontSize: "0.7rem",
-                    fontWeight: 700,
-                    padding: "0 4px",
+                    border: "1px solid var(--color-border)",
+                    padding: "1rem",
                   }}
                 >
-                  {t.badge}
-                </span>
-              )}
-            </button>
-          ))}
+                  <div style={{ fontSize: "0.8rem", color: "var(--color-text-muted)", marginBottom: "0.4rem" }}>
+                    {card.label}
+                  </div>
+                  <div
+                    style={{
+                      fontSize: "2rem",
+                      fontWeight: 700,
+                      color: card.color || "var(--color-text)",
+                      lineHeight: 1,
+                      marginBottom: "0.2rem",
+                    }}
+                  >
+                    {card.value}
+                  </div>
+                  <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)" }}>{card.sub}</div>
+                </div>
+              ))}
+            </div>
+          ) : null}
+          <div style={{ color: "var(--color-text-muted)", fontSize: "0.875rem" }}>
+            Use the tabs above to manage packages, users, and content reports.
+          </div>
         </div>
+      )}
 
-        {/* Overview */}
-        {tab === "overview" && (
-          <div>
-            {loadingStats ? (
-              <div style={{ color: "var(--color-text-muted)" }}>Loading stats...</div>
-            ) : stats ? (
-              <div style={{ display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(180px, 1fr))", gap: "1rem", marginBottom: "2rem" }}>
-                {[
-                  { label: "Total Users", value: stats.users.total, sub: `+${stats.users.newToday} today` },
-                  { label: "Total Packages", value: stats.packages.total, sub: `${stats.packages.active} active` },
-                  { label: "Banned Packages", value: stats.packages.banned, sub: "banned", color: stats.packages.banned > 0 ? "#e74c3c" : undefined },
-                  { label: "Total Installs", value: stats.installations.total, sub: "all time" },
-                  { label: "Pending Reports", value: stats.reports.pending, sub: "need review", color: stats.reports.pending > 0 ? "#e74c3c" : undefined },
-                ].map((card) => (
-                  <div
-                    key={card.label}
-                    style={{
-                      background: "var(--color-card)",
-                      border: "1px solid var(--color-border)",
-                      borderRadius: "10px",
-                      padding: "1.25rem",
-                    }}
-                  >
-                    <div style={{ fontSize: "0.8rem", color: "var(--color-text-muted)", marginBottom: "0.5rem" }}>
-                      {card.label}
-                    </div>
-                    <div
-                      style={{
-                        fontSize: "2rem",
-                        fontWeight: 700,
-                        color: card.color || "var(--color-text)",
-                        lineHeight: 1,
-                        marginBottom: "0.25rem",
-                      }}
-                    >
-                      {card.value}
-                    </div>
-                    <div style={{ fontSize: "0.75rem", color: "var(--color-text-muted)" }}>{card.sub}</div>
-                  </div>
-                ))}
-              </div>
-            ) : null}
-            <div style={{ color: "var(--color-text-muted)", fontSize: "0.875rem" }}>
-              Use the tabs above to manage packages, users, and content reports.
-            </div>
+      {/* Packages */}
+      {tab === "packages" && (
+        <div>
+          <div style={{ display: "flex", gap: "0.4rem", marginBottom: "1rem" }}>
+            {["all", "active", "archived", "banned"].map((s) => (
+              <button
+                key={s}
+                onClick={() => setPkgStatusFilter(s)}
+                className={pkgStatusFilter === s ? "w98-btn w98-btn--default" : "w98-btn"}
+              >
+                {s.charAt(0).toUpperCase() + s.slice(1)}
+              </button>
+            ))}
           </div>
-        )}
 
-        {/* Packages */}
-        {tab === "packages" && (
-          <div>
-            <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1.25rem" }}>
-              {["all", "active", "archived", "banned"].map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setPkgStatusFilter(s)}
-                  className={pkgStatusFilter === s ? "btn btn-primary" : "btn btn-outline"}
-                  style={{ fontSize: "0.8rem", padding: "0.35rem 0.8rem" }}
+          {loadingTab ? (
+            <div style={{ color: "var(--color-text-muted)" }}>Loading...</div>
+          ) : packages.length === 0 ? (
+            <div className="empty-state">No packages found.</div>
+          ) : (
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>Package</th>
+                  <th>Author</th>
+                  <th>Category</th>
+                  <th>Installs</th>
+                  <th>Status</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                {packages.map((pkg) => (
+                  <tr key={pkg.id}>
+                    <td>
+                      <Link to={`/skill/${pkg.packageId}`} style={{ color: "var(--color-text)", textDecoration: "none", fontWeight: 600 }}>
+                        {pkg.displayName}
+                      </Link>
+                      <div style={{ fontFamily: "monospace", fontSize: "0.78rem", color: "var(--color-text-muted)" }}>
+                        {pkg.packageId}
+                      </div>
+                    </td>
+                    <td>{pkg.authorName}</td>
+                    <td>{pkg.category}</td>
+                    <td>{pkg.installCount}</td>
+                    <td>
+                      <span
+                        style={{
+                          padding: "0.2rem 0.5rem",
+                          fontSize: "0.75rem",
+                          fontWeight: 600,
+                          background: statusColor(pkg.status) + "22",
+                          color: statusColor(pkg.status),
+                        }}
+                      >
+                        {pkg.status}
+                      </span>
+                    </td>
+                    <td>
+                      <div style={{ display: "flex", gap: "0.3rem" }}>
+                        {pkg.status !== "active" && (
+                          <button className="w98-btn" style={{ fontSize: "0.75rem", color: "#2ecc71" }} onClick={() => handlePkgStatus(pkg.id, "active")}>
+                            Activate
+                          </button>
+                        )}
+                        {pkg.status !== "archived" && (
+                          <button className="w98-btn" style={{ fontSize: "0.75rem" }} onClick={() => handlePkgStatus(pkg.id, "archived")}>
+                            Archive
+                          </button>
+                        )}
+                        {pkg.status !== "banned" && (
+                          <button className="w98-btn" style={{ fontSize: "0.75rem", color: "#e74c3c" }} onClick={() => handlePkgStatus(pkg.id, "banned")}>
+                            Ban
+                          </button>
+                        )}
+                      </div>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+
+      {/* Users */}
+      {tab === "users" && (
+        <div>
+          <div style={{ marginBottom: "1rem" }}>
+            <input
+              className="w98-input"
+              value={userSearch}
+              onChange={(e) => setUserSearch(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") setTab("users"); }}
+              placeholder="Search by username..."
+              style={{ width: "280px" }}
+            />
+          </div>
+
+          {loadingTab ? (
+            <div style={{ color: "var(--color-text-muted)" }}>Loading...</div>
+          ) : users.length === 0 ? (
+            <div className="empty-state">No users found.</div>
+          ) : (
+            <table className="admin-table">
+              <thead>
+                <tr>
+                  <th>User</th>
+                  <th>GitHub</th>
+                  <th>Tier</th>
+                  <th>Joined</th>
+                  <th>Role</th>
+                  <th>Change Role</th>
+                </tr>
+              </thead>
+              <tbody>
+                {users.map((u) => (
+                  <tr key={u.id}>
+                    <td style={{ fontWeight: 600 }}>{u.displayName}</td>
+                    <td>@{u.githubUsername}</td>
+                    <td>{u.tier}</td>
+                    <td>{formatDate(u.createdAt)}</td>
+                    <td>
+                      <span
+                        style={{
+                          padding: "0.2rem 0.5rem",
+                          fontSize: "0.75rem",
+                          fontWeight: 600,
+                          background: u.role === "admin" ? "rgba(231,76,60,0.15)" : "var(--color-border)",
+                          color: u.role === "admin" ? "#e74c3c" : "var(--color-text-muted)",
+                        }}
+                      >
+                        {u.role}
+                      </span>
+                    </td>
+                    <td>
+                      <select
+                        className="w98-input"
+                        value={u.role}
+                        onChange={(e) => handleUserRole(u.id, e.target.value)}
+                      >
+                        <option value="user">User</option>
+                        <option value="admin">Admin</option>
+                      </select>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          )}
+        </div>
+      )}
+
+      {/* Reports */}
+      {tab === "reports" && (
+        <div>
+          <div style={{ display: "flex", gap: "0.4rem", marginBottom: "1rem" }}>
+            {["pending", "resolved", "dismissed"].map((s) => (
+              <button
+                key={s}
+                onClick={() => setReportStatusFilter(s)}
+                className={reportStatusFilter === s ? "w98-btn w98-btn--default" : "w98-btn"}
+              >
+                {s.charAt(0).toUpperCase() + s.slice(1)}
+              </button>
+            ))}
+          </div>
+
+          {loadingTab ? (
+            <div style={{ color: "var(--color-text-muted)" }}>Loading...</div>
+          ) : reports.length === 0 ? (
+            <div className="empty-state">No {reportStatusFilter} reports.</div>
+          ) : (
+            <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+              {reports.map((r) => (
+                <div
+                  key={r.id}
+                  style={{
+                    border: "1px solid var(--color-border)",
+                    padding: "1rem",
+                  }}
                 >
-                  {s.charAt(0).toUpperCase() + s.slice(1)}
-                </button>
+                  <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.5rem" }}>
+                    <div>
+                      <span style={{ fontWeight: 600, marginRight: "0.5rem" }}>{r.reason.replace(/_/g, " ")}</span>
+                      <span style={{ fontSize: "0.78rem", color: "var(--color-text-muted)" }}>
+                        {r.targetType}: <code>{r.targetId}</code>
+                      </span>
+                    </div>
+                    <span style={{ fontSize: "0.75rem", color: "var(--color-text-muted)" }}>{formatDate(r.createdAt)}</span>
+                  </div>
+                  {r.description && (
+                    <div style={{ fontSize: "0.85rem", color: "var(--color-text-muted)", marginBottom: "0.75rem" }}>
+                      {r.description}
+                    </div>
+                  )}
+                  {r.status === "pending" && (
+                    <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginTop: "0.5rem" }}>
+                      <input
+                        className="w98-input"
+                        value={reportNote[r.id] || ""}
+                        onChange={(e) => setReportNote((prev) => ({ ...prev, [r.id]: e.target.value }))}
+                        placeholder="Optional admin note..."
+                        style={{ flex: 1 }}
+                      />
+                      <button
+                        className="w98-btn"
+                        style={{ fontSize: "0.78rem", color: "#2ecc71" }}
+                        onClick={() => handleReport(r.id, "resolved")}
+                      >
+                        Resolve
+                      </button>
+                      <button
+                        className="w98-btn"
+                        style={{ fontSize: "0.78rem" }}
+                        onClick={() => handleReport(r.id, "dismissed")}
+                      >
+                        Dismiss
+                      </button>
+                    </div>
+                  )}
+                  {r.adminNote && (
+                    <div style={{ fontSize: "0.78rem", color: "var(--color-text-muted)", marginTop: "0.5rem", fontStyle: "italic" }}>
+                      Admin note: {r.adminNote}
+                    </div>
+                  )}
+                </div>
               ))}
             </div>
-
-            {loadingTab ? (
-              <div style={{ color: "var(--color-text-muted)" }}>Loading...</div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                {packages.length === 0 ? (
-                  <div style={{ color: "var(--color-text-muted)", padding: "2rem 0" }}>No packages found.</div>
-                ) : packages.map((pkg) => (
-                  <div
-                    key={pkg.id}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "1rem",
-                      background: "var(--color-card)",
-                      border: "1px solid var(--color-border)",
-                      borderRadius: "8px",
-                      padding: "0.875rem 1rem",
-                    }}
-                  >
-                    <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontWeight: 600, marginBottom: "0.2rem" }}>
-                        <Link to={`/skill/${pkg.packageId}`} style={{ color: "var(--color-text)", textDecoration: "none" }}>
-                          {pkg.displayName}
-                        </Link>
-                        <span style={{ marginLeft: "0.5rem", fontSize: "0.78rem", fontFamily: "monospace", color: "var(--color-text-muted)" }}>
-                          {pkg.packageId}
-                        </span>
-                      </div>
-                      <div style={{ fontSize: "0.78rem", color: "var(--color-text-muted)" }}>
-                        By {pkg.authorName} · {pkg.category} · {pkg.installCount} installs · {formatDate(pkg.createdAt)}
-                      </div>
-                    </div>
-                    <span
-                      style={{
-                        padding: "0.2rem 0.6rem",
-                        borderRadius: "4px",
-                        fontSize: "0.75rem",
-                        fontWeight: 600,
-                        background: statusColor(pkg.status) + "22",
-                        color: statusColor(pkg.status),
-                      }}
-                    >
-                      {pkg.status}
-                    </span>
-                    <div style={{ display: "flex", gap: "0.4rem" }}>
-                      {pkg.status !== "active" && (
-                        <button className="btn btn-outline" style={{ fontSize: "0.75rem", padding: "0.3rem 0.6rem", color: "#2ecc71" }} onClick={() => handlePkgStatus(pkg.id, "active")}>
-                          Activate
-                        </button>
-                      )}
-                      {pkg.status !== "archived" && (
-                        <button className="btn btn-outline" style={{ fontSize: "0.75rem", padding: "0.3rem 0.6rem" }} onClick={() => handlePkgStatus(pkg.id, "archived")}>
-                          Archive
-                        </button>
-                      )}
-                      {pkg.status !== "banned" && (
-                        <button className="btn btn-outline" style={{ fontSize: "0.75rem", padding: "0.3rem 0.6rem", color: "#e74c3c" }} onClick={() => handlePkgStatus(pkg.id, "banned")}>
-                          Ban
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Users */}
-        {tab === "users" && (
-          <div>
-            <div style={{ marginBottom: "1.25rem" }}>
-              <input
-                value={userSearch}
-                onChange={(e) => setUserSearch(e.target.value)}
-                onKeyDown={(e) => { if (e.key === "Enter") setTab("users"); }}
-                placeholder="Search by username..."
-                className="publish-input"
-                style={{
-                  width: "300px",
-                  padding: "0.6rem 0.75rem",
-                  background: "var(--color-input-bg)",
-                  border: "1px solid var(--color-border)",
-                  borderRadius: "6px",
-                  color: "var(--color-text)",
-                }}
-              />
-            </div>
-
-            {loadingTab ? (
-              <div style={{ color: "var(--color-text-muted)" }}>Loading...</div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.5rem" }}>
-                {users.length === 0 ? (
-                  <div style={{ color: "var(--color-text-muted)", padding: "2rem 0" }}>No users found.</div>
-                ) : users.map((u) => (
-                  <div
-                    key={u.id}
-                    style={{
-                      display: "flex",
-                      alignItems: "center",
-                      gap: "1rem",
-                      background: "var(--color-card)",
-                      border: "1px solid var(--color-border)",
-                      borderRadius: "8px",
-                      padding: "0.875rem 1rem",
-                    }}
-                  >
-                    <div style={{ flex: 1 }}>
-                      <div style={{ fontWeight: 600 }}>{u.displayName}</div>
-                      <div style={{ fontSize: "0.8rem", color: "var(--color-text-muted)" }}>
-                        @{u.githubUsername} · Tier {u.tier} · Joined {formatDate(u.createdAt)}
-                      </div>
-                    </div>
-                    <span
-                      style={{
-                        padding: "0.2rem 0.6rem",
-                        borderRadius: "4px",
-                        fontSize: "0.75rem",
-                        fontWeight: 600,
-                        background: u.role === "admin" ? "rgba(231,76,60,0.15)" : "var(--color-border)",
-                        color: u.role === "admin" ? "#e74c3c" : "var(--color-text-muted)",
-                      }}
-                    >
-                      {u.role}
-                    </span>
-                    <select
-                      value={u.role}
-                      onChange={(e) => handleUserRole(u.id, e.target.value)}
-                      style={{
-                        padding: "0.35rem 0.6rem",
-                        background: "var(--color-input-bg)",
-                        border: "1px solid var(--color-border)",
-                        borderRadius: "4px",
-                        color: "var(--color-text)",
-                        fontSize: "0.8rem",
-                        cursor: "pointer",
-                      }}
-                    >
-                      <option value="user">User</option>
-                      <option value="admin">Admin</option>
-                    </select>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-
-        {/* Reports */}
-        {tab === "reports" && (
-          <div>
-            <div style={{ display: "flex", gap: "0.5rem", marginBottom: "1.25rem" }}>
-              {["pending", "resolved", "dismissed"].map((s) => (
-                <button
-                  key={s}
-                  onClick={() => setReportStatusFilter(s)}
-                  className={reportStatusFilter === s ? "btn btn-primary" : "btn btn-outline"}
-                  style={{ fontSize: "0.8rem", padding: "0.35rem 0.8rem" }}
-                >
-                  {s.charAt(0).toUpperCase() + s.slice(1)}
-                </button>
-              ))}
-            </div>
-
-            {loadingTab ? (
-              <div style={{ color: "var(--color-text-muted)" }}>Loading...</div>
-            ) : (
-              <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
-                {reports.length === 0 ? (
-                  <div style={{ color: "var(--color-text-muted)", padding: "2rem 0" }}>
-                    No {reportStatusFilter} reports.
-                  </div>
-                ) : reports.map((r) => (
-                  <div
-                    key={r.id}
-                    style={{
-                      background: "var(--color-card)",
-                      border: "1px solid var(--color-border)",
-                      borderRadius: "8px",
-                      padding: "1rem 1.25rem",
-                    }}
-                  >
-                    <div style={{ display: "flex", justifyContent: "space-between", marginBottom: "0.5rem" }}>
-                      <div>
-                        <span style={{ fontWeight: 600, marginRight: "0.5rem" }}>{r.reason.replace(/_/g, " ")}</span>
-                        <span style={{ fontSize: "0.78rem", color: "var(--color-text-muted)" }}>
-                          {r.targetType}: <code>{r.targetId}</code>
-                        </span>
-                      </div>
-                      <span style={{ fontSize: "0.75rem", color: "var(--color-text-muted)" }}>{formatDate(r.createdAt)}</span>
-                    </div>
-                    {r.description && (
-                      <div style={{ fontSize: "0.85rem", color: "var(--color-text-muted)", marginBottom: "0.75rem" }}>
-                        {r.description}
-                      </div>
-                    )}
-                    {r.status === "pending" && (
-                      <div style={{ display: "flex", gap: "0.5rem", alignItems: "center", marginTop: "0.5rem" }}>
-                        <input
-                          value={reportNote[r.id] || ""}
-                          onChange={(e) => setReportNote((prev) => ({ ...prev, [r.id]: e.target.value }))}
-                          placeholder="Optional admin note..."
-                          className="publish-input"
-                          style={{
-                            flex: 1,
-                            padding: "0.4rem 0.6rem",
-                            background: "var(--color-input-bg)",
-                            border: "1px solid var(--color-border)",
-                            borderRadius: "4px",
-                            color: "var(--color-text)",
-                            fontSize: "0.8rem",
-                          }}
-                        />
-                        <button
-                          className="btn btn-outline"
-                          style={{ fontSize: "0.78rem", color: "#2ecc71" }}
-                          onClick={() => handleReport(r.id, "resolved")}
-                        >
-                          Resolve
-                        </button>
-                        <button
-                          className="btn btn-outline"
-                          style={{ fontSize: "0.78rem" }}
-                          onClick={() => handleReport(r.id, "dismissed")}
-                        >
-                          Dismiss
-                        </button>
-                      </div>
-                    )}
-                    {r.adminNote && (
-                      <div style={{ fontSize: "0.78rem", color: "var(--color-text-muted)", marginTop: "0.5rem", fontStyle: "italic" }}>
-                        Admin note: {r.adminNote}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
-        )}
-      </main>
-    </div>
+          )}
+        </div>
+      )}
+    </Win98Window>
   );
 }
