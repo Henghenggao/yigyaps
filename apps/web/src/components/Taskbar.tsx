@@ -21,11 +21,19 @@ function getPageTitle(pathname: string): string {
 }
 
 export function Taskbar() {
-  const [startOpen, setStartOpen] = useState(false);
+  // Track the pathname at which the menu was opened — derives startOpen without a setState-in-effect
+  const [menuOpenAt, setMenuOpenAt] = useState<string | null>(null);
   const [clock, setClock] = useState('');
   const { user, openAuthModal } = useAuth();
   const location = useLocation();
   const taskbarRef = useRef<HTMLDivElement>(null);
+
+  // Menu is open only if the stored pathname still matches current location
+  const startOpen = menuOpenAt === location.pathname;
+
+  const closeMenu = () => setMenuOpenAt(null);
+  const toggleMenu = () =>
+    setMenuOpenAt((prev) => (prev === location.pathname ? null : location.pathname));
 
   useEffect(() => {
     const tick = () => {
@@ -39,17 +47,12 @@ export function Taskbar() {
     return () => clearInterval(id);
   }, []);
 
-  // Close start menu on navigation
-  useEffect(() => {
-    setStartOpen(false);
-  }, [location.pathname]);
-
   // Close start menu on outside click
   useEffect(() => {
     if (!startOpen) return;
     const handle = (e: MouseEvent) => {
       if (taskbarRef.current && !taskbarRef.current.contains(e.target as Node)) {
-        setStartOpen(false);
+        closeMenu();
       }
     };
     document.addEventListener('mousedown', handle);
@@ -60,7 +63,7 @@ export function Taskbar() {
     <div className="w98-taskbar" ref={taskbarRef} style={{ position: 'relative' }}>
       <button
         className="w98-start-btn"
-        onClick={() => setStartOpen((v) => !v)}
+        onClick={toggleMenu}
       >
         <span className="w98-start-btn__mark">∴</span>
         Start
@@ -68,7 +71,7 @@ export function Taskbar() {
 
       {startOpen && (
         <StartMenu
-          onClose={() => setStartOpen(false)}
+          onClose={closeMenu}
           user={user}
           onAuthClick={openAuthModal}
         />
