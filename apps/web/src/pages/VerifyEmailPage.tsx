@@ -1,6 +1,7 @@
 import { useEffect, useState, useRef } from "react";
 import { useSearchParams, Link } from "react-router-dom";
 import { fetchApi } from "../lib/api";
+import { Win98Dialog } from "../components/Win98Dialog";
 
 export function VerifyEmailPage() {
     const [searchParams] = useSearchParams();
@@ -27,55 +28,50 @@ export function VerifyEmailPage() {
             });
     }, [token]);
 
+    if (status === "loading") {
+        return (
+            <Win98Dialog title="Verify Email — Yig Yaps" icon="∴">
+                <div style={{ fontFamily: 'var(--yig-font-w98)', fontSize: 11, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <div style={{ display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0' }}>
+                        <span className="spinner" /> Verifying your email...
+                    </div>
+                </div>
+            </Win98Dialog>
+        );
+    }
+
+    if (status === "success") {
+        return (
+            <Win98Dialog
+                title="Verify Email — Yig Yaps"
+                icon="∴"
+                footer={
+                    <Link to="/marketplace">
+                        <button className="w98-btn w98-btn--default">Go to Marketplace</button>
+                    </Link>
+                }
+            >
+                <div style={{ fontFamily: 'var(--yig-font-w98)', fontSize: 11, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    <p style={{ margin: 0 }}>{message}</p>
+                </div>
+            </Win98Dialog>
+        );
+    }
+
+    // error state
     return (
-        <div style={{ minHeight: "100vh", display: "flex", alignItems: "center", justifyContent: "center", padding: "2rem" }}>
-            <div style={{
-                background: "var(--color-surface)",
-                border: "1px solid var(--color-border)",
-                borderRadius: "var(--radius-lg)",
-                padding: "2.5rem",
-                maxWidth: "420px",
-                width: "100%",
-                textAlign: "center",
-            }}>
-                {status === "loading" && (
-                    <p style={{ color: "var(--color-text-sub)" }}>Verifying your email...</p>
-                )}
-                {status === "success" && (
-                    <>
-                        <h2 style={{ fontFamily: "var(--font-serif)", marginBottom: "1rem" }}>Email Verified</h2>
-                        <p style={{ color: "var(--color-text-sub)", marginBottom: "1.5rem" }}>{message}</p>
-                        <Link to="/marketplace" style={{
-                            display: "inline-block",
-                            padding: "0.75rem 1.5rem",
-                            background: "var(--color-primary)",
-                            color: "var(--color-surface)",
-                            borderRadius: "var(--radius-md)",
-                            textDecoration: "none",
-                            fontWeight: 600,
-                        }}>
-                            Go to Marketplace
-                        </Link>
-                    </>
-                )}
-                {status === "error" && (
-                    <>
-                        <h2 style={{ fontFamily: "var(--font-serif)", marginBottom: "1rem", color: "#c33" }}>Verification Failed</h2>
-                        <p style={{ color: "var(--color-text-sub)", marginBottom: "1.5rem" }}>{message}</p>
-                        <Link to="/" style={{
-                            display: "inline-block",
-                            padding: "0.75rem 1.5rem",
-                            background: "var(--color-primary)",
-                            color: "var(--color-surface)",
-                            borderRadius: "var(--radius-md)",
-                            textDecoration: "none",
-                            fontWeight: 600,
-                        }}>
-                            Back to Home
-                        </Link>
-                    </>
-                )}
+        <Win98Dialog
+            title="Verify Email — Yig Yaps"
+            icon="∴"
+            footer={
+                <Link to="/">
+                    <button className="w98-btn w98-btn--default">Back to Home</button>
+                </Link>
+            }
+        >
+            <div style={{ fontFamily: 'var(--yig-font-w98)', fontSize: 11, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                {message && <p style={{ color: 'var(--yig-cinnabar)', margin: 0 }}>{message}</p>}
             </div>
-        </div>
+        </Win98Dialog>
     );
 }

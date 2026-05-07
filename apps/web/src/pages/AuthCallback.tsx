@@ -9,6 +9,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
+import { Win98Dialog } from "../components/Win98Dialog";
 
 export function AuthCallback() {
   const [status, setStatus] = useState<"processing" | "success" | "error">(
@@ -50,86 +51,27 @@ export function AuthCallback() {
     handleCallback();
   }, [navigate, refreshUser]);
 
-  return (
-    <div
-      style={{
-        minHeight: "100vh",
-        display: "flex",
-        alignItems: "center",
-        justifyContent: "center",
-        background: "#0a0a0a",
-        color: "#e0e0e0",
-      }}
-    >
-      <div
-        style={{
-          textAlign: "center",
-          padding: "3rem",
-          maxWidth: "500px",
-        }}
+  if (status === "error") {
+    return (
+      <Win98Dialog
+        title="Sign In Error — Yig Yaps"
+        icon="∴"
+        footer={
+          <button className="w98-btn w98-btn--default" onClick={() => navigate('/')}>OK</button>
+        }
       >
-        {status === "processing" && (
-          <>
-            <div
-              style={{
-                width: "48px",
-                height: "48px",
-                border: "3px solid #333",
-                borderTopColor: "#00ff88",
-                borderRadius: "50%",
-                animation: "spin 1s linear infinite",
-                margin: "0 auto 1.5rem",
-              }}
-            />
-            <style>{`@keyframes spin { to { transform: rotate(360deg); } }`}</style>
-          </>
-        )}
+        <div style={{ fontFamily: 'var(--yig-font-w98)', fontSize: 11, color: 'var(--yig-cinnabar)', padding: '8px 0' }}>
+          {message || 'Authentication failed. Please try again.'}
+        </div>
+      </Win98Dialog>
+    );
+  }
 
-        {status === "success" && (
-          <div
-            style={{
-              fontSize: "3rem",
-              marginBottom: "1rem",
-              color: "#00ff88",
-            }}
-          >
-            ✓
-          </div>
-        )}
-
-        {status === "error" && (
-          <div
-            style={{
-              fontSize: "3rem",
-              marginBottom: "1rem",
-              color: "#ff4444",
-            }}
-          >
-            ✗
-          </div>
-        )}
-
-        <h1
-          style={{
-            fontSize: "1.5rem",
-            marginBottom: "0.5rem",
-            color:
-              status === "error"
-                ? "#ff4444"
-                : status === "success"
-                  ? "#00ff88"
-                  : "#e0e0e0",
-          }}
-        >
-          {status === "processing"
-            ? "Authenticating..."
-            : status === "success"
-              ? "Success!"
-              : "Authentication Failed"}
-        </h1>
-
-        <p style={{ color: "#888" }}>{message}</p>
+  return (
+    <Win98Dialog title="Signing In — Yig Yaps" icon="∴">
+      <div style={{ fontFamily: 'var(--yig-font-w98)', fontSize: 11, display: 'flex', alignItems: 'center', gap: 8, padding: '8px 0' }}>
+        <span className="spinner" /> Authenticating...
       </div>
-    </div>
+    </Win98Dialog>
   );
 }
