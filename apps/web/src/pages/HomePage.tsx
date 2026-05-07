@@ -5,6 +5,7 @@ import { FilterPanel } from "../components/FilterPanel";
 import { SkillCard } from "../components/SkillCard";
 import { SkeletonGrid } from "../components/SkeletonLoader";
 import { Pagination } from "../components/Pagination";
+import { Win98Window } from "../components/Win98Window";
 import type {
   SkillPackageSearchQuery,
   SkillPackageCategory,
@@ -88,179 +89,96 @@ export function HomePage() {
     });
   };
 
+  const statusText = loading
+    ? "Loading..."
+    : error
+    ? `Error: ${error}`
+    : `${total} skills · Page ${page}`;
+
   return (
-    <div className="home-layout">
-      <main className="home-main">
-        <section className="hero-section animate-fade-in">
-          <div className="container">
-            <h1 className="hero-title">Assetize Your Wisdom.</h1>
-            <p className="hero-subtitle">
-              The open marketplace for high-value AI skills. Package your
-              expertise, license your identity, and generate royalties.
-            </p>
-            <div className="hero-search-wrapper">
-              <SearchBar
-                value={query}
-                onChange={handleSearchChange}
-                placeholder="Search skills, domains, or creators..."
-              />
-            </div>
+    <Win98Window
+      title={`Marketplace — ${total > 0 ? `${total} Skills` : "Browse Skills"}`}
+      icon="📦"
+      menuItems={[
+        { label: "File" }, { label: "View" },
+        { label: "Sort" }, { label: "Filter" },
+      ]}
+      statusBar={
+        <>
+          <div className="w98-statusbar__panel w98-statusbar__panel--grow">
+            {statusText}
           </div>
-        </section>
+          <div className="w98-statusbar__panel">↑↓ to navigate · Enter to open</div>
+        </>
+      }
+    >
+      {/* Toolbar */}
+      <div className="mp-toolbar">
+        <SearchBar value={query} onChange={handleSearchChange} />
+        <div className="mp-sep" />
+        <select
+          className="filter-select"
+          style={{ height: 21, width: 140, fontFamily: "var(--yig-font-w98)", fontSize: 11 }}
+          value={sortBy}
+          onChange={(e) =>
+            handleFilterChange({ sortBy: e.target.value as SkillPackageSearchQuery["sortBy"] })
+          }
+        >
+          <option value="popularity">By Popularity</option>
+          <option value="newest">By Newest</option>
+          <option value="rating">By Rating</option>
+          <option value="price_asc">Price: Low→High</option>
+          <option value="price_desc">Price: High→Low</option>
+        </select>
+      </div>
 
-        <section className="marketplace-section">
-          <div className="container">
-            <div className="marketplace-layout">
-              <aside className="marketplace-sidebar">
-                <FilterPanel
-                  filters={searchQuery}
-                  onFilterChange={handleFilterChange}
-                />
-              </aside>
-
-              <div className="marketplace-content">
-                <div className="content-header">
-                  <h2 className="section-heading">
-                    {query ? `Search: ${query}` : "Recommended Skills"}
-                  </h2>
-                  {total > 0 && (
-                    <span className="results-count">
-                      {total} skills available
-                    </span>
-                  )}
-                </div>
-
-                {loading && <SkeletonGrid count={6} />}
-
-                {error && (
-                  <div className="error-state">
-                    <p>{error}</p>
-                    <button className="auth-btn" onClick={() => window.location.reload()}>Retry</button>
-                  </div>
-                )}
-
-                {!loading && !error && skills.length === 0 && (
-                  <div className="empty-state">
-                    <p>No skills matches your current filters.</p>
-                  </div>
-                )}
-
-                {!loading && !error && skills.length > 0 && (
-                  <>
-                    <div className="skills-grid">
-                      {skills.map((skill) => (
-                        <SkillCard key={skill.packageId} skill={skill} />
-                      ))}
-                    </div>
-
-                    <Pagination
-                      currentPage={page}
-                      totalItems={total}
-                      itemsPerPage={ITEMS_PER_PAGE}
-                      onPageChange={handlePageChange}
-                    />
-                  </>
-                )}
-              </div>
-            </div>
-          </div>
-        </section>
-      </main>
-
-      <footer className="site-footer">
-        <div className="container">
-          <p>&copy; {new Date().getFullYear()} YigYaps. Shared Wisdom for AI Agents.</p>
+      {/* Sidebar + content grid */}
+      <div className="mp-layout">
+        <div className="mp-sidebar">
+          <FilterPanel filters={searchQuery} onFilterChange={handleFilterChange} />
         </div>
-      </footer>
+        <div className="mp-content">
+          {loading && <SkeletonGrid count={6} />}
 
-      <style>{`
-        .home-main {
-          min-height: 80vh;
-        }
-        .hero-section {
-          padding: 7rem 0 5rem;
-          text-align: center;
-          border-bottom: 1px solid var(--color-border);
-          background: var(--color-bg);
-        }
-        .hero-title {
-          font-family: var(--font-serif);
-          font-size: clamp(2.5rem, 6vw, 4.5rem);
-          font-weight: 700;
-          margin-bottom: 2rem;
-          line-height: 1.05;
-          letter-spacing: -0.03em;
-        }
-        .hero-subtitle {
-          font-family: var(--font-sans);
-          font-size: clamp(1.1rem, 2vw, 1.25rem);
-          max-width: 700px;
-          margin: 0 auto 4rem;
-          color: var(--color-text-sub);
-          line-height: 1.6;
-          font-weight: 400;
-        }
-        .hero-search-wrapper {
-          max-width: 700px;
-          margin: 0 auto;
-        }
-        .marketplace-section {
-          padding: 4rem 0;
-        }
-        .marketplace-layout {
-          display: grid;
-          grid-template-columns: 280px 1fr;
-          gap: 3rem;
-        }
-        .content-header {
-          display: flex;
-          justify-content: space-between;
-          align-items: baseline;
-          margin-bottom: 2rem;
-          padding-bottom: 1rem;
-          border-bottom: 1px solid var(--color-border);
-        }
-        .section-heading {
-          font-size: 1.75rem;
-          margin: 0;
-        }
-        .results-count {
-          font-size: 0.9rem;
-          color: var(--color-text-sub);
-          font-weight: 500;
-        }
-        .skills-grid {
-          display: grid;
-          grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
-          gap: 2rem;
-          margin-bottom: 3rem;
-        }
-        .error-state, .empty-state {
-          text-align: center;
-          padding: 5rem 0;
-          background: var(--color-surface);
-          border-radius: var(--radius-lg);
-          border: 1px solid var(--color-border);
-        }
-        .site-footer {
-          padding: 3rem 0;
-          border-top: 1px solid var(--color-border);
-          text-align: center;
-          color: var(--color-text-sub);
-          font-size: 0.9rem;
-        }
-        @media (max-width: 1024px) {
-          .marketplace-layout {
-            grid-template-columns: 1fr;
-          }
-          .marketplace-sidebar {
-            display: none; /* Mobile filter logic can be added later */
-          }
-          .hero-title {
-            font-size: 2.5rem;
-          }
-        }
-      `}</style>
-    </div>
+          {error && !loading && (
+            <div className="empty-state">
+              <p>{error}</p>
+              <button
+                className="w98-btn"
+                style={{ marginTop: 8 }}
+                onClick={() => window.location.reload()}
+              >
+                Retry
+              </button>
+            </div>
+          )}
+
+          {!loading && !error && skills.length === 0 && (
+            <div className="empty-state">
+              <p>No skills match your filters.</p>
+            </div>
+          )}
+
+          {!loading && !error && skills.length > 0 && (
+            <>
+              <p className="mp-count">
+                {query ? `Results for "${query}"` : "All Skills"}
+              </p>
+              <div className="skills-grid">
+                {skills.map((skill) => (
+                  <SkillCard key={skill.packageId} skill={skill} />
+                ))}
+              </div>
+              <Pagination
+                currentPage={page}
+                totalItems={total}
+                itemsPerPage={ITEMS_PER_PAGE}
+                onPageChange={handlePageChange}
+              />
+            </>
+          )}
+        </div>
+      </div>
+    </Win98Window>
   );
 }
