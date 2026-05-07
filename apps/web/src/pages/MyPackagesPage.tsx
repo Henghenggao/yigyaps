@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
 import { useToast } from "../contexts/ToastContext";
 import { fetchApi } from "../lib/api";
+import { Win98Window } from "../components/Win98Window";
 
 interface PackageSummary {
   id: string;
@@ -68,132 +69,123 @@ export function MyPackagesPage() {
       ? packages.reduce((s, p) => s + Number(p.rating || 0), 0) / packages.length
       : 0;
 
-
   return (
-    <div className="app-container">
-      <main className="main-content dashboard-container">
-        <div className="dashboard-header fade-in">
-          <div className="header-titles">
-            <h1>My Skills</h1>
-            <p className="subtitle">Manage and monitor your AI skill packages</p>
+    <Win98Window
+      title="📊 My Packages — Dashboard"
+      icon="📊"
+      menuItems={[{ label: "File" }, { label: "View" }, { label: "Help" }]}
+      statusBar={loading ? "Loading..." : `${packages.length} package${packages.length !== 1 ? "s" : ""}`}
+    >
+      {/* Header action row */}
+      <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+        <p className="wizard-sub" style={{ margin: 0 }}>Manage and monitor your AI skill packages</p>
+        <Link to="/publish" className="w98-btn w98-btn--default">
+          + Publish New Skill
+        </Link>
+      </div>
+
+      {/* Stats row */}
+      {packages.length > 0 && (
+        <div className="dash-stats">
+          <div className="dash-stat">
+            <div className="dash-stat-value">{packages.length}</div>
+            <div className="dash-stat-label">Skills Published</div>
           </div>
-          <Link to="/publish" className="btn btn-primary">
-            + Publish New Skill
+          <div className="dash-stat">
+            <div className="dash-stat-value">{totalInstalls.toLocaleString()}</div>
+            <div className="dash-stat-label">Total Installs</div>
+          </div>
+          <div className="dash-stat">
+            <div className="dash-stat-value">{avgRating.toFixed(1)}</div>
+            <div className="dash-stat-label">Avg Rating</div>
+          </div>
+          {earnings && (
+            <>
+              <div className="dash-stat">
+                <div className="dash-stat-value">${Number(earnings.last30dUsd || 0).toFixed(2)}</div>
+                <div className="dash-stat-label">Earnings (30d)</div>
+              </div>
+              <div className="dash-stat">
+                <div className="dash-stat-value">${Number(earnings.allTimeUsd || 0).toFixed(2)}</div>
+                <div className="dash-stat-label">Earnings (all time)</div>
+              </div>
+            </>
+          )}
+        </div>
+      )}
+
+      {/* Loading state */}
+      {loading && (
+        <div className="empty-state">
+          <p>Gathering your arsenal...</p>
+        </div>
+      )}
+
+      {/* Empty state */}
+      {!loading && packages.length === 0 && (
+        <div className="empty-state">
+          <p>No skills published yet.</p>
+          <p style={{ fontSize: "0.875rem", color: "var(--color-text-muted)" }}>
+            Ready to assetize your wisdom and earn from the agent economy?
+          </p>
+          <Link to="/publish" className="w98-btn w98-btn--default" style={{ marginTop: 8, display: "inline-flex" }}>
+            Publish Your First Skill
           </Link>
         </div>
+      )}
 
-        {/* Stats bar */}
-        {packages.length > 0 && (
-          <div className="stats-grid fade-in-up">
-            {[
-              { label: "Published Skills", value: packages.length, icon: "📦" },
-              { label: "Total Installs", value: totalInstalls.toLocaleString(), icon: "📥" },
-              { label: "Avg Rating", value: avgRating.toFixed(1), icon: "⭐" },
-              ...(earnings
-                ? [
-                    {
-                      label: "Earnings (30d)",
-                      value: `$${Number(earnings.last30dUsd || 0).toFixed(2)}`,
-                      icon: "💰",
-                    },
-                    {
-                      label: "Earnings (all time)",
-                      value: `$${Number(earnings.allTimeUsd || 0).toFixed(2)}`,
-                      icon: "💎",
-                    },
-                  ]
-                : []),
-            ].map((stat) => (
-              <div key={stat.label} className="stat-card">
-                <div className="stat-icon">{stat.icon}</div>
-                <div className="stat-info">
-                  <div className="stat-value">{stat.value}</div>
-                  <div className="stat-label">{stat.label}</div>
-                </div>
+      {/* Package list */}
+      {!loading && packages.length > 0 && (
+        <div className="dash-list">
+          {packages.map((pkg) => (
+            <div key={pkg.id} className="dash-item">
+              <div className="dash-item-icon">
+                {pkg.icon || pkg.displayName.charAt(0).toUpperCase()}
               </div>
-            ))}
-          </div>
-        )}
-
-        {loading ? (
-          <div className="loading-state">
-            <div className="spinner" />
-            <p>Gathering your arsenal...</p>
-          </div>
-        ) : packages.length === 0 ? (
-          <div className="empty-dashboard fade-in">
-            <div className="empty-icon">📦</div>
-            <h2>No skills published yet</h2>
-            <p>Ready to assetize your wisdom and earn from the agent economy?</p>
-            <Link to="/publish" className="btn btn-primary">
-              Publish Your First Skill
-            </Link>
-          </div>
-        ) : (
-          <div className="dashboard-list fade-in">
-            {packages.map((pkg, idx) => (
-              <div
-                key={pkg.id}
-                className="dashboard-item fade-in-up"
-                style={{ animationDelay: `${idx * 0.05}s` }}
-              >
-                <div className="item-icon">
-                  {pkg.icon || pkg.displayName.charAt(0).toUpperCase()}
-                </div>
-
-                <div className="item-main">
-                  <div className="item-title-row">
-                    <span className="item-title">{pkg.displayName}</span>
-                    <span className={`status-badge maturity-${pkg.maturity}`}>
-                      {pkg.maturity}
-                    </span>
-                    <span className={`status-badge status-${pkg.status}`}>
-                      {pkg.status}
-                    </span>
-                  </div>
-                  <div className="item-desc">{pkg.description}</div>
-                  <div className="item-metrics">
-                    <span className="metric">
-                      <strong>{pkg.installCount.toLocaleString()}</strong> installs
-                    </span>
-                    {Number(pkg.rating) > 0 && (
-                      <span className="metric">
-                        <strong>⭐ {Number(pkg.rating).toFixed(1)}</strong> ({pkg.reviewCount})
-                      </span>
-                    )}
-                    <span className="metric category">{pkg.category}</span>
-                  </div>
-                </div>
-
-                <div className="item-actions">
-                  <Link to={`/skill/${pkg.packageId}`} className="btn btn-outline btn-sm">
-                    View
-                  </Link>
-                  <Link to={`/my-packages/${pkg.id}/edit`} className="btn btn-outline btn-sm">
-                    Edit
-                  </Link>
-                  <Link
-                    to={`/lab/${pkg.packageId}`}
-                    className="btn btn-outline btn-sm btn-accent"
-                    title="Open Evolution Lab"
+              <div className="dash-item-main">
+                <p className="dash-item-title">
+                  {pkg.displayName}
+                  {" "}
+                  <span style={{ fontSize: "0.75rem", opacity: 0.7 }}>[{pkg.maturity}]</span>
+                  {" "}
+                  <span style={{ fontSize: "0.75rem", opacity: 0.7 }}>[{pkg.status}]</span>
+                </p>
+                <p className="dash-item-sub">
+                  {[
+                    pkg.category,
+                    pkg.installCount ? `${pkg.installCount.toLocaleString()} installs` : null,
+                    Number(pkg.rating) > 0 ? `⭐ ${Number(pkg.rating).toFixed(1)} (${pkg.reviewCount})` : null,
+                  ].filter(Boolean).join(" · ")}
+                </p>
+              </div>
+              <div className="dash-item-actions">
+                <Link to={`/skill/${pkg.packageId}`} className="w98-btn">
+                  View
+                </Link>
+                <Link to={`/my-packages/${pkg.id}/edit`} className="w98-btn">
+                  Edit
+                </Link>
+                <Link
+                  to={`/lab/${pkg.packageId}`}
+                  className="w98-btn"
+                  title="Open Evolution Lab"
+                >
+                  Lab
+                </Link>
+                {pkg.status === "active" && (
+                  <button
+                    className="w98-btn"
+                    disabled={archiving === pkg.id}
+                    onClick={() => handleArchive(pkg)}
                   >
-                    Lab
-                  </Link>
-                  {pkg.status === "active" && (
-                    <button
-                      className="btn btn-outline btn-sm btn-danger"
-                      disabled={archiving === pkg.id}
-                      onClick={() => handleArchive(pkg)}
-                    >
-                      {archiving === pkg.id ? "..." : "Archive"}
-                    </button>
-                  )}
-                </div>
+                    {archiving === pkg.id ? "..." : "Archive"}
+                  </button>
+                )}
               </div>
-            ))}
-          </div>
-        )}
-      </main>
-    </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </Win98Window>
   );
 }
