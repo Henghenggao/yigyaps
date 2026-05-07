@@ -46,7 +46,7 @@ export function ProtectedRoute() {
               You need to be signed in to access this page.
             </p>
             <button className="btn btn-primary" style={{ width: "100%" }} onClick={openAuthModal}>
-              Sign in to YigYaps
+              Sign in to Yig Yaps
             </button>
           </div>
         </main>

@@ -17,7 +17,7 @@ export function TermsPage() {
         <section>
           <h2>1. Acceptance of Terms</h2>
           <p>
-            By accessing or using YigYaps ("the Platform", "we", "us"), you agree to be bound by these Terms of Service.
+            By accessing or using Yig Yaps ("the Platform", "we", "us"), you agree to be bound by these Terms of Service.
             If you do not agree to all terms, you may not access the Platform.
           </p>
         </section>
@@ -25,7 +25,7 @@ export function TermsPage() {
         <section>
           <h2>2. Description of Service</h2>
           <p>
-            YigYaps is a marketplace for human expertise packaged as **Yigbot Augmented Plugin** skills ("Skills" or "YAPs").
+            Yig Yaps is a marketplace for human expertise packaged as **Yigbot Augmented Plugin** skills ("Skills" or "YAPs").
             Creators publish encrypted skill rules that AI agents can license and invoke. The Platform operates as
             an intermediary between Creators and AI operators.
           </p>
@@ -42,7 +42,7 @@ export function TermsPage() {
         <section>
           <h2>4. Intellectual Property</h2>
           <p>
-            Creators retain full ownership of their published Skills. By publishing on YigYaps, you grant the Platform
+            Creators retain full ownership of their published Skills. By publishing on Yig Yaps, you grant the Platform
             a non-exclusive license to store, encrypt, and deliver your Skills to licensed users. You represent that
             you own or have rights to publish all content you submit.
           </p>
@@ -65,7 +65,7 @@ export function TermsPage() {
           <p>
             <strong>5.1 Prohibition.</strong>{" "}
             You ("Licensee") shall NOT use any knowledge, rules, case studies, decision frameworks,
-            evaluation criteria, or derivative data obtained through YigYaps API calls for:
+            evaluation criteria, or derivative data obtained through Yig Yaps API calls for:
           </p>
           <ul>
             <li>
@@ -84,8 +84,8 @@ export function TermsPage() {
           </ul>
           <p>
             <strong>5.3 Detection &amp; Audit.</strong>{" "}
-            YigYaps reserves the right to periodically test Licensee systems for output patterns matching
-            YigYaps Skill fingerprints. Licensee agrees to cooperate with reasonable audit requests within
+            Yig Yaps reserves the right to periodically test Licensee systems for output patterns matching
+            Yig Yaps Skill fingerprints. Licensee agrees to cooperate with reasonable audit requests within
             14 days of written notice.
           </p>
           <p style={{ fontSize: "0.8rem", marginBottom: 0 }}>
@@ -108,7 +108,7 @@ export function TermsPage() {
         <section>
           <h2>7. Revenue Sharing</h2>
           <p>
-            For paid Skills, Creators receive 70% of net revenue. YigYaps retains 30% as a platform fee to cover
+            For paid Skills, Creators receive 70% of net revenue. Yig Yaps retains 30% as a platform fee to cover
             infrastructure, security, and operational costs. Payouts are processed via Stripe when available.
           </p>
         </section>
@@ -116,7 +116,7 @@ export function TermsPage() {
         <section>
           <h2>8. Alpha Disclaimer</h2>
           <p>
-            YigYaps is currently in Alpha. The Platform may be unavailable, reset, or significantly modified without
+            Yig Yaps is currently in Alpha. The Platform may be unavailable, reset, or significantly modified without
             notice. Data may be lost during this period. Do not rely on the Platform for production-critical workloads
             during Alpha.
           </p>
@@ -125,7 +125,7 @@ export function TermsPage() {
         <section>
           <h2>9. Limitation of Liability</h2>
           <p>
-            TO THE MAXIMUM EXTENT PERMITTED BY LAW, YIGYAPS SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL,
+            TO THE MAXIMUM EXTENT PERMITTED BY LAW, YIG YAPS SHALL NOT BE LIABLE FOR ANY INDIRECT, INCIDENTAL, SPECIAL,
             CONSEQUENTIAL, OR PUNITIVE DAMAGES. OUR TOTAL LIABILITY SHALL NOT EXCEED THE GREATER OF $100 OR THE AMOUNT
             YOU PAID IN THE PAST 12 MONTHS.
           </p>

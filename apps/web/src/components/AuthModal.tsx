@@ -56,7 +56,7 @@ export function AuthModal() {
 
     return (
         <Win98Dialog title={title} icon="∴" onClose={closeAuthModal}>
-            <h2>{mode === "options" ? "Sign In to YigYaps" : mode === "email-login" ? "Log in with Email" : mode === "forgot-password" ? "Reset Password" : "Sign up with Email"}</h2>
+            <h2>{mode === "options" ? "Sign In to Yig Yaps" : mode === "email-login" ? "Log in with Email" : mode === "forgot-password" ? "Reset Password" : "Sign up with Email"}</h2>
 
             {error && <div className={`auth-modal-error ${error.includes("successful") ? "auth-modal-success" : ""}`}>{error}</div>}
 

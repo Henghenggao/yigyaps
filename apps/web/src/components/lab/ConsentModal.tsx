@@ -61,7 +61,7 @@ export function ConsentModal({
         >
           {hasApiKey
             ? "You are using your own API key — the data agreement is between you and Anthropic."
-            : "You are using the YigYaps platform key. This is for testing only and is not the production security model."}
+            : "You are using the Yig Yaps platform key. This is for testing only and is not the production security model."}
         </p>
         <p
           style={{

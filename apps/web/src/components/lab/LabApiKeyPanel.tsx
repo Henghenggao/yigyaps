@@ -33,7 +33,7 @@ export function LabApiKeyPanel({
       >
         Enter your Anthropic API key. It is stored in{" "}
         <strong>sessionStorage only</strong> (cleared when you close this tab)
-        and never saved to YigYaps servers. The data agreement for inference
+        and never saved to Yig Yaps servers. The data agreement for inference
         will be between you and Anthropic.
       </p>
       <div style={{ display: "flex", gap: "0.5rem" }}>

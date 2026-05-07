@@ -133,7 +133,7 @@ const tool = toOpenAITool(client, "${packageId}");
               <div className="qs-step">
                 <span className="qs-step-num">1</span>
                 <div className="qs-step-body">
-                  <span className="qs-step-label">Install the YigYaps CLI</span>
+                  <span className="qs-step-label">Install the Yig Yaps CLI</span>
                   <CodeBlock
                     code={installCmd}
                     id="cli"
