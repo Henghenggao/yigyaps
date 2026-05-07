@@ -52,7 +52,7 @@ export function Pagination({
       pages.push(
         <button
           key={i}
-          className={`pagination-btn ${i === currentPage ? "active" : ""}`}
+          className={`pagination-btn${i === currentPage ? ' active' : ''}`}
           onClick={() => onPageChange(i)}
         >
           {i}

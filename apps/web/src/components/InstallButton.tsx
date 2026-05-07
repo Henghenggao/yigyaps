@@ -32,7 +32,7 @@ export function InstallButton({ skill, onInstallSuccess }: InstallButtonProps) {
   // Check if user is not logged in
   if (!user) {
     return (
-      <button className="btn btn-primary btn-large" onClick={openAuthModal}>
+      <button className="w98-btn w98-btn--default" onClick={openAuthModal}>
         Sign In to Install
       </button>
     );
@@ -73,10 +73,7 @@ export function InstallButton({ skill, onInstallSuccess }: InstallButtonProps) {
     // Tier locked state
     if (tierLocked && status === "idle") {
       return (
-        <button
-          className="btn btn-primary btn-large install-btn-locked"
-          disabled
-        >
+        <button className="w98-btn" disabled>
           Requires {getTierName(skill.requiredTier)}
         </button>
       );
@@ -87,10 +84,7 @@ export function InstallButton({ skill, onInstallSuccess }: InstallButtonProps) {
       case "checking_tier":
       case "installing":
         return (
-          <button
-            className="btn btn-primary btn-large install-btn-loading"
-            disabled
-          >
+          <button className="w98-btn" disabled>
             <span className="spinner" />
             Installing...
           </button>
@@ -98,20 +92,14 @@ export function InstallButton({ skill, onInstallSuccess }: InstallButtonProps) {
 
       case "success":
         return (
-          <button
-            className="btn btn-primary btn-large install-btn-success"
-            disabled
-          >
+          <button className="w98-btn" disabled>
             Installed
           </button>
         );
 
       case "error":
         return (
-          <button
-            className="btn btn-primary btn-large install-btn-error"
-            onClick={handleInstall}
-          >
+          <button className="w98-btn" onClick={handleInstall}>
             Retry
           </button>
         );
@@ -121,7 +109,7 @@ export function InstallButton({ skill, onInstallSuccess }: InstallButtonProps) {
         const priceLabel =
           skill.priceUsd > 0 ? `Install - $${skill.priceUsd}` : "Install Free";
         return (
-          <button className="btn btn-primary btn-large" onClick={handleInstall}>
+          <button className="w98-btn w98-btn--default" onClick={handleInstall}>
             {priceLabel}
           </button>
         );
@@ -130,10 +118,10 @@ export function InstallButton({ skill, onInstallSuccess }: InstallButtonProps) {
   };
 
   return (
-    <div className="install-button-container">
+    <div className="install-btn-container">
       {renderButton()}
       {error && status === "error" && (
-        <div className="install-error-message">{error}</div>
+        <div className="install-error">{error}</div>
       )}
     </div>
   );
