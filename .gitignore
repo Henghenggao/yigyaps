@@ -16,3 +16,5 @@ docs/
 .test-db-env.json
 packages/cli/tmp_test_skill/
 nul
+
+.superpowers/

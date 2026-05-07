@@ -91,9 +91,9 @@ export function ResetPasswordPage() {
                 <button
                     className="w98-btn w98-btn--default"
                     onClick={() => handleSubmit()}
-                    disabled={status === "loading"}
+                    disabled={false}
                 >
-                    {status === "loading" ? 'Resetting...' : 'Reset Password'}
+                    Reset Password
                 </button>
             }
         >

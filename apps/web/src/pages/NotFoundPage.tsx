@@ -5,7 +5,7 @@ export function NotFoundPage() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const handle = (e: KeyboardEvent) => void navigate('/');
+    const handle = (_e: KeyboardEvent) => void navigate('/');
     window.addEventListener('keydown', handle);
     return () => window.removeEventListener('keydown', handle);
   }, [navigate]);
