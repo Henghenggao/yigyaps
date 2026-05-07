@@ -2,6 +2,7 @@ import type { ReactNode } from 'react';
 
 export interface MenuItem {
   label: string;
+  /** Must be the first N characters of `label` — rendered as the underlined keyboard shortcut. */
   accessKey?: string;
 }
 

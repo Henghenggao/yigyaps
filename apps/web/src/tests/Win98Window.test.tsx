@@ -47,6 +47,11 @@ describe('Win98Window', () => {
     expect(container.querySelector('.w98-menubar')).toBeNull();
   });
 
+  it('does not render menubar when menuItems is an empty array', () => {
+    const { container } = render(<Win98Window title="T" menuItems={[]}>body</Win98Window>);
+    expect(container.querySelector('.w98-menubar')).toBeNull();
+  });
+
   it('does not render statusbar when statusBar is absent', () => {
     const { container } = render(<Win98Window title="T">body</Win98Window>);
     expect(container.querySelector('.w98-statusbar')).toBeNull();
