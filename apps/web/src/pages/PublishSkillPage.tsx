@@ -7,6 +7,8 @@ import { MarkdownEditor } from "../components/MarkdownEditor";
 import { TemplateEditor } from "../components/TemplateEditor";
 import { Win98Window } from "../components/Win98Window";
 import { Win98Wizard } from "../components/Win98Wizard";
+import { Win98Dialog } from "../components/Win98Dialog";
+import { PACKAGE_ID_DESCRIPTION, isValidPackageId } from "@yigyaps/types";
 
 const CATEGORIES = [
   { value: "development", label: "Development" },
@@ -82,6 +84,11 @@ export function PublishSkillPage() {
   const [submitting, setSubmitting] = useState(false);
   const [packageIdAvailable, setPackageIdAvailable] = useState<boolean | null>(null);
   const [checkingId, setCheckingId] = useState(false);
+  const [publishedSkill, setPublishedSkill] = useState<{
+    packageId: string;
+    expertShare: string;
+  } | null>(null);
+  const [expertShareConfirmed, setExpertShareConfirmed] = useState(false);
 
   const [formData, setFormData] = useState<FormData>({
     packageId: "",
@@ -130,7 +137,7 @@ export function PublishSkillPage() {
   };
 
   const checkPackageId = async (id: string) => {
-    if (!id || id.length < 3) {
+    if (!isValidPackageId(id)) {
       setPackageIdAvailable(null);
       return;
     }
@@ -157,8 +164,9 @@ export function PublishSkillPage() {
 
   const validateStep = (s: number): string | null => {
     if (s === 0) {
-      if (!formData.packageId.match(/^[a-z0-9][a-z0-9-]{1,98}[a-z0-9]$/) && formData.packageId.length < 3)
-        return "Package ID must be at least 3 characters, lowercase letters, numbers and hyphens only.";
+      if (!isValidPackageId(formData.packageId)) {
+        return PACKAGE_ID_DESCRIPTION;
+      }
       if (packageIdAvailable === false) return "This Package ID is already taken.";
       if (!formData.version.match(/^\d+\.\d+\.\d+/)) return "Version must follow semver (e.g. 1.0.0).";
       if (!formData.displayName.trim()) return "Display name is required.";
@@ -215,10 +223,29 @@ export function PublishSkillPage() {
       });
 
       // Step 2: Encrypt and store knowledge rules
-      await fetchApi(`/v1/security/knowledge/${formData.packageId}`, {
-        method: "POST",
-        body: JSON.stringify({ plaintextRules: formData.rules }),
-      });
+      const encryptedKnowledge = await fetchApi<{ expert_share?: string }>(
+        `/v1/security/knowledge/${formData.packageId}`,
+        {
+          method: "POST",
+          body: JSON.stringify({ plaintextRules: formData.rules }),
+        },
+      );
+      if (encryptedKnowledge.expert_share) {
+        sessionStorage.setItem(
+          `yigyaps_expert_share:${formData.packageId}`,
+          encryptedKnowledge.expert_share,
+        );
+        setPublishedSkill({
+          packageId: pkg.packageId,
+          expertShare: encryptedKnowledge.expert_share,
+        });
+        setExpertShareConfirmed(false);
+        addToast({
+          message: "Skill published. Save your expert share to continue.",
+          type: "success",
+        });
+        return;
+      }
 
       addToast({ message: "Skill published successfully!", type: "success" });
       navigate(`/skill/${pkg.packageId}`);
@@ -232,8 +259,101 @@ export function PublishSkillPage() {
     }
   };
 
+  const copyExpertShare = async () => {
+    if (!publishedSkill) return;
+    if (!navigator.clipboard?.writeText) {
+      addToast({
+        message: "Clipboard unavailable. Select and copy the share manually.",
+        type: "warning",
+      });
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(publishedSkill.expertShare);
+      addToast({ message: "Expert share copied", type: "success" });
+    } catch {
+      addToast({
+        message: "Copy failed. Select and copy the share manually.",
+        type: "warning",
+      });
+    }
+  };
+
+  const continueAfterShareSaved = () => {
+    if (!publishedSkill || !expertShareConfirmed) return;
+    navigate(`/skill/${publishedSkill.packageId}`);
+  };
+
   return (
-    <Win98Window
+    <>
+      {publishedSkill && (
+        <Win98Dialog
+          title="Save Expert Share"
+          icon="*"
+          footer={
+            <div
+              style={{
+                display: "flex",
+                gap: "0.75rem",
+                alignItems: "center",
+                flexWrap: "wrap",
+              }}
+            >
+              <button className="w98-btn" type="button" onClick={copyExpertShare}>
+                Copy Share
+              </button>
+              <button
+                className="w98-btn w98-btn--default"
+                type="button"
+                disabled={!expertShareConfirmed}
+                onClick={continueAfterShareSaved}
+              >
+                Continue
+              </button>
+            </div>
+          }
+        >
+          <p style={{ lineHeight: 1.7, marginBottom: "0.75rem" }}>
+            This expert share is required to retrieve, evolve, and securely
+            invoke this skill. YigYaps does not store a copy, so save it before
+            leaving this screen.
+          </p>
+          <textarea
+            aria-label="Expert share"
+            readOnly
+            value={publishedSkill.expertShare}
+            className="w98-input"
+            style={{
+              width: "100%",
+              minHeight: "96px",
+              fontFamily: "var(--font-mono, monospace)",
+              fontSize: "0.78rem",
+              resize: "vertical",
+              marginBottom: "0.85rem",
+            }}
+            onFocus={(event) => event.currentTarget.select()}
+          />
+          <label
+            style={{
+              display: "flex",
+              gap: "0.55rem",
+              alignItems: "flex-start",
+              lineHeight: 1.5,
+            }}
+          >
+            <input
+              type="checkbox"
+              checked={expertShareConfirmed}
+              onChange={(event) => setExpertShareConfirmed(event.target.checked)}
+              style={{ marginTop: "0.2rem" }}
+            />
+            <span>I saved this expert share somewhere durable.</span>
+          </label>
+        </Win98Dialog>
+      )}
+
+      <Win98Window
       title="⬆ Publish a Skill — New YAP Wizard"
       icon="⬆"
       statusBar={
@@ -492,5 +612,6 @@ export function PublishSkillPage() {
         )}
       </Win98Wizard>
     </Win98Window>
+    </>
   );
 }

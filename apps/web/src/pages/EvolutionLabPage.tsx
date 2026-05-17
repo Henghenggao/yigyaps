@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useToast } from "../contexts/ToastContext";
-import { fetchApi } from "../lib/api";
+import { ApiError, fetchApi } from "../lib/api";
 import {
   LabApiKeyPanel,
   ChatInterface,
@@ -16,6 +16,11 @@ import { Win98Dialog } from "../components/Win98Dialog";
 
 // Session-scoped storage key — cleared when tab closes
 const SESSION_KEY = "yigyaps_lab_api_key";
+const EXPERT_SHARE_HEADER = "x-yigyaps-expert-share";
+
+function expertShareSessionKey(packageId: string): string {
+  return `yigyaps_expert_share:${packageId}`;
+}
 
 export function EvolutionLabPage() {
   const { packageId } = useParams<{ packageId: string }>();
@@ -25,6 +30,10 @@ export function EvolutionLabPage() {
   const [initialRules, setInitialRules] = useState("");
   const [loadingRules, setLoadingRules] = useState(true);
   const [rulesNotFound, setRulesNotFound] = useState(false);
+  const [shareRequired, setShareRequired] = useState(false);
+  const [expertShare, setExpertShare] = useState("");
+  const [expertSharePackageId, setExpertSharePackageId] = useState<string>();
+  const [shareDraft, setShareDraft] = useState("");
 
   const [query, setQuery] = useState("");
   const [chat, setChat] = useState<ChatMessage[]>([]);
@@ -45,17 +54,46 @@ export function EvolutionLabPage() {
 
   useEffect(() => {
     if (!packageId) return;
-    fetchApi<{ plaintextRules: string }>(`/v1/security/knowledge/${packageId}`)
+    const savedShare = sessionStorage.getItem(expertShareSessionKey(packageId)) ?? "";
+    setExpertShare(savedShare);
+    setExpertSharePackageId(packageId);
+    setShareDraft(savedShare);
+  }, [packageId]);
+
+  useEffect(() => {
+    if (!packageId || expertSharePackageId !== packageId) return;
+    const headers: Record<string, string> = {};
+    if (expertShare) {
+      headers[EXPERT_SHARE_HEADER] = expertShare;
+    }
+
+    setLoadingRules(true);
+    fetchApi<{ plaintextRules: string }>(`/v1/security/knowledge/${packageId}`, {
+      headers,
+    })
       .then((data) => {
         setRules(data.plaintextRules);
         setInitialRules(data.plaintextRules);
+        setRulesNotFound(false);
+        setShareRequired(false);
       })
       .catch((err) => {
-        if (err.status === 404) setRulesNotFound(true);
-        else addToast({ message: "Failed to load skill rules", type: "error" });
+        if (err instanceof ApiError && err.status === 404) {
+          setRulesNotFound(true);
+          setShareRequired(false);
+        } else if (
+          err instanceof ApiError &&
+          err.status === 400 &&
+          JSON.stringify(err.data ?? {}).includes("expert share")
+        ) {
+          setShareRequired(true);
+          setRulesNotFound(false);
+        } else {
+          addToast({ message: "Failed to load skill rules", type: "error" });
+        }
       })
       .finally(() => setLoadingRules(false));
-  }, [packageId, addToast]);
+  }, [packageId, expertSharePackageId, expertShare, addToast]);
 
   const saveLabApiKey = () => {
     const trimmed = keyDraft.trim();
@@ -77,12 +115,37 @@ export function EvolutionLabPage() {
     addToast({ message: "API key cleared", type: "success" });
   };
 
+  const saveExpertShare = () => {
+    if (!packageId) return;
+    const trimmed = shareDraft.trim();
+    if (trimmed) {
+      sessionStorage.setItem(expertShareSessionKey(packageId), trimmed);
+      setExpertShare(trimmed);
+      addToast({ message: "Expert share saved for this session", type: "success" });
+    } else {
+      sessionStorage.removeItem(expertShareSessionKey(packageId));
+      setExpertShare("");
+      setShareRequired(true);
+      addToast({ message: "Expert share cleared", type: "success" });
+    }
+  };
+
+  const clearExpertShare = () => {
+    if (!packageId) return;
+    sessionStorage.removeItem(expertShareSessionKey(packageId));
+    setExpertShare("");
+    setShareDraft("");
+    setShareRequired(true);
+    addToast({ message: "Expert share cleared", type: "success" });
+  };
+
   const doTest = async (userMessage: string) => {
     setChat((prev) => [...prev, { role: "user", content: userMessage }]);
     setTesting(true);
     try {
       const body: Record<string, string> = { user_query: userMessage };
       if (labApiKey) body.lab_api_key = labApiKey;
+      if (expertShare) body.expert_share = expertShare;
 
       const data = await fetchApi<{
         conclusion: string;
@@ -146,10 +209,16 @@ export function EvolutionLabPage() {
     }
     setSaving(true);
     try {
-      await fetchApi(`/v1/security/knowledge/${packageId}`, {
+      const data = await fetchApi<{ expert_share?: string }>(`/v1/security/knowledge/${packageId}`, {
         method: "POST",
         body: JSON.stringify({ plaintextRules: rules }),
       });
+      if (data.expert_share && packageId) {
+        sessionStorage.setItem(expertShareSessionKey(packageId), data.expert_share);
+        setExpertShare(data.expert_share);
+        setShareDraft(data.expert_share);
+        setShareRequired(false);
+      }
       setInitialRules(rules);
       addToast({
         message: "Rules evolved and re-encrypted successfully",
@@ -163,6 +232,7 @@ export function EvolutionLabPage() {
   };
 
   const isDirty = rules !== initialRules;
+  const showRulesPlaceholder = loadingRules || rulesNotFound || shareRequired;
 
   return (
     <>
@@ -230,8 +300,78 @@ export function EvolutionLabPage() {
           />
         )}
 
-        {loadingRules || rulesNotFound ? (
-          <EmptyRulesState isLoading={loadingRules} packageId={packageId} />
+        <div
+          style={{
+            marginBottom: "1.25rem",
+            padding: "0.85rem 1.25rem",
+            background: shareRequired
+              ? "rgba(231,76,60,0.08)"
+              : "var(--color-card)",
+            border: shareRequired
+              ? "1px solid rgba(231,76,60,0.35)"
+              : "1px solid var(--color-border)",
+            borderRadius: "8px",
+            display: "flex",
+            flexWrap: "wrap",
+            gap: "0.75rem",
+            alignItems: "center",
+          }}
+        >
+          <div style={{ flex: "1 1 160px" }}>
+            <strong>Expert share</strong>
+            <div style={{ fontSize: "0.72rem", color: "var(--color-text-muted)" }}>
+              {expertShare ? "Available for this session" : "Required to decrypt rules"}
+            </div>
+          </div>
+          <input
+            type="password"
+            value={shareDraft}
+            onChange={(event) => setShareDraft(event.target.value)}
+            placeholder="Paste share_index 2"
+            style={{
+              flex: "2 1 260px",
+              minWidth: "180px",
+              padding: "0.55rem 0.7rem",
+              border: "1px solid var(--color-border)",
+              borderRadius: "4px",
+              background: "var(--color-bg)",
+              color: "var(--color-text)",
+              fontFamily: "var(--font-mono, monospace)",
+              fontSize: "0.78rem",
+            }}
+          />
+          <div style={{ display: "flex", gap: "0.5rem" }}>
+            <button className="btn btn-primary" onClick={saveExpertShare}>
+              Save
+            </button>
+            {expertShare && (
+              <button className="btn btn-outline" onClick={clearExpertShare}>
+                Clear
+              </button>
+            )}
+          </div>
+        </div>
+
+        {showRulesPlaceholder ? (
+          shareRequired ? (
+            <div
+              style={{
+                minHeight: "320px",
+                display: "grid",
+                placeItems: "center",
+                color: "var(--color-text-muted)",
+                border: "1px solid var(--color-border)",
+                borderRadius: "8px",
+                background: "var(--color-card)",
+                textAlign: "center",
+                padding: "2rem",
+              }}
+            >
+              Enter the expert share to load and test encrypted rules.
+            </div>
+          ) : (
+            <EmptyRulesState isLoading={loadingRules} packageId={packageId} />
+          )
         ) : (
           <div
             style={{
