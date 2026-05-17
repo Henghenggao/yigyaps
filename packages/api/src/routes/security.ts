@@ -7,7 +7,7 @@
  * License: Apache 2.0
  */
 
-import { FastifyPluginAsync } from "fastify";
+import type { FastifyPluginAsync, FastifyRequest } from "fastify";
 import Anthropic from "@anthropic-ai/sdk";
 import { KMS } from "../lib/kms.js";
 import { RuleEngine, type RuleEvaluation } from "../lib/rule-engine.js";
@@ -27,6 +27,12 @@ import { ShamirManager } from "../lib/shamir.js";
 import { InferenceEngine } from "../lib/inference-engine.js";
 import { AnthropicProvider } from "../lib/llm-provider.js";
 import { AuditLogger } from "../lib/audit-logger.js";
+import {
+  DekRecoveryError,
+  SHAMIR_ONLY_ENCRYPTED_DEK,
+  recoverDek,
+  readExpertShareHeader,
+} from "../lib/dek-policy.js";
 import { eq, desc, and, sql } from "drizzle-orm";
 import crypto from "crypto";
 import { randomUUID } from "crypto";
@@ -61,7 +67,27 @@ const paramsSchema = z.object({
   packageId: z.string().min(1),
 });
 
+type DekRecoverySurface = "rules" | "corpus";
+
 export const securityRoutes: FastifyPluginAsync = async (fastify) => {
+  const auditDekRecoveryFailure = async (
+    request: FastifyRequest,
+    skillPackageId: string,
+    callerId: string,
+    surface: DekRecoverySurface,
+    code: string,
+  ) => {
+    await AuditLogger.logEvent(fastify.db, {
+      skillPackageId,
+      apiClientId: callerId,
+      conclusionText: `blocked:dek-recovery:${surface}:${code}`,
+    });
+    request.log.warn(
+      { skillPackageId, callerId, surface, code },
+      "Blocked DEK recovery attempt",
+    );
+  };
+
   /**
    * Encrypt and store knowledge on the edge/client simulator
    * This represents the end of the "Extraction Pipeline" where data goes to the Vault.
@@ -104,21 +130,18 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
       // 1. Generate DEK
       const dek = KMS.generateDek();
 
-      // 2. Encrypt DEK with KEK (KMS Mock)
-      const { encryptedDek } = await KMS.encryptDek(dek);
-
-      // 3. Encrypt Knowledge using DEK
+      // 2. Encrypt Knowledge using DEK
       const contentCiphertext = KMS.encryptKnowledge(plaintextRules, dek);
 
-      // 4. Hash the original plaintext for IP Registration verification
+      // 3. Hash the original plaintext for IP Registration verification
       const contentHash = crypto
         .createHash("sha256")
         .update(plaintextRules)
         .digest("hex");
 
-      // 4b. IP Timestamp Proof (Sprint 7B #11)
-      //     Primary: GitHub evidence commit → "github:<sha>" (publicly verifiable)
-      //     Fallback: HMAC-SHA256 → "sha256:<hex>" (platform-verifiable)
+      // 4. IP Timestamp Proof (Sprint 7B #11)
+      //    Primary: GitHub evidence commit -> "github:<sha>" (publicly verifiable)
+      //    Fallback: HMAC-SHA256 -> "sha256:<hex>" (platform-verifiable)
       const blockchainTx = await registerIpTimestamp(
         packageId,
         contentHash,
@@ -148,17 +171,21 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
       await fastify.db.insert(encryptedKnowledgeTable).values({
         id: randomUUID(),
         skillPackageId: internalId,
-        encryptedDek,
+        // Schema-compatible marker: new uploads do not store a KEK-decryptable DEK.
+        encryptedDek: SHAMIR_ONLY_ENCRYPTED_DEK,
         contentCiphertext,
         contentHash,
         isActive: true,
         createdAt: Date.now(),
       });
 
-      // 6. Shamir (2,3) secret sharing — split the plaintext DEK into 3 shares.
-      //    Share 1 (platform) + Share 3 (backup) are stored in DB.
+      // 6. Shamir (2,3) secret sharing - split the plaintext DEK into 3 shares.
+      //    Share 1 (platform) is stored in DB.
       //    Share 2 (expert) is returned to the caller and NEVER stored.
-      //    Reconstructing the DEK requires any 2 shares.
+      //    Share 3 is not stored by the platform in the default security model.
+      //    Invocation requires platform share + expert share.
+      // Default persisted state stores only the platform share. The expert
+      // receives share 2; share 3 is reserved for external recovery.
       const dekHex = dek.toString("hex");
       const { shares } = ShamirManager.split(dekHex);
       const now = Date.now();
@@ -168,31 +195,21 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
         .delete(shamirSharesTable)
         .where(eq(shamirSharesTable.skillPackageId, internalId));
 
-      await fastify.db.insert(shamirSharesTable).values([
-        {
-          id: randomUUID(),
-          skillPackageId: internalId,
-          shareIndex: 1,
-          shareData: shares[0],
-          custodian: "platform",
-          createdAt: now,
-        },
-        {
-          id: randomUUID(),
-          skillPackageId: internalId,
-          shareIndex: 3,
-          shareData: shares[2],
-          custodian: "backup",
-          createdAt: now,
-        },
-      ]);
+      await fastify.db.insert(shamirSharesTable).values({
+        id: randomUUID(),
+        skillPackageId: internalId,
+        shareIndex: 1,
+        shareData: shares[0],
+        custodian: "platform",
+        createdAt: now,
+      });
 
       return reply.send({
         success: true,
         message: "Knowledge encrypted and saved with Shamir key splitting.",
         expert_share: shares[1],
         shamir_notice:
-          "IMPORTANT: Save your expert share securely. It is required to invoke this skill and is NOT stored on the platform. Losing it means only platform cold-backup recovery is possible.",
+          "IMPORTANT: Save your expert share securely. It is required to invoke this skill and is NOT stored on the platform. Losing it means the Shamir invocation path cannot reconstruct the key.",
       });
     },
   );
@@ -244,13 +261,53 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
       }
 
       const record = knowledgeRecords[0];
-      const dek = await KMS.decryptDek(record.encryptedDek);
+      const expertShare = readExpertShareHeader(request.headers);
+
+      const shamirShares = await fastify.db
+        .select()
+        .from(shamirSharesTable)
+        .where(eq(shamirSharesTable.skillPackageId, pkg.id));
+
+      let recovery: { dek: Buffer; keyMode: "shamir" | "legacy-kms" };
+      try {
+        recovery = await recoverDek({
+          shares: shamirShares,
+          expertShare,
+          legacyEncryptedDek: record.encryptedDek,
+          decryptLegacyDek: (encryptedDek) => KMS.decryptDek(encryptedDek),
+        });
+      } catch (error) {
+        if (error instanceof DekRecoveryError) {
+          if (error.code === "SHAMIR_SHARE_REQUIRED") {
+            return reply.code(400).send({
+              error: "Shamir Share Required",
+              message:
+                "This skill uses Shamir key splitting. Provide x-yigyaps-expert-share to retrieve plaintext rules.",
+            });
+          }
+          if (error.code === "INVALID_EXPERT_SHARE") {
+            return reply.code(400).send({
+              error: "Bad Request",
+              message: "Invalid expert share.",
+            });
+          }
+          if (error.code === "DEK_RECOVERY_UNAVAILABLE") {
+            return reply.code(409).send({
+              error: "DEK Recovery Unavailable",
+              message:
+                "This knowledge was uploaded in Shamir-only mode, but no platform share is available.",
+            });
+          }
+        }
+        throw error;
+      }
+
       const plaintextRules = KMS.decryptKnowledge(
         record.contentCiphertext as Buffer,
-        dek,
+        recovery.dek,
       );
 
-      return reply.send({ plaintextRules });
+      return reply.send({ plaintextRules, key_mode: recovery.keyMode });
     },
   );
 
@@ -343,8 +400,10 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
       if (pkg.knowledgeType === "corpus") {
         const expertShare = bodyParsed.data?.expert_share;
 
-        // Reconstruct DEK: try cached DEK first, then Shamir
-        let dek: Buffer | null = null;
+        const shamirShares = await fastify.db
+          .select()
+          .from(shamirSharesTable)
+          .where(eq(shamirSharesTable.skillPackageId, pkg.id));
 
         const cachedEntries = await fastify.db
           .select({ cachedEncryptedDek: skillCorpusTable.cachedEncryptedDek })
@@ -352,44 +411,53 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
           .where(eq(skillCorpusTable.skillPackageId, pkg.id))
           .limit(1);
 
-        if (cachedEntries[0]?.cachedEncryptedDek) {
-          try {
-            dek = await KMS.decryptDek(cachedEntries[0].cachedEncryptedDek);
-          } catch {
-            // Fall through to Shamir
-          }
-        }
-
-        if (!dek) {
-          const shamirShares = await fastify.db
-            .select()
-            .from(shamirSharesTable)
-            .where(eq(shamirSharesTable.skillPackageId, pkg.id));
-          const platformShare = shamirShares.find((s) => s.shareIndex === 1);
-
-          if (platformShare && expertShare) {
-            try {
-              const dekHex = ShamirManager.reconstruct([
-                platformShare.shareData,
-                expertShare,
-              ]);
-              dek = Buffer.from(dekHex, "hex");
-            } catch {
+        let dek: Buffer;
+        try {
+          const recovery = await recoverDek({
+            shares: shamirShares,
+            expertShare,
+            legacyEncryptedDek: cachedEntries[0]?.cachedEncryptedDek ?? null,
+            decryptLegacyDek: (encryptedDek) => KMS.decryptDek(encryptedDek),
+          });
+          dek = recovery.dek;
+        } catch (error) {
+          if (error instanceof DekRecoveryError) {
+            if (error.code === "SHAMIR_SHARE_REQUIRED") {
+              await auditDekRecoveryFailure(
+                request,
+                pkg.id,
+                callerId,
+                "corpus",
+                error.code,
+              );
+              return reply.code(400).send({
+                error: "Shamir Share Required",
+                message: "Provide expert_share to invoke this corpus skill.",
+              });
+            }
+            if (error.code === "INVALID_EXPERT_SHARE") {
+              await auditDekRecoveryFailure(
+                request,
+                pkg.id,
+                callerId,
+                "corpus",
+                error.code,
+              );
               return reply.code(400).send({
                 error: "Bad Request",
                 message: "Invalid expert share.",
               });
             }
-          } else if (platformShare) {
-            return reply.code(400).send({
-              error: "Shamir Share Required",
-              message: "Provide expert_share to invoke this corpus skill.",
-            });
-          } else {
-            return reply.code(404).send({
-              error: "No encryption keys found for this skill.",
-            });
+            if (
+              error.code === "DEK_RECOVERY_UNAVAILABLE" ||
+              error.code === "LEGACY_DEK_DECRYPT_FAILED"
+            ) {
+              return reply.code(404).send({
+                error: "No encryption keys found for this skill.",
+              });
+            }
           }
+          throw error;
         }
 
         if (!env.ANTHROPIC_API_KEY) {
@@ -409,28 +477,26 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
           skillName: pkg.displayName,
         });
 
-        // Audit log
-        AuditLogger.logEvent(fastify.db, {
+        await AuditLogger.logEvent(fastify.db, {
           skillPackageId: pkg.id,
           apiClientId: callerId,
           conclusionText: inferenceResult.text,
           inferenceMs: inferenceResult.inferenceMs,
-        }).catch((err) => {
-          request.log.warn({ err }, "Audit log failed for corpus invoke");
+        }, {
+          failClosed: true,
         });
 
-        recordInvocation(fastify.db, callerId, pkg.id, quota).catch((err) => {
-          request.log.warn({ err }, "Failed to record corpus invocation usage");
-        });
+        await recordInvocation(fastify.db, callerId, pkg.id, quota);
 
         return reply.send({
           success: true,
           conclusion: inferenceResult.text,
           mode: "corpus",
           privacy_notice:
-            "CORPUS MODE — Expert knowledge decrypted server-side, synthesized via LLM. No raw QA pairs leave the server.",
+            "CORPUS MODE - Expert knowledge is decrypted server-side and sent to the configured LLM provider for synthesis. Responses are checked for long verbatim leakage before release.",
           qa_count: inferenceResult.qaCount,
           inference_ms: inferenceResult.inferenceMs,
+          leakage_blocked: inferenceResult.leakageBlocked,
         });
       }
 
@@ -514,37 +580,15 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
           demoText = `Skill Evaluation\nOverall: ${evaluation.overall_score}/10 (${evaluation.verdict})\n\n${scoreLines}`;
         }
 
-        // Record demo invocation in audit log
-        const demoConclusionHash = crypto
-          .createHash("sha256")
-          .update(demoText)
-          .digest("hex");
-        const demoLastLog = await fastify.db
-          .select({ eventHash: invocationLogsTable.eventHash })
-          .from(invocationLogsTable)
-          .where(eq(invocationLogsTable.skillPackageId, pkg.id))
-          .orderBy(desc(invocationLogsTable.createdAt))
-          .limit(1);
-        const demoPrevHash = demoLastLog[0]?.eventHash ?? "GENESIS";
-        const demoEventHash = crypto
-          .createHash("sha256")
-          .update(`${pkg.id}${callerId}${demoConclusionHash}${demoPrevHash}`)
-          .digest("hex");
-
-        await fastify.db.insert(invocationLogsTable).values({
-          id: randomUUID(),
+        await AuditLogger.logEvent(fastify.db, {
           skillPackageId: pkg.id,
           apiClientId: callerId,
-          inferenceMs: null,
-          conclusionHash: demoConclusionHash,
-          prevHash: demoPrevHash,
-          eventHash: demoEventHash,
-          createdAt: Date.now(),
+          conclusionText: demoText,
+        }, {
+          failClosed: true,
         });
 
-        recordInvocation(fastify.db, callerId, pkg.id, quota).catch((err) => {
-          request.log.warn({ err }, "Failed to record demo invocation usage");
-        });
+        await recordInvocation(fastify.db, callerId, pkg.id, quota);
 
         return reply.send({
           success: true,
@@ -594,23 +638,15 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
         .from(shamirSharesTable)
         .where(eq(shamirSharesTable.skillPackageId, pkg.id));
 
-      const platformShare = shamirShares.find((s) => s.shareIndex === 1);
-
       const dekProvider = async (): Promise<Buffer> => {
-        if (platformShare && expertShare) {
-          // Shamir reconstruction: platform share + expert share → DEK
-          const dekHex = ShamirManager.reconstruct([
-            platformShare.shareData,
-            expertShare,
-          ]);
-          return Buffer.from(dekHex, "hex");
-        }
-        if (platformShare && !expertShare) {
-          // Shamir is enabled but expert didn't provide their share
-          throw new Error("SHAMIR_SHARE_REQUIRED");
-        }
-        // Fallback: KEK-based decryption (pre-Shamir packages)
-        return KMS.decryptDek(encryptedDek);
+        const recovery = await recoverDek({
+          shares: shamirShares,
+          expertShare,
+          legacyEncryptedDek: encryptedDek,
+          decryptLegacyDek: (legacyEncryptedDek) =>
+            KMS.decryptDek(legacyEncryptedDek),
+        });
+        return recovery.dek;
       };
 
       // ── Secure Pipeline ───────────────────────────────────────────────────
@@ -714,51 +750,57 @@ export const securityRoutes: FastifyPluginAsync = async (fastify) => {
         },
       );
       } catch (err: unknown) {
-        if (err instanceof Error && err.message === "SHAMIR_SHARE_REQUIRED") {
-          return reply.code(400).send({
-            error: "Shamir Share Required",
-            message:
-              "This skill uses Shamir key splitting. Provide your expert_share in the request body to invoke it.",
-          });
+        if (err instanceof DekRecoveryError) {
+          if (err.code === "SHAMIR_SHARE_REQUIRED") {
+            await auditDekRecoveryFailure(
+              request,
+              pkg.id,
+              callerId,
+              "rules",
+              err.code,
+            );
+            return reply.code(400).send({
+              error: "Shamir Share Required",
+              message:
+                "This skill uses Shamir key splitting. Provide your expert_share in the request body to invoke it.",
+            });
+          }
+          if (err.code === "INVALID_EXPERT_SHARE") {
+            await auditDekRecoveryFailure(
+              request,
+              pkg.id,
+              callerId,
+              "rules",
+              err.code,
+            );
+            return reply.code(400).send({
+              error: "Bad Request",
+              message: "Invalid expert share.",
+            });
+          }
+          if (err.code === "DEK_RECOVERY_UNAVAILABLE") {
+            return reply.code(409).send({
+              error: "DEK Recovery Unavailable",
+              message:
+                "This knowledge was uploaded in Shamir-only mode, but no platform share is available.",
+            });
+          }
         }
         throw err;
       }
 
       // ── Audit log with hash-chain ─────────────────────────────────────────
-      const conclusionHash = crypto
-        .createHash("sha256")
-        .update(conclusion.text)
-        .digest("hex");
-
-      // Get previous event_hash for chain continuity
-      const lastLog = await fastify.db
-        .select({ eventHash: invocationLogsTable.eventHash })
-        .from(invocationLogsTable)
-        .where(eq(invocationLogsTable.skillPackageId, pkg.id))
-        .orderBy(desc(invocationLogsTable.createdAt))
-        .limit(1);
-
-      const prevHash = lastLog[0]?.eventHash ?? "GENESIS";
-      const eventHash = crypto
-        .createHash("sha256")
-        .update(`${pkg.id}${callerId}${conclusionHash}${prevHash}`)
-        .digest("hex");
-
-      await fastify.db.insert(invocationLogsTable).values({
-        id: randomUUID(),
+      await AuditLogger.logEvent(fastify.db, {
         skillPackageId: pkg.id,
         apiClientId: callerId,
-        inferenceMs: inferenceMs || null,
-        conclusionHash,
-        prevHash,
-        eventHash,
-        createdAt: Date.now(),
+        conclusionText: conclusion.text,
+        inferenceMs: inferenceMs || undefined,
+      }, {
+        failClosed: true,
       });
 
-      // ── Record usage (async, don't block response) ───────────────────────
-      recordInvocation(fastify.db, callerId, pkg.id, quota).catch((err) => {
-        request.log.warn({ err }, "Failed to record invocation usage");
-      });
+      // Record usage before returning so successful invocations are billable.
+      await recordInvocation(fastify.db, callerId, pkg.id, quota);
 
       const privacyNotice =
         conclusion.mode === "lab-preview-expert-key"

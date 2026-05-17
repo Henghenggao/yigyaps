@@ -16,6 +16,7 @@ import type * as schema from "@yigyaps/db";
 import { SkillCorpusDAL } from "@yigyaps/db";
 import type { LLMProvider } from "./llm-provider.js";
 import { KMS } from "./kms.js";
+import { sanitizeKnowledgeOutput } from "./knowledge-leakage-guard.js";
 
 // ── Types ────────────────────────────────────────────────────────────────
 
@@ -35,6 +36,7 @@ export interface InferenceResult {
   outputTokens: number;
   inferenceMs: number;
   qaCount: number;
+  leakageBlocked: boolean;
 }
 
 // ── Inference Engine ────────────────────────────────────────────────────
@@ -44,8 +46,9 @@ export class InferenceEngine {
    * Invoke a corpus-type skill: decrypt all QA pairs, build context, generate response.
    *
    * This is the production inference path for skills that use the capture system
-   * (knowledge_type = 'corpus'). The DEK must already be reconstructed by the caller
-   * (either from Shamir shares or from the cached production DEK).
+   * (knowledge_type = 'corpus'). The DEK must already be reconstructed by the caller.
+   * New Shamir-protected skills reconstruct from platform share + expert share;
+   * cached KEK-encrypted DEKs are legacy-only.
    */
   static async invoke(params: InferenceParams): Promise<InferenceResult> {
     const { db, llm, skillPackageId, userQuery, dek, skillName } = params;
@@ -60,6 +63,7 @@ export class InferenceEngine {
         outputTokens: 0,
         inferenceMs: 0,
         qaCount: 0,
+        leakageBlocked: false,
       };
     }
 
@@ -97,13 +101,18 @@ export class InferenceEngine {
       maxTokens: 1024,
     });
     const inferenceMs = Date.now() - start;
+    const safeOutput = sanitizeKnowledgeOutput(
+      result.text,
+      qaPairs.map((qa) => qa.answer),
+    );
 
     return {
-      text: result.text,
+      text: safeOutput.text,
       inputTokens: result.inputTokens,
       outputTokens: result.outputTokens,
       inferenceMs,
       qaCount: qaPairs.length,
+      leakageBlocked: safeOutput.leakageBlocked,
     };
   }
 
@@ -140,6 +149,8 @@ export class InferenceEngine {
       `Answer the user's question based ONLY on the expert knowledge provided.`,
       `If the expert knowledge does not cover the user's question, say so clearly.`,
       `Do not fabricate information beyond what the expert has shared.`,
+      `Do not quote full QA entries or long verbatim passages from the expert knowledge.`,
+      `Summarize, synthesize, and transform the expert reasoning instead of reproducing source text.`,
       ``,
       `=== EXPERT KNOWLEDGE (${qaPairs.length} entries) ===`,
       ``,

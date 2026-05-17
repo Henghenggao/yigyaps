@@ -1,15 +1,13 @@
 /**
- * YigYaps AuditLogger — Hash-Chain Audit Logging
+ * YigYaps AuditLogger - hash-chain audit logging.
  *
- * Extracts the tamper-evident hash-chain audit logging pattern from
- * security.ts into a reusable helper. Uses a SERIALIZABLE transaction
- * to prevent the concurrency bug where two concurrent requests could
- * read the same prevHash and fork the chain.
+ * Uses a SERIALIZABLE transaction so concurrent requests cannot read the same
+ * previous hash and silently fork the audit chain.
  *
  * License: Apache 2.0
  */
 
-import { eq, desc } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import type * as schema from "@yigyaps/db";
 import { invocationLogsTable } from "@yigyaps/db";
@@ -25,70 +23,93 @@ export interface AuditLogParams {
   inferenceMs?: number;
 }
 
+export interface AuditLogOptions {
+  /**
+   * When true, throw after retries instead of only warning. Use for routes
+   * where an invocation must not be returned unless the audit ledger is durable.
+   */
+  failClosed?: boolean;
+  maxRetries?: number;
+}
+
 export class AuditLogger {
   /**
    * Record a skill invocation in the tamper-evident hash-chain audit log.
    *
-   * Uses a SERIALIZABLE transaction to prevent concurrent requests from
-   * reading the same prevHash and forking the chain. Each entry's eventHash
-   * incorporates the previous entry's hash, forming an append-only ledger.
-   *
-   * This method never throws — audit logging must not break the main request.
-   * Errors are logged with console.warn.
+   * By default this preserves the old best-effort behavior and logs failures.
+   * Pass failClosed=true for secure paths that must not return an invocation
+   * result unless the audit row has been durably appended.
    */
   static async logEvent(
     db: NodePgDatabase<typeof schema>,
     params: AuditLogParams,
+    options: AuditLogOptions = {},
   ): Promise<void> {
-    try {
-      const conclusionHash = crypto
-        .createHash("sha256")
-        .update(params.conclusionText)
-        .digest("hex");
+    const maxRetries = options.maxRetries ?? 2;
 
-      await db.transaction(
-        async (tx) => {
-          // Read previous event hash within the serializable transaction.
-          // SERIALIZABLE isolation prevents phantom reads: if two concurrent
-          // transactions both SELECT the last row, PostgreSQL will detect the
-          // serialization conflict and abort one of them (which we catch below).
-          const lastLog = await tx
-            .select({ eventHash: invocationLogsTable.eventHash })
-            .from(invocationLogsTable)
-            .where(eq(invocationLogsTable.skillPackageId, params.skillPackageId))
-            .orderBy(desc(invocationLogsTable.createdAt))
-            .limit(1);
+    for (let attempt = 0; attempt <= maxRetries; attempt += 1) {
+      try {
+        const conclusionHash = crypto
+          .createHash("sha256")
+          .update(params.conclusionText)
+          .digest("hex");
 
-          const prevHash = lastLog[0]?.eventHash ?? "GENESIS";
+        await db.transaction(
+          async (tx) => {
+            const lastLog = await tx
+              .select({ eventHash: invocationLogsTable.eventHash })
+              .from(invocationLogsTable)
+              .where(
+                eq(invocationLogsTable.skillPackageId, params.skillPackageId),
+              )
+              .orderBy(desc(invocationLogsTable.createdAt))
+              .limit(1);
 
-          const eventHash = crypto
-            .createHash("sha256")
-            .update(
-              `${params.skillPackageId}${params.apiClientId}${conclusionHash}${prevHash}`,
-            )
-            .digest("hex");
+            const prevHash = lastLog[0]?.eventHash ?? "GENESIS";
+            const eventHash = crypto
+              .createHash("sha256")
+              .update(
+                `${params.skillPackageId}${params.apiClientId}${conclusionHash}${prevHash}`,
+              )
+              .digest("hex");
 
-          await tx.insert(invocationLogsTable).values({
-            id: randomUUID(),
-            skillPackageId: params.skillPackageId,
-            apiClientId: params.apiClientId,
-            costUsd: params.costUsd ?? null,
-            expertSplit: params.expertSplit ?? null,
-            inferenceMs: params.inferenceMs ?? null,
-            conclusionHash,
-            prevHash,
-            eventHash,
-            createdAt: Date.now(),
-          });
-        },
-        { isolationLevel: "serializable" },
-      );
-    } catch (err) {
-      // Audit logging must never break the main request flow.
-      // Serialization failures (40001) are expected under high concurrency
-      // and are acceptable — the invocation still succeeds, only the audit
-      // entry is lost for that single request.
-      console.warn("[AuditLogger] Failed to record audit log entry:", err);
+            await tx.insert(invocationLogsTable).values({
+              id: randomUUID(),
+              skillPackageId: params.skillPackageId,
+              apiClientId: params.apiClientId,
+              costUsd: params.costUsd ?? null,
+              expertSplit: params.expertSplit ?? null,
+              inferenceMs: params.inferenceMs ?? null,
+              conclusionHash,
+              prevHash,
+              eventHash,
+              createdAt: Date.now(),
+            });
+          },
+          { isolationLevel: "serializable" },
+        );
+        return;
+      } catch (err) {
+        if (isSerializationFailure(err) && attempt < maxRetries) {
+          continue;
+        }
+
+        if (options.failClosed) {
+          throw err;
+        }
+
+        console.warn("[AuditLogger] Failed to record audit log entry:", err);
+        return;
+      }
     }
   }
+}
+
+function isSerializationFailure(err: unknown): boolean {
+  return (
+    typeof err === "object" &&
+    err !== null &&
+    "code" in err &&
+    (err as { code?: unknown }).code === "40001"
+  );
 }

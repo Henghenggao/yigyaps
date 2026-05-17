@@ -43,12 +43,12 @@ describe("ShamirManager", () => {
       expect(result).toBe(DEK_HEX);
     });
 
-    it("reconstructs from shares 1+3 (platform + backup)", () => {
+    it("reconstructs from shares 1+3 (platform + external recovery)", () => {
       const result = ShamirManager.reconstruct([shares[0], shares[2]]);
       expect(result).toBe(DEK_HEX);
     });
 
-    it("reconstructs from shares 2+3 (expert + backup)", () => {
+    it("reconstructs from shares 2+3 (expert + external recovery)", () => {
       const result = ShamirManager.reconstruct([shares[1], shares[2]]);
       expect(result).toBe(DEK_HEX);
     });
@@ -78,7 +78,7 @@ describe("ShamirManager", () => {
   });
 
   describe("round-trip with KMS-like workflow", () => {
-    it("split → store platform+backup → reconstruct with platform+expert", () => {
+    it("split -> store platform only -> reconstruct with platform+expert", () => {
       // Simulate the full encrypt → invoke flow
       const dek = crypto.randomBytes(32);
       const dekHex = dek.toString("hex");
@@ -87,7 +87,8 @@ describe("ShamirManager", () => {
       const { shares } = ShamirManager.split(dekHex);
       const platformShare = shares[0]; // stored in DB
       const expertShare = shares[1];   // returned to expert
-      // shares[2] = backup, stored separately
+      // shares[2] is reserved for optional external recovery and is not stored
+      // by the default platform upload path.
 
       // Invoke: expert provides their share
       const reconstructed = ShamirManager.reconstruct([platformShare, expertShare]);

@@ -49,6 +49,7 @@ export const encryptedKnowledgeTable = pgTable(
     skillPackageId: text("skill_package_id")
       .notNull()
       .references(() => skillPackagesTable.id, { onDelete: "cascade" }),
+    // Legacy KEK-encrypted DEK, or a Shamir-only marker for new uploads.
     encryptedDek: text("encrypted_dek").notNull(),
     contentCiphertext: buffer("content_ciphertext").notNull(),
     contentHash: text("content_hash").notNull(),
@@ -123,15 +124,18 @@ export type IpRegistrationRow = typeof ipRegistrationsTable.$inferSelect;
 export type IpRegistrationInsert = typeof ipRegistrationsTable.$inferInsert;
 
 /**
- * Shamir Secret Sharing — (2,3) threshold shares for DEK protection.
+ * Shamir Secret Sharing - (2,3) threshold shares for DEK protection.
  *
- * Each encrypted knowledge entry can optionally have its DEK split into 3 shares:
- *   share_index 1 → platform DB     (custodian: "platform")
- *   share_index 2 → expert local    (custodian: "expert", returned to client)
- *   share_index 3 → platform backup (custodian: "backup")
+ * Each encrypted knowledge entry can optionally have its DEK split into 3 shares.
+ * Default persisted state stores only:
+ *   share_index 1 -> platform DB (custodian: "platform")
+ *
+ * The expert receives share_index 2 and the platform does not store it.
+ * share_index 3 is reserved for optional external recovery and is not stored by
+ * the default upload path.
  *
  * Reconstructing DEK requires any 2 of 3 shares.
- * Expert revocation = delete all shares → crypto-shredding.
+ * Revocation deletes persisted platform shares and encrypted knowledge rows.
  */
 export const shamirSharesTable = pgTable(
   "yy_shamir_shares",
@@ -142,7 +146,7 @@ export const shamirSharesTable = pgTable(
       .references(() => skillPackagesTable.id, { onDelete: "cascade" }),
     shareIndex: integer("share_index").notNull(),
     shareData: text("share_data").notNull(),
-    custodian: text("custodian").notNull(), // "platform" | "expert" | "backup"
+    custodian: text("custodian").notNull(), // "platform" | "expert" | "external-recovery" | legacy "backup"
     createdAt: bigint("created_at", { mode: "number" }).notNull(),
   },
   (table) => [
