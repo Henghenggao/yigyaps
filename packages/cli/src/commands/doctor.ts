@@ -31,10 +31,10 @@ export async function doctorCommand() {
     // Node.js Check
     const nodeVersion = process.version;
     const major = parseInt(nodeVersion.slice(1).split(".")[0]);
-    if (major >= 18) {
+    if (major >= 22) {
       p.log.success(`Node.js ${colors.muted(nodeVersion)}: Supported`);
     } else {
-      p.log.error(`Node.js ${colors.muted(nodeVersion)}: Required >= 18.0.0`);
+      p.log.error(`Node.js ${colors.muted(nodeVersion)}: Required >= 22.0.0`);
     }
 
     // Auth Check

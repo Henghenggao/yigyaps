@@ -6,18 +6,13 @@ export default defineConfig({
   test: {
     globals: true,
     environment: "node",
-    include: ["**/__tests__/**/*.test.ts"],
-    globalSetup: [
-      path.resolve(__dirname, "__tests__/integration/helpers/global-setup.ts"),
-    ],
+    include: ["__tests__/unit/**/*.test.ts"],
     testTimeout: 30000,
-    hookTimeout: 120000,
-    fileParallelism: false,
     env: {
       NODE_ENV: "test",
+      KMS_KEK:
+        "0123456789abcdef0123456789abcdef0123456789abcdef0123456789abcdef",
     },
-    pool: "threads",
-    poolMatchGlobs: [["**/*.test.ts", { threads: { singleThread: true } }]],
     coverage: {
       provider: "v8",
       reporter: ["text", "json", "html"],

@@ -13,7 +13,7 @@ describe("SkillPackageDAL", () => {
 
   afterAll(async () => {
     await pool.end();
-    await container.stop();
+    await container?.stop();
   });
 
   describe("create", () => {

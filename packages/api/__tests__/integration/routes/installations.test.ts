@@ -2,26 +2,20 @@
  * Installations Route Integration Tests
  *
  * Tests skill package installation, uninstallation, and royalty calculation.
- * Uses Testcontainers for real PostgreSQL integration.
+ * Uses the Vitest global setup PostgreSQL database.
  *
  * License: Apache 2.0
  */
 
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
-import {
-  PostgreSqlContainer,
-  StartedPostgreSqlContainer,
-} from "@testcontainers/postgresql";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { Pool } from "pg";
-import path from "path";
-import { fileURLToPath } from "url";
 import {
   createTestServer,
   closeTestServer,
   type TestServerContext,
 } from "../helpers/test-server.js";
+import { getTestDatabaseUrl } from "../helpers/test-db-url.js";
 import { SkillPackageDAL, SkillMintDAL, RoyaltyLedgerDAL } from "@yigyaps/db";
 import {
   SkillPackageFactory,
@@ -30,7 +24,7 @@ import {
 import { createTestJWT } from "../../unit/helpers/jwt-helpers.js";
 import { sql } from "drizzle-orm";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const DB_URL = getTestDatabaseUrl();
 
 // Local database cleanup function for integration tests
 async function clearDatabase(db: ReturnType<typeof drizzle>) {
@@ -50,7 +44,6 @@ async function clearDatabase(db: ReturnType<typeof drizzle>) {
 }
 
 describe("POST /v1/installations", () => {
-  let container: StartedPostgreSqlContainer;
   let pool: Pool;
   let testDb: ReturnType<typeof drizzle>;
   let serverContext: TestServerContext;
@@ -59,26 +52,14 @@ describe("POST /v1/installations", () => {
   let royaltyLedgerDAL: RoyaltyLedgerDAL;
 
   beforeAll(async () => {
-    // Start PostgreSQL container
-    container = await new PostgreSqlContainer("postgres:16-alpine")
-      .withDatabase("yigyaps_test")
-      .withUsername("test_user")
-      .withPassword("test_password")
-      .start();
-
-    const connectionString = container.getConnectionUri();
-    pool = new Pool({ connectionString });
+    pool = new Pool({ connectionString: DB_URL, max: 5 });
     testDb = drizzle(pool);
-
-    // Run migrations
-    const migrationsPath = path.resolve(__dirname, "../../../../db/migrations");
-    await migrate(testDb, { migrationsFolder: migrationsPath });
 
     // Set JWT_SECRET for tests
     process.env.JWT_SECRET = "test-jwt-secret";
 
     // Create test server
-    serverContext = await createTestServer(connectionString);
+    serverContext = await createTestServer(DB_URL);
 
     // Initialize DALs
     packageDAL = new SkillPackageDAL(testDb);
@@ -89,7 +70,6 @@ describe("POST /v1/installations", () => {
   afterAll(async () => {
     await closeTestServer(serverContext);
     await pool.end();
-    await container.stop();
   });
 
   beforeEach(async () => {
@@ -424,36 +404,24 @@ describe("POST /v1/installations", () => {
 });
 
 describe("DELETE /v1/installations/:id", () => {
-  let container: StartedPostgreSqlContainer;
   let pool: Pool;
   let testDb: ReturnType<typeof drizzle>;
   let serverContext: TestServerContext;
   let packageDAL: SkillPackageDAL;
 
   beforeAll(async () => {
-    container = await new PostgreSqlContainer("postgres:16-alpine")
-      .withDatabase("yigyaps_test")
-      .withUsername("test_user")
-      .withPassword("test_password")
-      .start();
-
-    const connectionString = container.getConnectionUri();
-    pool = new Pool({ connectionString });
+    pool = new Pool({ connectionString: DB_URL, max: 5 });
     testDb = drizzle(pool);
-
-    const migrationsPath = path.resolve(__dirname, "../../../../db/migrations");
-    await migrate(testDb, { migrationsFolder: migrationsPath });
 
     process.env.JWT_SECRET = "test-jwt-secret";
 
-    serverContext = await createTestServer(connectionString);
+    serverContext = await createTestServer(DB_URL);
     packageDAL = new SkillPackageDAL(testDb);
   }, 120000);
 
   afterAll(async () => {
     await closeTestServer(serverContext);
     await pool.end();
-    await container.stop();
   });
 
   beforeEach(async () => {

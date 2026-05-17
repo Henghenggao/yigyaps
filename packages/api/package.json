@@ -21,6 +21,9 @@
     "dev": "node --watch-path=dist dist/server.js",
     "start": "node dist/server.js",
     "test": "vitest run",
+    "test:unit": "vitest run",
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "test:all": "npm run test:unit && npm run test:integration",
     "test:watch": "vitest",
     "test:coverage": "vitest run --coverage"
   },

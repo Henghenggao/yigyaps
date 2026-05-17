@@ -14,25 +14,19 @@
  */
 
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
-import {
-  PostgreSqlContainer,
-  StartedPostgreSqlContainer,
-} from "@testcontainers/postgresql";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { Pool } from "pg";
-import path from "path";
-import { fileURLToPath } from "url";
 import {
   createTestServer,
   closeTestServer,
   type TestServerContext,
 } from "../helpers/test-server.js";
+import { getTestDatabaseUrl } from "../helpers/test-db-url.js";
 import { createTestJWT } from "../../unit/helpers/jwt-helpers.js";
 import { sql } from "drizzle-orm";
 import { randomUUID } from "crypto";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const DB_URL = getTestDatabaseUrl();
 
 // ── Fixtures ─────────────────────────────────────────────────────────────────
 
@@ -72,7 +66,6 @@ async function clearStripeTables(db: ReturnType<typeof drizzle>) {
 }
 
 describe("Stripe Routes", () => {
-  let container: StartedPostgreSqlContainer;
   let pool: Pool;
   let testDb: ReturnType<typeof drizzle>;
   let serverContext: TestServerContext;
@@ -86,26 +79,15 @@ describe("Stripe Routes", () => {
     delete process.env.STRIPE_WEBHOOK_SECRET;
     delete process.env.STRIPE_CONNECT_CLIENT_ID;
 
-    container = await new PostgreSqlContainer("postgres:16-alpine")
-      .withDatabase("yigyaps_test")
-      .withUsername("test_user")
-      .withPassword("test_password")
-      .start();
-
-    const connectionString = container.getConnectionUri();
-    pool = new Pool({ connectionString });
+    pool = new Pool({ connectionString: DB_URL, max: 5 });
     testDb = drizzle(pool);
 
-    const migrationsPath = path.resolve(__dirname, "../../../../db/migrations");
-    await migrate(testDb, { migrationsFolder: migrationsPath });
-
-    serverContext = await createTestServer(connectionString);
+    serverContext = await createTestServer(DB_URL);
   }, 60_000);
 
   afterAll(async () => {
     await closeTestServer(serverContext);
     await pool.end();
-    await container.stop();
   });
 
   beforeEach(async () => {
