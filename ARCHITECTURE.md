@@ -89,7 +89,7 @@ yy_subscriptions      — Subscription plans
 yy_usage_ledger       — Metered usage records
 ```
 
-Migrations live in `packages/db/migrations/` (0000–0011).
+Migrations live in `packages/db/migrations/` (currently 0000 through 0018).
 
 ---
 
@@ -105,9 +105,11 @@ Request
   │       ├─ JWT cookie (httpOnly, 7-day)
   │       └─ API Key (SHA-256 hash comparison)
   ├─ 5. Authorization (role-based: user / admin)
-  └─ 6. Encryption at rest (AES-256-GCM envelope)
+  └─ 6. Encryption at rest (AES-256-GCM content encryption)
            ├─ Per-skill DEK (Data Encryption Key)
-           └─ KEK (Key Encryption Key) from env / KMS
+           ├─ Shamir share 1 stored by platform
+           ├─ Shamir share 2 returned to expert, not stored by platform
+           └─ KEK fallback only for legacy pre-Shamir records
 ```
 
 ---
