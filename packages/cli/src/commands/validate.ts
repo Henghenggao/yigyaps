@@ -1,6 +1,7 @@
 import fs from "fs-extra";
 import path from "path";
 import { z } from "zod";
+import { PACKAGE_ID_DESCRIPTION, isValidPackageId } from "@yigyaps/types";
 import { CliError } from "../lib/errors.js";
 import { p } from "../lib/ui/prompts.js";
 import { colors } from "../lib/ui/theme.js";
@@ -10,7 +11,7 @@ import { panel, keyValue } from "../lib/ui/components.js";
  * Validation Logic for YigYaps skill packages.
  */
 export const manifestSchema = z.object({
-  name: z.string().min(1).max(50),
+  name: z.string().refine(isValidPackageId, PACKAGE_ID_DESCRIPTION),
   version: z.string().regex(/^\d+\.\d+\.\d+$/),
   description: z.string().min(10).max(500),
   author: z.string(),

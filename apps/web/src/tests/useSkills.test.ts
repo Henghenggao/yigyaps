@@ -78,6 +78,10 @@ describe("useSkills", () => {
     const query = {
       query: "test",
       category: "development" as const,
+      tags: ["react", "finance"],
+      minRating: 4,
+      maxPriceUsd: 25,
+      sortBy: "price_asc" as const,
       limit: 20,
       offset: 0,
     };
@@ -92,6 +96,11 @@ describe("useSkills", () => {
     const fetchUrl = mockFetch.mock.calls[0][0];
     expect(fetchUrl).toContain("query=test");
     expect(fetchUrl).toContain("category=development");
+    expect(fetchUrl).toContain("tags=react");
+    expect(fetchUrl).toContain("tags=finance");
+    expect(fetchUrl).toContain("minRating=4");
+    expect(fetchUrl).toContain("maxPriceUsd=25");
+    expect(fetchUrl).toContain("sortBy=price_asc");
   });
 
   it("refetches data when query changes", async () => {

@@ -406,7 +406,7 @@ program
 program
   .command("export")
   .description("Export a skill as a SKILL.md file (for SkillsMP and ecosystem)")
-  .argument("<packageId>", "Package ID (e.g. expert/investment-eval)")
+  .argument("<packageId>", "Package ID (e.g. legal-contract-reviewer)")
   .option("--format <format>", "Export format", "skill-md")
   .option("-o, --output <file>", "Output file path")
   .option("--json", "Output results in JSON format")

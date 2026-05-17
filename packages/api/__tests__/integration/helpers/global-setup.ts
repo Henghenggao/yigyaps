@@ -14,24 +14,57 @@ import {
 } from "@testcontainers/postgresql";
 import { drizzle } from "drizzle-orm/node-postgres";
 import { migrate } from "drizzle-orm/node-postgres/migrator";
+import { readdir } from "fs/promises";
 import { Pool } from "pg";
 import path from "path";
 import { fileURLToPath } from "url";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 
+async function countIntegrationSpecs(dir: string): Promise<number> {
+  const entries = await readdir(dir, { withFileTypes: true });
+  let count = 0;
+
+  for (const entry of entries) {
+    const fullPath = path.join(dir, entry.name);
+    if (entry.isDirectory()) {
+      count += await countIntegrationSpecs(fullPath);
+    } else if (entry.isFile() && entry.name.endsWith(".test.ts")) {
+      count += 1;
+    }
+  }
+
+  return count;
+}
+
 export async function setup() {
   let container: StartedPostgreSqlContainer | null = null;
   let connectionString = process.env.TEST_DATABASE_URL;
+  const integrationRoot = path.resolve(__dirname, "..");
+  const specCount = await countIntegrationSpecs(integrationRoot);
+
+  if (specCount === 0) {
+    throw new Error(
+      `No API integration test files found under ${integrationRoot}. Check vitest.integration.config.ts.`,
+    );
+  }
+  console.log(`Discovered ${specCount} API integration test files.`);
 
   if (!connectionString) {
     console.log("Starting PostgreSQL container for integration tests...");
 
-    container = await new PostgreSqlContainer("postgres:16-alpine")
-      .withDatabase("yigyaps_test")
-      .withUsername("test_user")
-      .withPassword("test_password")
-      .start();
+    try {
+      container = await new PostgreSqlContainer("postgres:16-alpine")
+        .withDatabase("yigyaps_test")
+        .withUsername("test_user")
+        .withPassword("test_password")
+        .start();
+    } catch (error) {
+      throw new Error(
+        "Integration tests require either TEST_DATABASE_URL or a working Docker/Podman-compatible container runtime.",
+        { cause: error },
+      );
+    }
 
     connectionString = container.getConnectionUri();
   } else {

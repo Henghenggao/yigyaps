@@ -233,8 +233,8 @@ export const stripeRoutes: FastifyPluginAsync = async (fastify) => {
           tier,
           price_key: priceKey,
         },
-        success_url: `${frontendUrl}/skills/${packageId}?subscribed=1`,
-        cancel_url: `${frontendUrl}/skills/${packageId}`,
+        success_url: `${frontendUrl}/skill/${packageId}?subscribed=1`,
+        cancel_url: `${frontendUrl}/skill/${packageId}`,
       });
 
       return reply.send({ checkoutUrl: session.url, sessionId: session.id });

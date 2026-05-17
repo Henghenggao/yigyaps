@@ -1,13 +1,12 @@
 /**
- * YigYaps Shamir Secret Sharing — PoC
+ * YigYaps Shamir Secret Sharing - PoC
  *
- * Splits a DEK into (2,3) Shamir shares so that no single party can decrypt alone:
- *   Share 1 → Platform database  (custodian: "platform")
- *   Share 2 → Expert local store (custodian: "expert", returned to client)
- *   Share 3 → Platform cold backup (custodian: "backup")
+ * Splits a DEK into (2,3) Shamir shares:
+ *   Share 1 -> Platform database  (custodian: "platform")
+ *   Share 2 -> Expert local store (custodian: "expert", returned to client)
+ *   Share 3 -> Optional external recovery share, not stored by default
  *
- * Reconstructing the DEK requires any 2 of 3 shares.
- * Expert revocation = delete their Share 2 → crypto-shredding.
+ * The default invocation path reconstructs with platform share + expert share.
  *
  * Library: secrets.js-34r7h (MIT, pure JS, no native deps)
  *

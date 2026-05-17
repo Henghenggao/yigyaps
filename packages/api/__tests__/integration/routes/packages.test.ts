@@ -2,32 +2,26 @@
  * Packages Route Integration Tests
  *
  * Tests skill package CRUD operations, search, and access control.
- * Uses Testcontainers for real PostgreSQL integration.
+ * Uses the Vitest global setup PostgreSQL database.
  *
  * License: Apache 2.0
  */
 
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
-import {
-  PostgreSqlContainer,
-  StartedPostgreSqlContainer,
-} from "@testcontainers/postgresql";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { Pool } from "pg";
-import path from "path";
-import { fileURLToPath } from "url";
 import {
   createTestServer,
   closeTestServer,
   type TestServerContext,
 } from "../helpers/test-server.js";
+import { getTestDatabaseUrl } from "../helpers/test-db-url.js";
 import { createAdminJWT } from "../../unit/helpers/jwt-helpers.js";
 import { SkillPackageDAL, SkillRuleDAL } from "@yigyaps/db";
 import { SkillPackageFactory } from "../../../../db/__tests__/helpers/factories.js";
 import { sql } from "drizzle-orm";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const DB_URL = getTestDatabaseUrl();
 
 // Local database cleanup function for integration tests
 async function clearDatabase(db: ReturnType<typeof drizzle>) {
@@ -47,34 +41,21 @@ async function clearDatabase(db: ReturnType<typeof drizzle>) {
 }
 
 describe("Packages Routes", () => {
-  let container: StartedPostgreSqlContainer;
   let pool: Pool;
   let testDb: ReturnType<typeof drizzle>;
   let serverContext: TestServerContext;
   let packageDAL: SkillPackageDAL;
 
   beforeAll(async () => {
-    // Start PostgreSQL container
-    container = await new PostgreSqlContainer("postgres:16-alpine")
-      .withDatabase("yigyaps_test")
-      .withUsername("test_user")
-      .withPassword("test_password")
-      .start();
-
-    const connectionString = container.getConnectionUri();
-    pool = new Pool({ connectionString });
+    pool = new Pool({ connectionString: DB_URL, max: 5 });
     testDb = drizzle(pool);
-
-    // Run migrations
-    const migrationsPath = path.resolve(__dirname, "../../../../db/migrations");
-    await migrate(testDb, { migrationsFolder: migrationsPath });
 
     // Set JWT_SECRET and ADMIN_SECRET for tests
     process.env.JWT_SECRET = "test-jwt-secret";
     // ADMIN_SECRET removed
 
     // Create test server
-    serverContext = await createTestServer(connectionString);
+    serverContext = await createTestServer(DB_URL);
 
     // Initialize DAL
     packageDAL = new SkillPackageDAL(testDb);
@@ -83,7 +64,6 @@ describe("Packages Routes", () => {
   afterAll(async () => {
     await closeTestServer(serverContext);
     await pool.end();
-    await container.stop();
   });
 
   beforeEach(async () => {

@@ -36,7 +36,8 @@ YigYaps is engineered for **Security-First IP Protection**. We solve the "Knowle
 
 ### 🛡️ Expert IP Defense (Envelope Encryption)
 *   **Data at Rest**: All sensitive expertise is protected via **AES-256-GCM Envelope Encryption**.
-*   **KMS Integration**: Master keys (KEK) are managed separately from the database, ensuring that even a database breach won't expose creator knowledge.
+*   **Shamir Key Split**: New protected uploads store only the platform share; the expert share is returned to the creator and is required for secure retrieval/invocation.
+*   **Legacy KMS Support**: KEK-based DEK recovery remains only for older records that predate Shamir key splitting.
 *   **Ephemeral Decryption**: Rules are only decrypted in memory during active tool execution and are immediately zeroed out.
 
 ### 💻 Developer Experience (Premium CLI)
@@ -63,8 +64,8 @@ The `yigyaps` CLI provides a world-class workflow for skill creators:
 
 | Requirement | Version | Notes |
 |---|---|---|
-| Node.js | 20+ | Use `nvm use` — `.nvmrc` is included |
-| npm | 10+ | Bundled with Node 20 |
+| Node.js | 22+ | Use `nvm use` — `.nvmrc` is included |
+| npm | 10+ | Bundled with Node 22 |
 | PostgreSQL | 14+ | Local install **or** Docker Compose |
 | Docker Desktop | Latest | **Required** to run the test suite |
 | GitHub OAuth App | — | [See setup guide](#github-oauth-setup) |
@@ -75,7 +76,7 @@ The `yigyaps` CLI provides a world-class workflow for skill creators:
 # 1. Clone and install
 git clone https://github.com/Henghenggao/yigyaps.git
 cd yigyaps
-nvm use          # switches to Node 20 via .nvmrc
+nvm use          # switches to Node 22 via .nvmrc
 npm install
 
 # 2. Create a local database
@@ -108,15 +109,30 @@ docker compose up -d
 
 ### Running Tests
 
-> **Requires Docker Desktop to be running.** Tests use [Testcontainers](https://testcontainers.com/) to start a temporary PostgreSQL instance automatically.
-
 ```bash
-npm test                              # all 128 tests
-npm test --workspace=packages/api     # API tests (78)
-npm test --workspace=packages/db      # DB tests  (19) — runs serially
-npm test --workspace=apps/web         # Web tests (31)
-npm run test:coverage                 # with coverage report
+npm test                    # fast unit/UI suite; does not require Docker
+npm run test:integration    # DB/API integration suite; requires Docker or TEST_DATABASE_URL
+npm run test:api            # API unit tests
+npm run test:api:integration
+npm test --workspace=web
+npm run test:coverage
 ```
+
+For API integration tests, either start Docker/Podman for Testcontainers or
+point the suite at an isolated PostgreSQL database:
+
+```powershell
+$env:TEST_DATABASE_URL="postgres://user:pass@localhost:5432/yigyaps_test"
+npm run test:api:integration
+```
+
+The integration setup prints the number of discovered API specs before it
+starts PostgreSQL; if the container runtime is unavailable, fix Docker/Podman or
+provide `TEST_DATABASE_URL` before treating the release gate as complete.
+
+### Release Readiness
+
+- [Security and CI hardening readiness](docs/release-readiness.md) summarizes the current release decision, verification evidence, residual risks, and next execution plan.
 
 ### Useful Scripts
 

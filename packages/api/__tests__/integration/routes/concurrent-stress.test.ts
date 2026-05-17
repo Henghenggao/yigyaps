@@ -4,23 +4,14 @@
  * Tests limited edition minting under high concurrency to detect overselling bugs.
  * This is CRITICAL for platform credibility - limited editions must be truly limited.
  *
- * Expected Failures (until race condition is fixed):
- * - Legendary editions may exceed 10 limit
- * - Epic editions may exceed 100 limit
+ * Uses the Vitest global setup PostgreSQL database.
  *
  * License: Apache 2.0
  */
 
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
-import {
-  PostgreSqlContainer,
-  StartedPostgreSqlContainer,
-} from "@testcontainers/postgresql";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { Pool } from "pg";
-import path from "path";
-import { fileURLToPath } from "url";
 import { createTestJWT } from "../../unit/helpers/jwt-helpers.js";
 
 import {
@@ -28,6 +19,7 @@ import {
   closeTestServer,
   type TestServerContext,
 } from "../helpers/test-server.js";
+import { getTestDatabaseUrl } from "../helpers/test-db-url.js";
 import { SkillPackageDAL, SkillMintDAL } from "@yigyaps/db";
 import {
   SkillPackageFactory,
@@ -35,7 +27,7 @@ import {
 } from "../../../../db/__tests__/helpers/factories.js";
 import { sql } from "drizzle-orm";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
+const DB_URL = getTestDatabaseUrl();
 
 // Local database cleanup function for integration tests
 async function clearDatabase(db: ReturnType<typeof drizzle>) {
@@ -55,7 +47,6 @@ async function clearDatabase(db: ReturnType<typeof drizzle>) {
 }
 
 describe("Concurrent Stress Tests - Race Condition Detection", () => {
-  let container: StartedPostgreSqlContainer;
   let pool: Pool;
   let testDb: ReturnType<typeof drizzle>;
   let serverContext: TestServerContext;
@@ -63,26 +54,14 @@ describe("Concurrent Stress Tests - Race Condition Detection", () => {
   let mintDAL: SkillMintDAL;
 
   beforeAll(async () => {
-    // Start PostgreSQL container
-    container = await new PostgreSqlContainer("postgres:16-alpine")
-      .withDatabase("yigyaps_test")
-      .withUsername("test_user")
-      .withPassword("test_password")
-      .start();
-
-    const connectionString = container.getConnectionUri();
-    pool = new Pool({ connectionString });
+    pool = new Pool({ connectionString: DB_URL, max: 5 });
     testDb = drizzle(pool);
-
-    // Run migrations
-    const migrationsPath = path.resolve(__dirname, "../../../../db/migrations");
-    await migrate(testDb, { migrationsFolder: migrationsPath });
 
     // Set JWT_SECRET for tests
     process.env.JWT_SECRET = "test-jwt-secret";
 
     // Create test server
-    serverContext = await createTestServer(connectionString);
+    serverContext = await createTestServer(DB_URL);
 
     // Initialize DALs
     packageDAL = new SkillPackageDAL(testDb);
@@ -92,7 +71,6 @@ describe("Concurrent Stress Tests - Race Condition Detection", () => {
   afterAll(async () => {
     await closeTestServer(serverContext);
     await pool.end();
-    await container.stop();
   });
 
   beforeEach(async () => {

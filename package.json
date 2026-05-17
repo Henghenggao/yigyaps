@@ -10,19 +10,22 @@
     "apps/*"
   ],
   "engines": {
-    "node": ">=20",
-    "npm": ">=9"
+    "node": ">=22",
+    "npm": ">=10"
   },
   "scripts": {
     "build": "tsc -b",
     "clean": "tsc -b --clean",
-    "test": "npm run test -w @yigyaps/db && npm run test -w @yigyaps/api && npm run test -w @yigyaps/cli && npm run test -w web",
+    "test": "npm run test:unit",
+    "test:unit": "npm run test:unit -w @yigyaps/api && npm run test -w @yigyaps/client && npm run test -w @yigyaps/cli && npm run test -w web",
+    "test:integration": "npm run test:integration -w @yigyaps/db && npm run test:integration -w @yigyaps/api",
     "test:watch": "vitest",
     "test:ui": "vitest --ui",
     "test:coverage": "vitest run --coverage",
-    "test:db": "npm run test --workspace=@yigyaps/db",
+    "test:db": "npm run test:integration --workspace=@yigyaps/db",
     "test:api": "npm run test --workspace=@yigyaps/api",
-    "test:ci": "npm run test",
+    "test:api:integration": "npm run test:integration --workspace=@yigyaps/api",
+    "test:ci": "npm run build && npm run test:unit && npm run test:integration",
     "lint": "eslint .",
     "format": "prettier --write .",
     "dev:api": "npm run dev --workspace=@yigyaps/api",

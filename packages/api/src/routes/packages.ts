@@ -17,6 +17,7 @@ import { z } from "zod";
 import sanitizeHtml from "sanitize-html";
 import * as schema from "@yigyaps/db";
 import { SkillPackageDAL, SkillRuleDAL, UserDAL } from "@yigyaps/db";
+import { PACKAGE_ID_DESCRIPTION, PACKAGE_ID_PATTERN } from "@yigyaps/types";
 import { requireAuth } from "../middleware/auth-v2.js";
 
 // Sanitize HTML configuration - allow safe formatting tags only
@@ -67,8 +68,12 @@ const safeUrlSchema = z
     { message: "URL must use http or https protocol" },
   );
 
+const packageIdSchema = z
+  .string()
+  .regex(PACKAGE_ID_PATTERN, PACKAGE_ID_DESCRIPTION);
+
 const createPackageSchema = z.object({
-  packageId: z.string().min(1).max(100),
+  packageId: packageIdSchema,
   version: z.string().min(1).max(20),
   displayName: z.string().min(1).max(200),
   description: z.string().min(10).max(500),
@@ -164,7 +169,15 @@ const searchSchema = z.object({
   minRating: z.coerce.number().min(0).max(5).optional(),
   maxPriceUsd: z.coerce.number().min(0).optional(),
   sortBy: z
-    .enum(["relevance", "popularity", "rating", "recent", "name"])
+    .enum([
+      "relevance",
+      "popularity",
+      "rating",
+      "recent",
+      "name",
+      "price_asc",
+      "price_desc",
+    ])
     .default("relevance"),
   limit: z.coerce.number().int().min(1).max(100).default(20),
   offset: z.coerce.number().int().min(0).default(0),

@@ -61,7 +61,7 @@ const verdictSchema = z.object({
 });
 
 const publishSchema = z.object({
-  /** Expert's Shamir share for caching DEK at publish time */
+  /** Expert's Shamir share for validating DEK recovery at publish time */
   expert_share: z.string().min(1),
   /** Template ID for convergence check */
   templateId: z.string().min(1),
@@ -364,7 +364,7 @@ export const validateRoutes: FastifyPluginAsync = async (fastify) => {
         });
       }
 
-      // Reconstruct DEK and cache it for production invocations
+      // Reconstruct DEK to verify the expert share before publishing.
       const dek = await reconstructDek(fastify.db, pkg.id, expert_share);
       if (!dek) {
         return reply.code(400).send({
@@ -373,10 +373,10 @@ export const validateRoutes: FastifyPluginAsync = async (fastify) => {
         });
       }
 
-      // Cache KEK-encrypted DEK on all corpus entries for production
-      const { encryptedDek } = await KMS.encryptDek(dek);
+      // Do not persist a KEK-encrypted production DEK for Shamir-protected
+      // corpus entries. Runtime invocation must reconstruct with expert_share.
       const corpusDAL = new SkillCorpusDAL(fastify.db);
-      await corpusDAL.setCachedDek(pkg.id, encryptedDek);
+      await corpusDAL.setCachedDek(pkg.id, null);
 
       // Transition all completed sessions for this package to published
       const sessionDAL = new CaptureSessionDAL(fastify.db);
@@ -408,7 +408,26 @@ async function reconstructDek(
   skillPackageId: string,
   expertShare: string,
 ): Promise<Buffer | null> {
-  // First check if there's a cached DEK on corpus entries
+  // Shamir reconstruction is preferred whenever a platform share exists.
+  const shares = await db
+    .select()
+    .from(shamirSharesTable)
+    .where(eq(shamirSharesTable.skillPackageId, skillPackageId));
+
+  const platformShare = shares.find((s) => s.shareIndex === 1);
+  if (platformShare) {
+    try {
+      const dekHex = ShamirManager.reconstruct([
+        platformShare.shareData,
+        expertShare,
+      ]);
+      return Buffer.from(dekHex, "hex");
+    } catch {
+      return null;
+    }
+  }
+
+  // Legacy fallback only applies to corpus entries that predate Shamir shares.
   const cachedEntries = await db
     .select({ cachedEncryptedDek: skillCorpusTable.cachedEncryptedDek })
     .from(skillCorpusTable)
@@ -419,28 +438,11 @@ async function reconstructDek(
     try {
       return await KMS.decryptDek(cachedEntries[0].cachedEncryptedDek);
     } catch {
-      // Fall through to Shamir reconstruction
+      return null;
     }
   }
 
-  // Shamir reconstruction
-  const shares = await db
-    .select()
-    .from(shamirSharesTable)
-    .where(eq(shamirSharesTable.skillPackageId, skillPackageId));
-
-  const platformShare = shares.find((s) => s.shareIndex === 1);
-  if (!platformShare) return null;
-
-  try {
-    const dekHex = ShamirManager.reconstruct([
-      platformShare.shareData,
-      expertShare,
-    ]);
-    return Buffer.from(dekHex, "hex");
-  } catch {
-    return null;
-  }
+  return null;
 }
 
 function buildVariationPrompt(

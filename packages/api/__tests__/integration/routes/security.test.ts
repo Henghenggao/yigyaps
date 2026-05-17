@@ -8,34 +8,28 @@
  *   - Crypto-shredding (knowledge revocation)
  *   - Authorization: author-only access, anti-scraping guard
  *
- * Uses Testcontainers for real PostgreSQL integration.
+ * Uses the Vitest global setup PostgreSQL database.
  *
  * License: Apache 2.0
  */
 
 import { describe, it, expect, beforeAll, afterAll, beforeEach } from "vitest";
-import {
-  PostgreSqlContainer,
-  StartedPostgreSqlContainer,
-} from "@testcontainers/postgresql";
 import { drizzle } from "drizzle-orm/node-postgres";
-import { migrate } from "drizzle-orm/node-postgres/migrator";
 import { Pool } from "pg";
-import path from "path";
-import { fileURLToPath } from "url";
 import {
   createTestServer,
   closeTestServer,
   type TestServerContext,
 } from "../helpers/test-server.js";
+import { getTestDatabaseUrl } from "../helpers/test-db-url.js";
 import { createTestJWT } from "../../unit/helpers/jwt-helpers.js";
 import { sql } from "drizzle-orm";
-import crypto from "crypto";
+import {
+  EXPERT_SHARE_HEADER,
+  SHAMIR_ONLY_ENCRYPTED_DEK,
+} from "../../../src/lib/dek-policy.js";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-
-// Fixed KMS_KEK for deterministic tests (32 bytes = 64 hex chars)
-const TEST_KEK = crypto.randomBytes(32).toString("hex");
+const DB_URL = getTestDatabaseUrl();
 
 // ── Database cleanup ─────────────────────────────────────────────────────────
 
@@ -52,6 +46,7 @@ async function clearSecurityTables(db: ReturnType<typeof drizzle>) {
     "yy_usage_ledger",
     "yy_subscriptions",
     "yy_skill_packages",
+    "yy_users",
   ];
 
   for (const table of tables) {
@@ -109,6 +104,49 @@ const TEST_PACKAGE_ID = "test-security-skill";
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
+async function createTestUsers(db: ReturnType<typeof drizzle>) {
+  const now = Date.now();
+  await db.execute(
+    sql.raw(`
+      INSERT INTO yy_users (
+        id,
+        github_id,
+        github_username,
+        display_name,
+        tier,
+        role,
+        created_at,
+        updated_at,
+        last_login_at
+      )
+      VALUES
+        (
+          '${AUTHOR_ID}',
+          'gh_${AUTHOR_ID}',
+          'skillauthor',
+          'Skill Author',
+          'free',
+          'user',
+          ${now},
+          ${now},
+          ${now}
+        ),
+        (
+          '${OTHER_USER_ID}',
+          'gh_${OTHER_USER_ID}',
+          'otheruser',
+          'Other User',
+          'free',
+          'user',
+          ${now},
+          ${now},
+          ${now}
+        )
+      ON CONFLICT (id) DO NOTHING
+    `),
+  );
+}
+
 async function createTestPackage(serverContext: TestServerContext) {
   const res = await serverContext.fastify.inject({
     method: "POST",
@@ -132,7 +170,6 @@ async function createTestPackage(serverContext: TestServerContext) {
 // ─── Test Suite ──────────────────────────────────────────────────────────────
 
 describe("Security Routes", () => {
-  let container: StartedPostgreSqlContainer;
   let pool: Pool;
   let testDb: ReturnType<typeof drizzle>;
   let serverContext: TestServerContext;
@@ -141,34 +178,22 @@ describe("Security Routes", () => {
     // Set required env vars for security subsystem
     process.env.JWT_SECRET = "test-jwt-secret-that-is-at-least-32chars!!";
     process.env.SESSION_SECRET = "test-session-secret-that-is-32chars!!";
-    process.env.KMS_KEK = TEST_KEK;
     process.env.NODE_ENV = "test";
 
-    container = await new PostgreSqlContainer("postgres:16-alpine")
-      .withDatabase("yigyaps_test")
-      .withUsername("test_user")
-      .withPassword("test_password")
-      .start();
-
-    const connectionString = container.getConnectionUri();
-    pool = new Pool({ connectionString });
+    pool = new Pool({ connectionString: DB_URL, max: 5 });
     testDb = drizzle(pool);
 
-    // Run all migrations (0000-0010)
-    const migrationsPath = path.resolve(__dirname, "../../../../db/migrations");
-    await migrate(testDb, { migrationsFolder: migrationsPath });
-
-    serverContext = await createTestServer(connectionString);
+    serverContext = await createTestServer(DB_URL);
   }, 60_000);
 
   afterAll(async () => {
     await closeTestServer(serverContext);
     await pool.end();
-    await container.stop();
   });
 
   beforeEach(async () => {
     await clearSecurityTables(testDb);
+    await createTestUsers(testDb);
     await createTestPackage(serverContext);
   });
 
@@ -191,6 +216,19 @@ describe("Security Routes", () => {
       expect(body.expert_share).toBeDefined();
       expect(body.expert_share.length).toBeGreaterThan(0);
       expect(body.shamir_notice).toContain("IMPORTANT");
+      expect(body.shamir_notice).not.toContain("cold-backup");
+
+      const knowledgeRows = await testDb.execute(
+        sql.raw(`SELECT encrypted_dek FROM yy_encrypted_knowledge WHERE is_active = true`),
+      );
+      expect(knowledgeRows.rows[0].encrypted_dek).toBe(SHAMIR_ONLY_ENCRYPTED_DEK);
+
+      const shareRows = await testDb.execute(
+        sql.raw(`SELECT share_index, custodian FROM yy_shamir_shares ORDER BY share_index`),
+      );
+      expect(shareRows.rows).toHaveLength(1);
+      expect(shareRows.rows[0].share_index).toBe(1);
+      expect(shareRows.rows[0].custodian).toBe("platform");
     });
 
     it("rejects non-author upload", async () => {
@@ -290,6 +328,31 @@ describe("Security Routes", () => {
   describe("GET /v1/security/knowledge/:packageId", () => {
     it("author can decrypt and retrieve plaintext rules", async () => {
       // First, encrypt knowledge
+      const encryptRes = await serverContext.fastify.inject({
+        method: "POST",
+        url: `/v1/security/knowledge/${TEST_PACKAGE_ID}`,
+        headers: { authorization: `Bearer ${AUTHOR_JWT}` },
+        payload: { plaintextRules: SAMPLE_RULES },
+      });
+      const expertShare = encryptRes.json().expert_share;
+
+      // Then retrieve
+      const res = await serverContext.fastify.inject({
+        method: "GET",
+        url: `/v1/security/knowledge/${TEST_PACKAGE_ID}`,
+        headers: {
+          authorization: `Bearer ${AUTHOR_JWT}`,
+          [EXPERT_SHARE_HEADER]: expertShare,
+        },
+      });
+
+      expect(res.statusCode).toBe(200);
+      const body = res.json();
+      expect(body.plaintextRules).toBe(SAMPLE_RULES);
+      expect(body.key_mode).toBe("shamir");
+    });
+
+    it("requires expert share when author retrieves Shamir knowledge", async () => {
       await serverContext.fastify.inject({
         method: "POST",
         url: `/v1/security/knowledge/${TEST_PACKAGE_ID}`,
@@ -297,16 +360,14 @@ describe("Security Routes", () => {
         payload: { plaintextRules: SAMPLE_RULES },
       });
 
-      // Then retrieve
       const res = await serverContext.fastify.inject({
         method: "GET",
         url: `/v1/security/knowledge/${TEST_PACKAGE_ID}`,
         headers: { authorization: `Bearer ${AUTHOR_JWT}` },
       });
 
-      expect(res.statusCode).toBe(200);
-      const body = res.json();
-      expect(body.plaintextRules).toBe(SAMPLE_RULES);
+      expect(res.statusCode).toBe(400);
+      expect(res.json().error).toContain("Shamir");
     });
 
     it("non-author cannot decrypt knowledge", async () => {
@@ -372,6 +433,11 @@ describe("Security Routes", () => {
       expect(body.conclusion).toBeDefined();
       expect(body.mode).toBe("local");
       expect(body.privacy_notice).toContain("LOCAL MODE");
+
+      const usageRows = await testDb.execute(
+        sql.raw(`SELECT COUNT(*) as cnt FROM yy_usage_ledger`),
+      );
+      expect(Number(usageRows.rows[0].cnt)).toBe(1);
     });
 
     it("returns 400 when Shamir share is required but missing", async () => {
@@ -385,6 +451,36 @@ describe("Security Routes", () => {
       expect(res.statusCode).toBe(400);
       const body = res.json();
       expect(body.error).toContain("Shamir");
+    });
+
+    it("audits failed Shamir recovery attempts and rate-limits repeats", async () => {
+      for (let i = 0; i < 21; i += 1) {
+        const res = await serverContext.fastify.inject({
+          method: "POST",
+          url: `/v1/security/invoke/${TEST_PACKAGE_ID}`,
+          headers: { authorization: `Bearer ${AUTHOR_JWT}` },
+          payload: { user_query: `missing share attempt ${i}` },
+        });
+
+        expect(res.statusCode).toBe(400);
+      }
+
+      const logs = await testDb.execute(
+        sql.raw(`SELECT COUNT(*) as cnt FROM yy_invocation_logs`),
+      );
+      expect(Number(logs.rows[0].cnt)).toBe(21);
+
+      const blockedRes = await serverContext.fastify.inject({
+        method: "POST",
+        url: `/v1/security/invoke/${TEST_PACKAGE_ID}`,
+        headers: { authorization: `Bearer ${AUTHOR_JWT}` },
+        payload: { user_query: "one more missing share attempt" },
+      });
+
+      expect(blockedRes.statusCode).toBe(429);
+      expect(blockedRes.json()).toMatchObject({
+        error: "Too Many Requests",
+      });
     });
 
     it("creates hash-chain audit log entry", async () => {
@@ -498,7 +594,7 @@ describe("Security Routes", () => {
       const body = res.json();
       expect(body.success).toBe(true);
       expect(body.message).toContain("Crypto-shredding");
-      expect(body.deleted_shares).toBeGreaterThanOrEqual(2); // platform + backup
+      expect(body.deleted_shares).toBeGreaterThanOrEqual(1); // platform share
       expect(body.deleted_knowledge_versions).toBeGreaterThanOrEqual(1);
     });
 

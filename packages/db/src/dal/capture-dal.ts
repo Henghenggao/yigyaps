@@ -268,7 +268,8 @@ export class SkillCorpusDAL {
   }
 
   /**
-   * Set cached DEK on all corpus entries for a skill (at publish time).
+   * Set or clear the legacy cached DEK on all corpus entries for a skill.
+   * New Shamir-protected publish flows clear this field.
    */
   async setCachedDek(
     skillPackageId: string,

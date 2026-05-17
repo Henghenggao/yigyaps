@@ -154,7 +154,7 @@ npm run dev -w @yigyaps/cli
 
 | Category      | Technology                    |
 | ------------- | ----------------------------- |
-| Runtime       | Node.js >= 18                 |
+| Runtime       | Node.js >= 22                 |
 | Language      | TypeScript 5.3                |
 | CLI Framework | Commander.js                  |
 | Prompts       | @clack/prompts                |

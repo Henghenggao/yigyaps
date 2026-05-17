@@ -198,7 +198,14 @@ export interface SkillPackageSearchQuery {
   tags?: string[];
   minRating?: number;
   maxPriceUsd?: number | null;
-  sortBy?: "relevance" | "popularity" | "rating" | "recent" | "name";
+  sortBy?:
+    | "relevance"
+    | "popularity"
+    | "rating"
+    | "recent"
+    | "name"
+    | "price_asc"
+    | "price_desc";
   limit?: number;
   offset?: number;
 }

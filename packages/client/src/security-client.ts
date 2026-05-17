@@ -9,6 +9,13 @@
 
 import type { SkillInvokeResult } from "@yigyaps/types";
 
+export interface SecurityEncryptedKnowledgeUpload {
+  success: boolean;
+  message: string;
+  expert_share: string;
+  shamir_notice: string;
+}
+
 export interface SecurityClientOptions {
   baseUrl?: string;
   apiKey?: string;
@@ -33,7 +40,7 @@ export class YigYapsSecurityClient {
   async encryptKnowledge(
     packageId: string,
     plaintextRules: string,
-  ): Promise<{ success: boolean; message: string }> {
+  ): Promise<SecurityEncryptedKnowledgeUpload> {
     const res = await fetch(
       `${this.baseUrl}/v1/security/knowledge/${encodeURIComponent(packageId)}`,
       {
@@ -48,7 +55,7 @@ export class YigYapsSecurityClient {
         `YigYaps encryptKnowledge failed: ${res.status} ${JSON.stringify(err)}`,
       );
     }
-    return res.json() as Promise<{ success: boolean; message: string }>;
+    return res.json() as Promise<SecurityEncryptedKnowledgeUpload>;
   }
 
   /**

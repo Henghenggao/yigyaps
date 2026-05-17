@@ -5,11 +5,15 @@ dist/
 .env.local
 .DS_Store
 coverage/
+lint-results.json
 .claude/
 .gstack/
 .playwright-mcp/
 nul
 docs/
+!docs/
+docs/*
+!docs/release-readiness.md
 *.log
 *.txt
 *.png

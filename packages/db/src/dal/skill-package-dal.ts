@@ -7,7 +7,7 @@
  * License: Apache 2.0
  */
 
-import { eq, and, desc, sql, ilike, or } from "drizzle-orm";
+import { eq, and, asc, desc, sql, ilike, or } from "drizzle-orm";
 import type { NodePgDatabase } from "drizzle-orm/node-postgres";
 import * as schema from "../schema/index.js";
 import {
@@ -49,7 +49,14 @@ export interface SkillPackageSearchParams {
   tags?: string[];
   minRating?: number;
   maxPriceUsd?: number;
-  sortBy?: "relevance" | "popularity" | "rating" | "recent" | "name";
+  sortBy?:
+    | "relevance"
+    | "popularity"
+    | "rating"
+    | "recent"
+    | "name"
+    | "price_asc"
+    | "price_desc";
   limit?: number;
   offset?: number;
 }
@@ -154,7 +161,7 @@ export class SkillPackageDAL {
 
         if (params.tags && params.tags.length > 0) {
           conditions.push(
-            sql`${skillPackagesTable.tags} && ${params.tags}::text[]`
+            sql`${skillPackagesTable.tags} && ${params.tags}::text[]`,
           );
         }
 
@@ -170,6 +177,10 @@ export class SkillPackageDAL {
               return desc(skillPackagesTable.releasedAt);
             case "name":
               return skillPackagesTable.displayName;
+            case "price_asc":
+              return asc(skillPackagesTable.priceUsd);
+            case "price_desc":
+              return desc(skillPackagesTable.priceUsd);
             default:
               return desc(skillPackagesTable.installCount);
           }

@@ -126,7 +126,7 @@ export const skillCorpusTable = pgTable(
     parentQaId: text("parent_qa_id"),
     /** Knowledge graph: related QA entries for lineage tracking */
     relatedQaIds: text("related_qa_ids").array(),
-    /** Cached KEK-encrypted DEK for production invocations (set at publish time) */
+    /** Legacy cached KEK-encrypted DEK. New Shamir paths leave this null. */
     cachedEncryptedDek: text("cached_encrypted_dek"),
     createdAt: bigint("created_at", { mode: "number" }).notNull(),
   },

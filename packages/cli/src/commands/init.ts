@@ -1,5 +1,6 @@
 import fs from "fs-extra";
 import path from "path";
+import { PACKAGE_ID_DESCRIPTION, isValidPackageId } from "@yigyaps/types";
 import { CliError } from "../lib/errors.js";
 import { p, assertNotCancelled } from "../lib/ui/prompts.js";
 import { colors } from "../lib/ui/theme.js";
@@ -16,10 +17,15 @@ export async function initCommand(name?: string) {
         placeholder: "my-awesome-skill",
         validate: (input: string | undefined) => {
           if (!input || input.length === 0) return "Name is required";
+          if (!isValidPackageId(input)) return PACKAGE_ID_DESCRIPTION;
           return undefined;
         },
       }),
     );
+  }
+
+  if (!isValidPackageId(skillName)) {
+    throw CliError.user(PACKAGE_ID_DESCRIPTION);
   }
 
   const category = assertNotCancelled(

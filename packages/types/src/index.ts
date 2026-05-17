@@ -17,6 +17,14 @@ export type {
   SkillPackageSearchResult,
 } from "./skill-package.js";
 
+export {
+  PACKAGE_ID_DESCRIPTION,
+  PACKAGE_ID_MAX_LENGTH,
+  PACKAGE_ID_MIN_LENGTH,
+  PACKAGE_ID_PATTERN,
+  isValidPackageId,
+} from "./package-id.js";
+
 export type {
   RarityTier,
   SkillMint,

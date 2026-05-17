@@ -90,7 +90,7 @@ export async function installCommand(id: string, options: InstallOptions) {
 Next steps:
   ${colors.muted("•")} Open YigYaps app to see the new skill
   ${colors.muted("•")} Ask your agent about its new capabilities
-  ${colors.muted("•")} Details: ${colors.link(`https://yigyaps.com/skills/${pkg.id}`)}`);
+  ${colors.muted("•")} Details: ${colors.link(`https://yigyaps.com/skill/${pkg.packageId}`)}`);
     } catch (err: unknown) {
       s.stop("Installation failed");
       const message = err instanceof Error ? err.message : String(err);

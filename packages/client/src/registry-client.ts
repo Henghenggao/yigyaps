@@ -70,6 +70,15 @@ export class YigYapsRegistryClient {
     if (query.category) params.set("category", query.category);
     if (query.license) params.set("license", query.license);
     if (query.maturity) params.set("maturity", query.maturity);
+    if (query.minRating != null) {
+      params.set("minRating", String(query.minRating));
+    }
+    if (query.maxPriceUsd != null) {
+      params.set("maxPriceUsd", String(query.maxPriceUsd));
+    }
+    if (query.tags?.length) {
+      for (const tag of query.tags) params.append("tags", tag);
+    }
     if (query.sortBy) params.set("sortBy", query.sortBy);
     if (query.limit != null) params.set("limit", String(query.limit));
     if (query.offset != null) params.set("offset", String(query.offset));
@@ -220,9 +229,9 @@ export class YigYapsRegistryClient {
   async getRules(
     packageIdOrId: string,
   ): Promise<{ rules: { path: string; content: string }[] }> {
-    const isUuid =
-      packageIdOrId.includes("-") || packageIdOrId.startsWith("spkg_");
-    const endpoint = isUuid
+    const isInternalId =
+      packageIdOrId.startsWith("spkg_") || UUID_PATTERN.test(packageIdOrId);
+    const endpoint = isInternalId
       ? `/v1/packages/${packageIdOrId}/rules`
       : `/v1/packages/by-pkg/${encodeURIComponent(packageIdOrId)}/rules`;
 
@@ -243,3 +252,6 @@ export class YigYapsRegistryClient {
     return res.json() as Promise<AuthUser>;
   }
 }
+
+const UUID_PATTERN =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;

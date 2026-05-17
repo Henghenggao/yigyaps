@@ -106,7 +106,7 @@ function renderSkillMd(
     `created_at: "${new Date(pkg.createdAt).toISOString()}"`,
     `updated_at: "${new Date(pkg.updatedAt).toISOString()}"`,
     `platform: "yigyaps"`,
-    `platform_url: "https://yigyaps.com/skills/${esc(pkg.packageId)}"`,
+    `platform_url: "https://yigyaps.com/skill/${esc(pkg.packageId)}"`,
     `encrypted_knowledge: true`,
     "---",
     "",
@@ -137,7 +137,7 @@ function renderSkillMd(
     "",
     "_This skill is powered by YigYaps encrypted knowledge technology._",
     "_The full rule set is encrypted and never transmitted in plaintext._",
-    `_Learn more: https://yigyaps.com/skills/${pkg.packageId}_`,
+    `_Learn more: https://yigyaps.com/skill/${pkg.packageId}_`,
   );
 
   return lines.join("\n");

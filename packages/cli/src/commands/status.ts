@@ -32,7 +32,7 @@ export async function statusCommand(packageId: string) {
       console.log(panel(`${packageId} Status`, content));
 
       p.outro(
-        `${colors.muted("View details online:")} ${colors.link(`https://yigyaps.com/skills/${pkg.id}`)}`,
+        `${colors.muted("View details online:")} ${colors.link(`https://yigyaps.com/skill/${pkg.packageId}`)}`,
       );
     } catch {
       s.stop("Package not found");
