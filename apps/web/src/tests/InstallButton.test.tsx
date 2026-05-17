@@ -144,6 +144,11 @@ describe("InstallButton", () => {
           body: expect.stringContaining('"packageId":"test-package"'),
         }),
       );
+      expect(JSON.parse(mockFetch.mock.calls[0][1].body)).toMatchObject({
+        packageId: "test-package",
+        yigbotId: "web-marketplace",
+        userTier: "free",
+      });
       expect(onInstallSuccess).toHaveBeenCalled();
       expect(screen.getByText(/Installed/i)).toBeInTheDocument();
     });

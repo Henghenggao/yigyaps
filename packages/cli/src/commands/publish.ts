@@ -81,12 +81,12 @@ export async function publishCommand(options: PublishOptions) {
         );
       }
 
-      const packageUrl = `https://yigyaps.com/skills/${result.id}`;
+      const packageUrl = `https://yigyaps.com/skill/${result.packageId}`;
       if (options.json) {
         console.log(
           JSON.stringify({
             success: true,
-            packageId: result.id,
+            packageId: result.packageId,
             url: packageUrl,
             expertShare: result.encryptedKnowledge?.expert_share,
           }),
@@ -102,7 +102,7 @@ export async function publishCommand(options: PublishOptions) {
 ${expertShareNotice}
 
 ${colors.muted("To try your skill locally, run:")}
-${colors.primary(`yigyaps run ${result.id}`)}`);
+${colors.primary(`yigyaps run ${result.packageId}`)}`);
       }
     } catch (uploadError: unknown) {
       if (!options.json) s.stop("Upload failed");

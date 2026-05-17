@@ -14,6 +14,15 @@ import type {
 } from "@yigyaps/types";
 
 const ITEMS_PER_PAGE = 20;
+const SORT_OPTIONS = new Set<NonNullable<SkillPackageSearchQuery["sortBy"]>>([
+  "relevance",
+  "popularity",
+  "rating",
+  "recent",
+  "name",
+  "price_asc",
+  "price_desc",
+]);
 
 export function HomePage() {
   const [searchParams, setSearchParams] = useSearchParams();
@@ -25,8 +34,12 @@ export function HomePage() {
   const maxPriceUsd = searchParams.get("maxPrice")
     ? parseInt(searchParams.get("maxPrice")!, 10)
     : undefined;
-  const sortBy = (searchParams.get("sort") ||
-    "popularity") as SkillPackageSearchQuery["sortBy"];
+  const rawSortBy = searchParams.get("sort");
+  const sortBy = SORT_OPTIONS.has(
+    rawSortBy as NonNullable<SkillPackageSearchQuery["sortBy"]>,
+  )
+    ? (rawSortBy as SkillPackageSearchQuery["sortBy"])
+    : "popularity";
   const page = parseInt(searchParams.get("page") || "1", 10);
 
   const searchQuery: SkillPackageSearchQuery = {
@@ -125,7 +138,7 @@ export function HomePage() {
           }
         >
           <option value="popularity">By Popularity</option>
-          <option value="newest">By Newest</option>
+          <option value="recent">By Newest</option>
           <option value="rating">By Rating</option>
           <option value="price_asc">Price: Low→High</option>
           <option value="price_desc">Price: High→Low</option>

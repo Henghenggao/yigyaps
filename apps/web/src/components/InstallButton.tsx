@@ -24,6 +24,8 @@ type InstallStatus =
   | "success"
   | "error";
 
+const WEB_MARKETPLACE_AGENT_ID = "web-marketplace";
+
 export function InstallButton({ skill, onInstallSuccess }: InstallButtonProps) {
   const { user, openAuthModal } = useAuth();
   const [status, setStatus] = useState<InstallStatus>("idle");
@@ -51,7 +53,11 @@ export function InstallButton({ skill, onInstallSuccess }: InstallButtonProps) {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ packageId: skill.packageId }),
+        body: JSON.stringify({
+          packageId: skill.packageId,
+          yigbotId: WEB_MARKETPLACE_AGENT_ID,
+          userTier: user.tier,
+        }),
       });
 
       if (!res.ok) {

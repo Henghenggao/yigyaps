@@ -9,6 +9,7 @@ export function useSkills(searchParams?: SkillPackageSearchQuery) {
   const [total, setTotal] = useState(0);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const tagsKey = searchParams?.tags?.join(",");
 
   useEffect(() => {
     const fetchSkills = async () => {
@@ -51,6 +52,7 @@ export function useSkills(searchParams?: SkillPackageSearchQuery) {
     searchParams?.category,
     searchParams?.license,
     searchParams?.maturity,
+    tagsKey,
     searchParams?.minRating,
     searchParams?.maxPriceUsd,
     searchParams?.sortBy,
